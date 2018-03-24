@@ -1,0 +1,16 @@
+{
+  "name": "colyseus-construct3",
+  "version": "0.0.0",
+  "description": "Colyseus Multiplayer Client Plugin for Construct3.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "http-server -p 49152 --cors",
+    "chrome": "open -a Google\ Chrome --args --disable-web-security --user-data-dir"
+  },
+  "author": "Endel Dreyer",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^0.11.1"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "custom": {
+    "conditions": [
+      {
+        "id": "is-large-number",
+        "scriptName": "IsLargeNumber",
+        "highlight": true,
+        "params": [
+          {
+            "id": "number",
+            "type": "number"
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "do-alert",
+        "scriptName": "Alert",
+        "highlight": true
+      }
+    ],
+    "expressions": [
+      {
+        "id": "double",
+        "expressionName": "Double",
+        "scriptName": "Double",
+        "highlight": true,
+        "returnType": "number",
+        "params": [
+          {
+            "id": "number",
+            "type": "number"
+          }
+        ]
+      }
+    ]
+  }
+}
