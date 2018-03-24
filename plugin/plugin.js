@@ -12,8 +12,8 @@
   const PLUGIN_ID = "Colyseus";
   ////////////////////////////////////////////
 
-  const PLUGIN_VERSION = "0.7.4.0";
-  const PLUGIN_CATEGORY = "general";
+  const PLUGIN_VERSION = "0.9.0.0";
+  const PLUGIN_CATEGORY = "web";
   const PLUGIN_AUTHOR = "Endel Dreyer";
 
   let app = null;
@@ -44,7 +44,7 @@
 
       this._info.SetProperties([
           new SDK.PluginProperty("text", "endpoint", "http://localhost:2567"),
-          new SDK.PluginProperty("text", "roomName", "chat")
+          // new SDK.PluginProperty("text", "roomName", "chat")
       ]);
 
       SDK.Lang.PopContext(); // .properties

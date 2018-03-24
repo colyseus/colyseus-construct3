@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "http-server -p 49152 --cors",
-    "chrome": "open -a Google\ Chrome --args --disable-web-security --user-data-dir"
+    "start": "http-server plugin -p 5432 --cors",
+    "chrome": "open -a Google\\ Chrome --args https://editor.construct.net --disable-web-security"
   },
   "author": "Endel Dreyer",
   "license": "MIT",
