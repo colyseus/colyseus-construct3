@@ -82,6 +82,7 @@ cr.plugins_.Colyseus = function(runtime)
 	Cnds.prototype.OnJoinRoom = function () { return true; };
 	Cnds.prototype.OnLeaveRoom = function () { return true; };
 	Cnds.prototype.OnRoomError = function () { return true; };
+	Cnds.prototype.OnStateChange = function () { return true; };
 	Cnds.prototype.OnRoomListen = function (path, operation) {
 		return true;
 	};
@@ -137,6 +138,11 @@ cr.plugins_.Colyseus = function(runtime)
 
 		this.room.onStateChange.add(function (state) {
 			self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
+		});
+
+		this.room.listen(function(change) {
+			console.log("NEW CHANGE:", change);
+			self.runtime.trigger(pluginProto.cnds.OnRoomListen, self);
 		});
 	};
 
