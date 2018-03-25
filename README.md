@@ -2,7 +2,7 @@
 
 Colyseus Multiplayer Client Addon for Construct3.
 
-This addon is on early stages and is not ready to use.
+May not be ready to use yet. Use at your own risk.
 
 ## Development
 
