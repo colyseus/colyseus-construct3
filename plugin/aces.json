@@ -85,6 +85,21 @@
 
     "expressions": [
       {
+        "id": "path",
+        "expressionName": "Path",
+        "scriptName": "Path",
+        "returnType": "any",
+        "params": [
+          { "id": "variable", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "value",
+        "expressionName": "Value",
+        "scriptName": "Value",
+        "returnType": "any"
+      },
+      {
         "id": "state-value",
         "expressionName": "State",
         "scriptName": "State",

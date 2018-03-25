@@ -66,7 +66,7 @@ cr.plugins_.Colyseus = function(runtime)
 
 	//////////////////////////////////////
 	// Conditions
-	function Cnds() {};
+	function Cnds() { };
 
 	/**
 	 * Conditions for Client
@@ -84,6 +84,40 @@ cr.plugins_.Colyseus = function(runtime)
 	Cnds.prototype.OnRoomError = function () { return true; };
 	Cnds.prototype.OnStateChange = function () { return true; };
 	Cnds.prototype.OnRoomListen = function (path, operation) {
+		var self = this;
+		var change = this.lastChange;
+
+		// the operation doesn't match with the operation user is interested in.
+		if (operation !== "" && change.operation !== operation) {
+			return false;
+		}
+
+		var rules = path.split("/");
+
+		debugger;
+
+		if (!this.listeners[path]) {
+			rules = rules.map(function(segment) {
+				// replace placeholder matchers
+				return (segment.indexOf(":") === 0)
+					? self.room.matcherPlaceholders[segment] || this.matcherPlaceholders[":*"]
+					: new RegExp("^" + segment + "$");
+			});
+			this.listeners[path] = rules;
+		}
+
+		if (change.path.length !== this.listeners[path].length) {
+			return false;
+		}
+
+		for (var i = 0, len = this.listeners[path].length; i < len; i++) {
+			let matches = change.path[i].match(this.listeners[path][i]);
+			if (!matches || matches.length === 0 || matches.length > 2) {
+				return false;
+			}
+		}
+
+		// alright! let's execute the callback!
 		return true;
 	};
 
@@ -125,6 +159,7 @@ cr.plugins_.Colyseus = function(runtime)
 		}
 
 		this.room = client.join(roomName, options);
+		this.listeners = {};
 
 		this.room.onError.add(function () {
 			self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
@@ -141,7 +176,7 @@ cr.plugins_.Colyseus = function(runtime)
 		});
 
 		this.room.listen(function(change) {
-			console.log("NEW CHANGE:", change);
+			self.lastChange = change;
 			self.runtime.trigger(pluginProto.cnds.OnRoomListen, self);
 		});
 	};
@@ -182,16 +217,12 @@ cr.plugins_.Colyseus = function(runtime)
 		ret.set_any(value);
 	};
 
-	Exps.prototype.OperationAdd = function (ret) {
-        ret.set_string("add");
+	Exps.prototype.Path = function (ret, variable) {
+        ret.set_any(this.lastChange.path[variable]);
     };
 
-	Exps.prototype.OperationReplace = function (ret) {
-        ret.set_string("replace");
-    };
-
-	Exps.prototype.OperationDelete = function (ret) {
-        ret.set_string("delete");
+	Exps.prototype.Value = function (ret) {
+        ret.set_any(this.lastChange.value);
     };
 
 	pluginProto.exps = new Exps();

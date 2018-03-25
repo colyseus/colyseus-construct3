@@ -130,6 +130,20 @@
         },
 
         "expressions": {
+          "value": {
+            "description": "The value you're listening to. (Only avaliable during Listen)",
+            "translated-name": "Value"
+          },
+          "path": {
+            "description": "A variable present in the path you're listening to.",
+            "translated-name": "Path",
+            "params": {
+              "variable": {
+                "name": "Variable",
+                "desc": "Name of the variable. e.g. \"id\", \"number\", \"axis\""
+              }
+            }
+          },
           "state-value": {
             "description": "Returns a value from room's state",
             "translated-name": "State",
