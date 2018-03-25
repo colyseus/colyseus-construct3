@@ -1,6 +1,8 @@
 # colyseus-construct3
 
-Colyseus Multiplayer Client Plugin for Construct3.
+Colyseus Multiplayer Client Addon for Construct3.
+
+This addon is on early stages and is not ready to use.
 
 ## Development
 
