@@ -143,18 +143,6 @@
           "session-id": {
             "description": "Unique sessionId of the current user",
             "translated-name": "Session Id"
-          },
-          "operation-add": {
-            "description": "When listening for operation: add",
-            "translated-name": "Add"
-          },
-          "operation-replace": {
-            "description": "When listening for operation: replace",
-            "translated-name": "Replace"
-          },
-          "operation-delete": {
-            "description": "When listening for operation: delete",
-            "translated-name": "Delete"
           }
         }
       }

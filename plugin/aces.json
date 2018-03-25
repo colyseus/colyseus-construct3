@@ -98,24 +98,6 @@
         "expressionName": "SessionId",
         "scriptName": "SessionId",
         "returnType": "any"
-      },
-      {
-        "id": "operation-add",
-        "expressionName": "OperationAdd",
-        "scriptName": "OperationAdd",
-        "returnType": "string"
-      },
-      {
-        "id": "operation-replace",
-        "expressionName": "OperationReplace",
-        "scriptName": "OperationReplace",
-        "returnType": "string"
-      },
-      {
-        "id": "operation-delete",
-        "expressionName": "OperationDelete",
-        "scriptName": "OperationDelete",
-        "returnType": "string"
       }
     ]
   }
