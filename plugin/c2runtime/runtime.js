@@ -13,6 +13,7 @@ cr.plugins_.Colyseus = function(runtime)
 
 (function ()
 {
+	var rooms = {};
 	var pluginProto = cr.plugins_.Colyseus.prototype;
 
 	/////////////////////////////////////
@@ -67,7 +68,40 @@ cr.plugins_.Colyseus = function(runtime)
 	// Conditions
 	function Cnds() {};
 
-	Cnds.prototype.OnConnect = function ()
+	/**
+	 * Conditions for Client
+	 */
+	Cnds.prototype.OnOpen = function ()
+	{
+		return true;
+	};
+
+	Cnds.prototype.OnClose = function ()
+	{
+		return true;
+	};
+
+	Cnds.prototype.OnClientError = function ()
+	{
+		return true;
+	};
+
+	/**
+	 * Conditions for Room
+	 */
+
+	Cnds.prototype.OnJoinRoom = function (roomName)
+	{
+		return true;
+	};
+
+	Cnds.prototype.OnLeaveRoom = function (roomName)
+	{
+		return true;
+	};
+
+
+	Cnds.prototype.OnRoomError = function ()
 	{
 		return true;
 	};
@@ -78,18 +112,39 @@ cr.plugins_.Colyseus = function(runtime)
 	// Actions
 	function Acts() {};
 
-	Acts.prototype.Alert = function ()
-	{
-		alert("Test property = " + this.testProperty);
-	};
-
 	Acts.prototype.Connect = function ()
 	{
 		var self = this;
 		this.client = new Colyseus.Client(this.endpoint);
-		this.client.onOpen.add(function() {
-			console.log("ON OPEN!");
-			self.runtime.trigger(pluginProto.cnds.OnConnect, self);
+		this.client.onError.add(function() { self.runtime.trigger(pluginProto.cnds.OnClientError, self); });
+		this.client.onOpen.add(function() { self.runtime.trigger(pluginProto.cnds.OnOpen, self); });
+		this.client.onClose.add(function() { self.runtime.trigger(pluginProto.cnds.OnClose, self); });
+	};
+
+	Acts.prototype.Disconnect = function ()
+	{
+		var self = this;
+		if (this.client) {
+			this.client.close();
+		}
+	};
+
+	Acts.prototype.JoinRoom = function (roomName, optionsArr)
+	{
+		var self = this;
+		var options = {};
+
+		for (var i=0; i<optionsArr.length; i++) {
+			var option = optionsArr[i].split("=");
+			options[option[0]] = option[1];
+		}
+
+		rooms[roomName] = this.client.join(roomName, options);
+		rooms[roomName].onError.add(function () {
+			self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
+		});
+		rooms[roomName].onJoin.add(function () {
+			self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
 		});
 	};
 

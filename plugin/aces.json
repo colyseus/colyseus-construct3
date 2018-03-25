@@ -2,8 +2,18 @@
   "colyseus": {
     "conditions": [
       {
-        "id": "on-connect",
-        "scriptName": "OnConnect",
+        "id": "on-open",
+        "scriptName": "OnOpen",
+        "isTrigger": true
+      },
+      {
+        "id": "on-client-error",
+        "scriptName": "OnClientError",
+        "isTrigger": true
+      },
+      {
+        "id": "on-close",
+        "scriptName": "OnClose",
         "isTrigger": true
       }
     ],
@@ -13,10 +23,8 @@
         "scriptName": "JoinRoom",
         "highlight": true,
         "params": [
-          {
-            "id": "name",
-            "type": "string"
-          }
+          { "id": "name", "type": "string" },
+          { "id": "options", "type": "variadic" }
         ]
       },
 
@@ -35,17 +43,40 @@
         "highlight": true,
         "returnType": "number",
         "params": [
-          {
-            "id": "number",
-            "type": "number"
-          }
+          { "id": "number", "type": "number" }
         ]
       }
     ]
   },
 
-  "colyseusroom": {
-    "conditions": [ ],
+  "room": {
+    "conditions": [
+      {
+        "id": "on-join-room",
+        "scriptName": "OnJoinRoom",
+        "highlight": true,
+        "isTrigger": true,
+        "params": [
+          { "id": "name", "type": "string" }
+        ]
+      },
+      {
+        "id": "on-leave-room",
+        "scriptName": "OnLeaveRoom",
+        "isTrigger": true,
+        "params": [
+          { "id": "name", "type": "string" }
+        ]
+      },
+      {
+        "id": "on-room-error",
+        "scriptName": "OnRoomError",
+        "isTrigger": true,
+        "params": [
+          { "id": "name", "type": "string" }
+        ]
+      }
+     ],
     "actions": [ ],
     "expressions": [ ]
   }

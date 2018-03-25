@@ -15,8 +15,8 @@
           }
         },
         "aceCategories": {
-          "colyseus": "Colyseus Client",
-          "colyseusroom": "Colyseus Room"
+          "colyseus": "Client",
+          "room": "Room"
         },
 
         "conditions": {
@@ -31,31 +31,90 @@
               }
             }
           },
-          "on-connect": {
+          "on-open": {
             "isStatic": true,
-            "list-name": "On connect",
-            "display-text": "On connect",
-            "description": "Triggered when the connection with the server is stablished."
+            "list-name": "On open",
+            "display-text": "On connection oppened",
+            "description": "Triggered when connection with server is opened."
+          },
+          "on-client-error": {
+            "isStatic": true,
+            "list-name": "On error",
+            "display-text": "On error",
+            "description": "Triggered when an error happened on the server."
+          },
+          "on-close": {
+            "isStatic": true,
+            "list-name": "On close",
+            "display-text": "On connection closed",
+            "description": "Triggered when connection with server is closed."
+          },
+
+          "on-join-room": {
+            "isStatic": true,
+            "list-name": "On join",
+            "display-text": "On join room {0}",
+            "description": "Triggered when joined successfully into a room.",
+            "params": {
+              "name": {
+                "name": "Name",
+                "desc": "Name of the room"
+              }
+            }
+          },
+          "on-leave-room": {
+            "isStatic": true,
+            "list-name": "On leave",
+            "display-text": "On leave room {0}",
+            "description": "Triggered when left from a room.",
+            "params": {
+              "name": {
+                "name": "Name",
+                "desc": "Name of the room"
+              }
+            }
+          },
+          "on-room-error": {
+            "isStatic": true,
+            "list-name": "On error",
+            "display-text": "On error {0}",
+            "description": "Triggered when an error happened on the server.",
+            "params": {
+              "name": {
+                "name": "Name",
+                "desc": "Name of the room"
+              }
+            }
           }
         },
 
         "actions": {
+          "connect": {
+            "list-name": "Connect",
+            "display-text": "Connect",
+            "description": "Open connection with server"
+          },
+
+          "disconnect": {
+            "list-name": "Disconnect",
+            "display-text": "Disconnect",
+            "description": "Close connection with server"
+          },
+
           "join-room": {
             "list-name": "Join room",
-            "display-text": "Join room \"{0}\"",
+            "display-text": "Join room \"{0}\" with options {1}, {...}.",
             "description": "Join a room by name",
             "params": {
               "name": {
                 "name": "Name",
                 "desc": "Room name"
+              },
+              "options": {
+                "name": "Options",
+                "desc": "The \"requestJoin\" options."
               }
             }
-          },
-
-          "connect": {
-            "list-name": "Connect",
-            "display-text": "Connect",
-            "description": "Connect to Colyseus Server"
           }
         },
 
@@ -71,28 +130,6 @@
             }
           }
         }
-      },
-
-      "colyseusroom": {
-        "name": "Colyseus Room",
-        "description": "Colyseus Multiplayer Client",
-        "help-url": "http://colyseus.io/docs",
-        "properties": {
-          "roomName": {
-            "name": "Room name",
-            "desc": "Name of the room to connect to"
-          }
-        },
-        "aceCategories": {
-          "colyseusroom": "Colyseus Room"
-        },
-
-        "conditions": { },
-
-        "actions": { },
-
-        "expressions": { }
-
       }
     }
   }
