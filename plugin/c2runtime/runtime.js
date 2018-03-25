@@ -37,7 +37,7 @@ cr.plugins_.Colyseus = function(runtime)
 		this.runtime = type.runtime;
 
 		// Initialise object properties
-		this.testProperty = 0;
+		this.endpoint = "";
 	};
 
 	var instanceProto = pluginProto.Instance.prototype;
@@ -45,7 +45,7 @@ cr.plugins_.Colyseus = function(runtime)
 	instanceProto.onCreate = function()
 	{
 		// Read properties set in C3
-		this.testProperty = this.properties[0];
+		this.endpoint = this.properties[0];
 	};
 
 	instanceProto.saveToJSON = function ()
@@ -67,9 +67,9 @@ cr.plugins_.Colyseus = function(runtime)
 	// Conditions
 	function Cnds() {};
 
-	Cnds.prototype.IsLargeNumber = function (number)
+	Cnds.prototype.OnConnect = function ()
 	{
-		return number > 100;
+		return true;
 	};
 
 	pluginProto.cnds = new Cnds();
@@ -81,6 +81,16 @@ cr.plugins_.Colyseus = function(runtime)
 	Acts.prototype.Alert = function ()
 	{
 		alert("Test property = " + this.testProperty);
+	};
+
+	Acts.prototype.Connect = function ()
+	{
+		var self = this;
+		this.client = new Colyseus.Client(this.endpoint);
+		this.client.onOpen.add(function() {
+			console.log("ON OPEN!");
+			self.runtime.trigger(pluginProto.cnds.OnConnect, self);
+		});
 	};
 
 	pluginProto.acts = new Acts();

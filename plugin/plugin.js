@@ -41,12 +41,9 @@
       });
 
       SDK.Lang.PushContext(".properties");
-
       this._info.SetProperties([
-          new SDK.PluginProperty("text", "endpoint", "http://localhost:2567"),
-          // new SDK.PluginProperty("text", "roomName", "chat")
+          new SDK.PluginProperty("text", "endpoint", "ws://localhost:2567")
       ]);
-
       SDK.Lang.PopContext(); // .properties
 
       SDK.Lang.PopContext();

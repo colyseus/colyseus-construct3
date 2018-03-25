@@ -19,9 +19,9 @@
     "aces.json",
     "addon.json",
     "icon.png",
-    "instance.js",
     "plugin.js",
     "type.js",
+    "instance.js",
     "build/colyseus.js"
   ]
 }

@@ -3,10 +3,11 @@
   "fileDescription": "Strings for Colyseus.",
   "text": {
     "plugins": {
+
       "colyseus": {
-        "name": "Colyseus",
+        "name": "Colyseus Client",
         "description": "Colyseus Multiplayer Client",
-        "help-url": "https://github.com/gamestdio/colyseus/wiki",
+        "help-url": "http://colyseus.io/docs",
         "properties": {
           "endpoint": {
             "name": "Endpoint",
@@ -14,8 +15,10 @@
           }
         },
         "aceCategories": {
-          "custom": "Custom"
+          "colyseus": "Colyseus Client",
+          "colyseusroom": "Colyseus Room"
         },
+
         "conditions": {
           "is-large-number": {
             "list-name": "Is large number",
@@ -27,12 +30,19 @@
                 "desc": "Number to test if greater than 100."
               }
             }
+          },
+          "on-connect": {
+            "isStatic": true,
+            "list-name": "On connect",
+            "display-text": "On connect",
+            "description": "Triggered when the connection with the server is stablished."
           }
         },
+
         "actions": {
           "join-room": {
             "list-name": "Join room",
-            "display-text": "Join room by name",
+            "display-text": "Join room \"{0}\"",
             "description": "Join a room by name",
             "params": {
               "name": {
@@ -41,12 +51,14 @@
               }
             }
           },
-          "do-alert": {
-            "list-name": "Do alert",
-            "display-text": "Do alert",
-            "description": "Do a dummy alert."
+
+          "connect": {
+            "list-name": "Connect",
+            "display-text": "Connect",
+            "description": "Connect to Colyseus Server"
           }
         },
+
         "expressions": {
           "double": {
             "description": "Double a number.",
@@ -59,6 +71,28 @@
             }
           }
         }
+      },
+
+      "colyseusroom": {
+        "name": "Colyseus Room",
+        "description": "Colyseus Multiplayer Client",
+        "help-url": "http://colyseus.io/docs",
+        "properties": {
+          "roomName": {
+            "name": "Room name",
+            "desc": "Name of the room to connect to"
+          }
+        },
+        "aceCategories": {
+          "colyseusroom": "Colyseus Room"
+        },
+
+        "conditions": { },
+
+        "actions": { },
+
+        "expressions": { }
+
       }
     }
   }

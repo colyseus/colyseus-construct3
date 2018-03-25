@@ -1,24 +1,31 @@
 {
-  "custom": {
+  "colyseus": {
     "conditions": [
       {
-        "id": "is-large-number",
-        "scriptName": "IsLargeNumber",
-        "highlight": true,
-        "params": [
-          {
-            "id": "number",
-            "type": "number"
-          }
-        ]
+        "id": "on-connect",
+        "scriptName": "OnConnect",
+        "isTrigger": true
       }
     ],
     "actions": [
       {
-        "id": "do-alert",
-        "scriptName": "Alert",
+        "id": "join-room",
+        "scriptName": "JoinRoom",
+        "highlight": true,
+        "params": [
+          {
+            "id": "name",
+            "type": "string"
+          }
+        ]
+      },
+
+      {
+        "id": "connect",
+        "scriptName": "Connect",
         "highlight": true
       }
+
     ],
     "expressions": [
       {
@@ -35,5 +42,11 @@
         ]
       }
     ]
+  },
+
+  "colyseusroom": {
+    "conditions": [ ],
+    "actions": [ ],
+    "expressions": [ ]
   }
 }
