@@ -134,6 +134,16 @@
             "description": "The value you're listening to. (Only avaliable during Listen)",
             "translated-name": "Value"
           },
+          "value-at": {
+            "description": "The nested value you're listening to. (Only avaliable during Listen)",
+            "translated-name": "ValueAt",
+            "params": {
+              "variable": {
+                "name": "Variable",
+                "desc": "A dot separated path to the variable. e.g. \"messages.0\""
+              }
+            }
+          },
           "path": {
             "description": "A variable present in the path you're listening to.",
             "translated-name": "Path",
@@ -150,13 +160,13 @@
             "params": {
               "variable": {
                 "name": "Variable",
-                "desc": "Path of the variable. e.g. \"entities.\""
+                "desc": "A dot separated path to the variable. e.g. \"messages.0\""
               }
             }
           },
           "session-id": {
             "description": "Unique sessionId of the current user",
-            "translated-name": "Session Id"
+            "translated-name": "SessionId"
           }
         }
       }

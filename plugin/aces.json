@@ -100,6 +100,15 @@
         "returnType": "any"
       },
       {
+        "id": "value-at",
+        "expressionName": "ValueAt",
+        "scriptName": "ValueAt",
+        "returnType": "any",
+        "params": [
+          { "id": "variable", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
         "id": "state-value",
         "expressionName": "State",
         "scriptName": "State",

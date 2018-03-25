@@ -203,25 +203,34 @@ cr.plugins_.Colyseus = function(runtime)
 
    Exps.prototype.State = function (ret, variablePath)
    {
-     var path = variablePath.split(".");
-     var value = this.room.data;
-
-     // deeply get the requested variable from the room's state.
-     do {
-       value = value[path.shift()];
-     } while (path.length > 0);
-
-     ret.set_any(value);
+     ret.set_any(getDeepVariable(variablePath, this.room.data));
    };
 
    Exps.prototype.Path = function (ret, variable) {
      ret.set_any(this.lastChange.path[variable]);
    };
 
-   Exps.prototype.Value = function (ret) {
+   Exps.prototype.Value = function (ret, path) {
      ret.set_any(this.lastChange.value);
+   };
+
+   Exps.prototype.ValueAt = function (ret, path) {
+     ret.set_any(getDeepVariable(path, this.lastChange.value));
    };
 
    pluginProto.exps = new Exps();
 
+   //////////////////////////////////////
+   // Utilities
+   function getDeepVariable (path, container) {
+     var path = path.split(".");
+     var value = container;
+
+     // deeply get the requested variable from the room's state.
+     do {
+       value = value[path.shift()];
+     } while (path.length > 0);
+
+     return value;
+   }
  }());
