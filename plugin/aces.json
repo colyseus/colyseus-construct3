@@ -19,34 +19,12 @@
     ],
     "actions": [
       {
-        "id": "join-room",
-        "scriptName": "JoinRoom",
-        "highlight": true,
-        "params": [
-          { "id": "name", "type": "string" },
-          { "id": "options", "type": "variadic" }
-        ]
-      },
-
-      {
         "id": "connect",
-        "scriptName": "Connect",
-        "highlight": true
+        "scriptName": "Connect"
       }
 
     ],
-    "expressions": [
-      {
-        "id": "double",
-        "expressionName": "Double",
-        "scriptName": "Double",
-        "highlight": true,
-        "returnType": "number",
-        "params": [
-          { "id": "number", "type": "number" }
-        ]
-      }
-    ]
+    "expressions": [ ]
   },
 
   "room": {
@@ -54,7 +32,6 @@
       {
         "id": "on-join-room",
         "scriptName": "OnJoinRoom",
-        "highlight": true,
         "isTrigger": true,
         "params": [
           { "id": "name", "type": "string" }
@@ -75,9 +52,73 @@
         "params": [
           { "id": "name", "type": "string" }
         ]
+      },
+      {
+        "id": "on-room-statechange",
+        "scriptName": "OnStateChange",
+        "isTrigger": true,
+        "params": [
+          { "id": "name", "type": "string" }
+        ]
+      },
+      {
+        "id": "room-listen",
+        "scriptName": "OnRoomListen",
+        "isTrigger": true,
+        "params": [
+          { "id": "name", "type": "string" },
+          { "id": "path", "type": "string" },
+          { "id": "operation", "type": "string" }
+        ]
       }
-     ],
-    "actions": [ ],
-    "expressions": [ ]
+    ],
+
+    "actions": [
+      {
+        "id": "join-room",
+        "scriptName": "JoinRoom",
+        "params": [
+          { "id": "name", "type": "string" },
+          { "id": "options", "type": "variadic" }
+        ]
+      },
+
+      {
+        "id": "room-send",
+        "scriptName": "RoomSend",
+        "params": [
+          { "id": "name", "type": "string" },
+          { "id": "message", "type": "any" }
+        ]
+      },
+      {
+        "id": "room-leave",
+        "scriptName": "RoomLeave",
+        "params": [
+          { "id": "name", "type": "string" }
+        ]
+      }
+    ],
+
+    "expressions": [
+      {
+        "id": "operation-add",
+        "expressionName": "OperationAdd",
+        "scriptName": "OperationAdd",
+        "returnType": "string"
+      },
+      {
+        "id": "operation-replace",
+        "expressionName": "OperationReplace",
+        "scriptName": "OperationReplace",
+        "returnType": "string"
+      },
+      {
+        "id": "operation-delete",
+        "expressionName": "OperationDelete",
+        "scriptName": "OperationDelete",
+        "returnType": "string"
+      }
+    ]
   }
 }

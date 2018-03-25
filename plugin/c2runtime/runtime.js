@@ -100,6 +100,20 @@ cr.plugins_.Colyseus = function(runtime)
 		return true;
 	};
 
+	Cnds.prototype.OnRoomListen = function (roomName, path, operation)
+	{
+		if (!rooms[roomName]) {
+			throw new Error("Room not instantiated: " + roomName);
+		}
+
+		rooms[roomName].listen(path, function(change) {
+			console.log(change);
+			if (operation === "" || change.operation === operation) {
+				console.log("SHOULD TRIGGER!");
+			}
+		});
+		return true;
+	};
 
 	Cnds.prototype.OnRoomError = function ()
 	{
@@ -140,13 +154,29 @@ cr.plugins_.Colyseus = function(runtime)
 		}
 
 		rooms[roomName] = this.client.join(roomName, options);
+
 		rooms[roomName].onError.add(function () {
 			self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
 		});
+
 		rooms[roomName].onJoin.add(function () {
 			self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
 		});
+
+		rooms[roomName].onStateChange.add(function (state) {
+			self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
+		});
 	};
+
+	Acts.prototype.RoomSend = function (roomName, data)
+	{
+		rooms[roomName].send(data);
+	}
+
+	Acts.prototype.RoomLeave = function (roomName)
+	{
+		rooms[roomName].leave()
+	}
 
 	pluginProto.acts = new Acts();
 
@@ -158,6 +188,18 @@ cr.plugins_.Colyseus = function(runtime)
 	{
 		ret.set_float(number * 2);
 	};
+
+	Exps.prototype.OperationAdd = function (ret) {
+        ret.set_string("add");
+    };
+
+	Exps.prototype.OperationReplace = function (ret) {
+        ret.set_string("replace");
+    };
+
+	Exps.prototype.OperationDelete = function (ret) {
+        ret.set_string("delete");
+    };
 
 	pluginProto.exps = new Exps();
 
