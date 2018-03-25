@@ -13,6 +13,7 @@ cr.plugins_.Colyseus = function(runtime)
 
 (function ()
 {
+	var client;
 	var pluginProto = cr.plugins_.Colyseus.prototype;
 
 	/////////////////////////////////////
@@ -94,7 +95,12 @@ cr.plugins_.Colyseus = function(runtime)
 	Acts.prototype.Connect = function ()
 	{
 		var self = this;
-		this.client = new Colyseus.Client(this.endpoint);
+
+		if (!client) {
+			client = new Colyseus.Client(this.endpoint);
+		}
+
+		this.client = client;
 		this.client.onError.add(function() { self.runtime.trigger(pluginProto.cnds.OnClientError, self); });
 		this.client.onOpen.add(function() { self.runtime.trigger(pluginProto.cnds.OnOpen, self); });
 		this.client.onClose.add(function() { self.runtime.trigger(pluginProto.cnds.OnClose, self); });
@@ -102,9 +108,8 @@ cr.plugins_.Colyseus = function(runtime)
 
 	Acts.prototype.Disconnect = function ()
 	{
-		var self = this;
-		if (this.client) {
-			this.client.close();
+		if (client) {
+			client.close();
 		}
 	};
 
@@ -118,7 +123,7 @@ cr.plugins_.Colyseus = function(runtime)
 			options[option[0]] = option[1];
 		}
 
-		this.room = this.client.join(roomName, options);
+		this.room = client.join(roomName, options);
 
 		this.room.onError.add(function () {
 			self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
