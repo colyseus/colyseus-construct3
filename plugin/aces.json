@@ -102,6 +102,21 @@
 
     "expressions": [
       {
+        "id": "state-value",
+        "expressionName": "State",
+        "scriptName": "StateValue",
+        "returnType": "any",
+        "params": [
+          { "id": "variable", "type": "string" }
+        ]
+      },
+      {
+        "id": "session-id",
+        "expressionName": "SessionId",
+        "scriptName": "SessionId",
+        "returnType": "any"
+      },
+      {
         "id": "operation-add",
         "expressionName": "OperationAdd",
         "scriptName": "OperationAdd",

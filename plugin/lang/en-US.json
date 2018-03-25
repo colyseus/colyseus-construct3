@@ -179,6 +179,20 @@
         },
 
         "expressions": {
+          "state-value": {
+            "description": "Returns a value from room's state",
+            "translated-name": "State",
+            "params": {
+              "variable": {
+                "name": "Variable",
+                "desc": "Path of the variable. e.g. \"entities.\""
+              }
+            }
+          },
+          "session-id": {
+            "description": "Unique sessionId of the current user",
+            "translated-name": "Session Id"
+          },
           "operation-add": {
             "description": "When listening for operation: add",
             "translated-name": "Add"

@@ -71,34 +71,17 @@ cr.plugins_.Colyseus = function(runtime)
 	/**
 	 * Conditions for Client
 	 */
-	Cnds.prototype.OnOpen = function ()
-	{
-		return true;
-	};
-
-	Cnds.prototype.OnClose = function ()
-	{
-		return true;
-	};
-
-	Cnds.prototype.OnClientError = function ()
-	{
-		return true;
-	};
+	Cnds.prototype.OnOpen = function () { return true; };
+	Cnds.prototype.OnClose = function () { return true; };
+	Cnds.prototype.OnClientError = function () { return true; };
 
 	/**
 	 * Conditions for Room
 	 */
 
-	Cnds.prototype.OnJoinRoom = function (roomName)
-	{
-		return true;
-	};
-
-	Cnds.prototype.OnLeaveRoom = function (roomName)
-	{
-		return true;
-	};
+	Cnds.prototype.OnJoinRoom = function (roomName) { return true; };
+	Cnds.prototype.OnLeaveRoom = function (roomName) { return true; };
+	Cnds.prototype.OnRoomError = function () { return true; };
 
 	Cnds.prototype.OnRoomListen = function (roomName, path, operation)
 	{
@@ -112,11 +95,7 @@ cr.plugins_.Colyseus = function(runtime)
 				console.log("SHOULD TRIGGER!");
 			}
 		});
-		return true;
-	};
 
-	Cnds.prototype.OnRoomError = function ()
-	{
 		return true;
 	};
 
@@ -160,6 +139,9 @@ cr.plugins_.Colyseus = function(runtime)
 		});
 
 		rooms[roomName].onJoin.add(function () {
+			self.sessionId = rooms[roomName].sessionId;
+			self.room = rooms[roomName];
+
 			self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
 		});
 
@@ -184,9 +166,21 @@ cr.plugins_.Colyseus = function(runtime)
 	// Expressions
 	function Exps() {};
 
-	Exps.prototype.Double = function (ret, number)
+	Exps.prototype.SessionId = function (ret)
 	{
-		ret.set_float(number * 2);
+		ret.set_string(this.sessionId);
+	};
+
+	Exps.prototype.StateValue = function (ret, variablePath)
+	{
+		var path = variablePath.split(".");
+		var value = this.room.data;
+
+		do {
+			value = value[path.shift()];
+		} while (path.length > 0);
+
+		ret.set_any(value);
 	};
 
 	Exps.prototype.OperationAdd = function (ret) {
