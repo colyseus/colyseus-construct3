@@ -163,11 +163,12 @@ cr.plugins_.Colyseus = function(runtime)
 		ret.set_string(this.room.sessionId);
 	};
 
-	Exps.prototype.StateValue = function (ret, variablePath)
+	Exps.prototype.State = function (ret, variablePath)
 	{
 		var path = variablePath.split(".");
 		var value = this.room.data;
 
+		// deeply get the requested variable from the room's state.
 		do {
 			value = value[path.shift()];
 		} while (path.length > 0);

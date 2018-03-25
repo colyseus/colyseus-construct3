@@ -87,10 +87,10 @@
       {
         "id": "state-value",
         "expressionName": "State",
-        "scriptName": "StateValue",
+        "scriptName": "State",
         "returnType": "any",
         "params": [
-          { "id": "variable", "type": "string" }
+          { "id": "variable", "type": "string", "initialValue": "" }
         ]
       },
       {
