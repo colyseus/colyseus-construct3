@@ -8,223 +8,220 @@ assert2(cr.plugins_, "cr.plugins_ not created");
 // Plugin class
 cr.plugins_.Colyseus = function(runtime)
 {
-	this.runtime = runtime;
+  this.runtime = runtime;
 };
 
 (function ()
-{
-	var client;
-	var pluginProto = cr.plugins_.Colyseus.prototype;
+ {
+   var client;
+   var pluginProto = cr.plugins_.Colyseus.prototype;
 
-	/////////////////////////////////////
-	// Object type class
-	pluginProto.Type = function(plugin)
-	{
-		this.plugin = plugin;
-		this.runtime = plugin.runtime;
-	};
+   /////////////////////////////////////
+   // Object type class
+   pluginProto.Type = function(plugin)
+   {
+     this.plugin = plugin;
+     this.runtime = plugin.runtime;
+   };
 
-	var typeProto = pluginProto.Type.prototype;
+   var typeProto = pluginProto.Type.prototype;
 
-	typeProto.onCreate = function()
-	{
-	};
+   typeProto.onCreate = function()
+   {
+   };
 
-	/////////////////////////////////////
-	// Instance class
-	pluginProto.Instance = function(type)
-	{
-		this.type = type;
-		this.runtime = type.runtime;
+   /////////////////////////////////////
+   // Instance class
+   pluginProto.Instance = function(type)
+   {
+     this.type = type;
+     this.runtime = type.runtime;
 
-		// Initialise object properties
-		this.endpoint = "";
-	};
+     // Initialise object properties
+     this.endpoint = "";
+   };
 
-	var instanceProto = pluginProto.Instance.prototype;
+   var instanceProto = pluginProto.Instance.prototype;
 
-	instanceProto.onCreate = function()
-	{
-		// Read properties set in C3
-		this.endpoint = this.properties[0];
-	};
+   instanceProto.onCreate = function()
+   {
+     // Read properties set in C3
+     this.endpoint = this.properties[0];
+   };
 
-	instanceProto.saveToJSON = function ()
-	{
-		return {};
-	};
+   instanceProto.saveToJSON = function ()
+   {
+     return {};
+   };
 
-	instanceProto.loadFromJSON = function (o)
-	{
-	};
+   instanceProto.loadFromJSON = function (o)
+   {
+   };
 
-	/**BEGIN-PREVIEWONLY**/
-	instanceProto.getDebuggerValues = function (propsections)
-	{
-	};
-	/**END-PREVIEWONLY**/
+   /**BEGIN-PREVIEWONLY**/
+   instanceProto.getDebuggerValues = function (propsections)
+   {
+   };
+   /**END-PREVIEWONLY**/
 
-	//////////////////////////////////////
-	// Conditions
-	function Cnds() { };
+   //////////////////////////////////////
+   // Conditions
+   function Cnds() { };
 
-	/**
-	 * Conditions for Client
-	 */
-	Cnds.prototype.OnOpen = function () { return true; };
-	Cnds.prototype.OnClose = function () { return true; };
-	Cnds.prototype.OnClientError = function () { return true; };
+   /**
+    * Conditions for Client
+    */
+   Cnds.prototype.OnOpen = function () { return true; };
+   Cnds.prototype.OnClose = function () { return true; };
+   Cnds.prototype.OnClientError = function () { return true; };
 
-	/**
-	 * Conditions for Room
-	 */
+   /**
+    * Conditions for Room
+    */
+   Cnds.prototype.OnJoinRoom = function () { return true; };
+   Cnds.prototype.OnLeaveRoom = function () { return true; };
+   Cnds.prototype.OnRoomError = function () { return true; };
+   Cnds.prototype.OnStateChange = function () { return true; };
+   Cnds.prototype.OnRoomListen = function (path, operation) {
+     var self = this;
+     var change = this.lastChange;
 
-	Cnds.prototype.OnJoinRoom = function () { return true; };
-	Cnds.prototype.OnLeaveRoom = function () { return true; };
-	Cnds.prototype.OnRoomError = function () { return true; };
-	Cnds.prototype.OnStateChange = function () { return true; };
-	Cnds.prototype.OnRoomListen = function (path, operation) {
-		var self = this;
-		var change = this.lastChange;
+     // the operation doesn't match with the operation user is interested in.
+     if (operation !== "" && change.operation !== operation) {
+       return false;
+     }
 
-		// the operation doesn't match with the operation user is interested in.
-		if (operation !== "" && change.operation !== operation) {
-			return false;
-		}
+     var rules = path.split("/");
 
-		var rules = path.split("/");
+     if (!this.listeners[path]) {
+       rules = rules.map(function(segment) {
+         // replace placeholder matchers
+         return (segment.indexOf(":") === 0)
+           ? self.room.matcherPlaceholders[segment] || this.matcherPlaceholders[":*"]
+           : new RegExp("^" + segment + "$");
+       });
+       this.listeners[path] = rules;
+     }
 
-		debugger;
+     if (change.path.length !== this.listeners[path].length) {
+       return false;
+     }
 
-		if (!this.listeners[path]) {
-			rules = rules.map(function(segment) {
-				// replace placeholder matchers
-				return (segment.indexOf(":") === 0)
-					? self.room.matcherPlaceholders[segment] || this.matcherPlaceholders[":*"]
-					: new RegExp("^" + segment + "$");
-			});
-			this.listeners[path] = rules;
-		}
+     for (var i = 0, len = this.listeners[path].length; i < len; i++) {
+       let matches = change.path[i].match(this.listeners[path][i]);
+       if (!matches || matches.length === 0 || matches.length > 2) {
+         return false;
+       }
+     }
 
-		if (change.path.length !== this.listeners[path].length) {
-			return false;
-		}
+     // alright! let's execute the callback!
+     return true;
+   };
 
-		for (var i = 0, len = this.listeners[path].length; i < len; i++) {
-			let matches = change.path[i].match(this.listeners[path][i]);
-			if (!matches || matches.length === 0 || matches.length > 2) {
-				return false;
-			}
-		}
+   pluginProto.cnds = new Cnds();
 
-		// alright! let's execute the callback!
-		return true;
-	};
+   //////////////////////////////////////
+   // Actions
+   function Acts() {};
 
-	pluginProto.cnds = new Cnds();
+   Acts.prototype.Connect = function ()
+   {
+     var self = this;
 
-	//////////////////////////////////////
-	// Actions
-	function Acts() {};
+     if (!client) {
+       client = new Colyseus.Client(this.endpoint);
+     }
 
-	Acts.prototype.Connect = function ()
-	{
-		var self = this;
+     this.client = client;
+     this.client.onError.add(function() { self.runtime.trigger(pluginProto.cnds.OnClientError, self); });
+     this.client.onOpen.add(function() { self.runtime.trigger(pluginProto.cnds.OnOpen, self); });
+     this.client.onClose.add(function() { self.runtime.trigger(pluginProto.cnds.OnClose, self); });
+   };
 
-		if (!client) {
-			client = new Colyseus.Client(this.endpoint);
-		}
+   Acts.prototype.Disconnect = function ()
+   {
+     if (client) {
+       client.close();
+     }
+   };
 
-		this.client = client;
-		this.client.onError.add(function() { self.runtime.trigger(pluginProto.cnds.OnClientError, self); });
-		this.client.onOpen.add(function() { self.runtime.trigger(pluginProto.cnds.OnOpen, self); });
-		this.client.onClose.add(function() { self.runtime.trigger(pluginProto.cnds.OnClose, self); });
-	};
+   Acts.prototype.JoinRoom = function (roomName, optionsArr)
+   {
+     var self = this;
+     var options = {};
 
-	Acts.prototype.Disconnect = function ()
-	{
-		if (client) {
-			client.close();
-		}
-	};
+     for (var i=0; i<optionsArr.length; i++) {
+       var option = optionsArr[i].split("=");
+       options[option[0]] = option[1];
+     }
 
-	Acts.prototype.JoinRoom = function (roomName, optionsArr)
-	{
-		var self = this;
-		var options = {};
+     this.room = client.join(roomName, options);
+     this.listeners = {};
 
-		for (var i=0; i<optionsArr.length; i++) {
-			var option = optionsArr[i].split("=");
-			options[option[0]] = option[1];
-		}
+     this.room.onError.add(function () {
+       self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
+     });
 
-		this.room = client.join(roomName, options);
-		this.listeners = {};
+     this.room.onJoin.add(function () {
+       self.sessionId = self.room.sessionId;
 
-		this.room.onError.add(function () {
-			self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
-		});
+       self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
+     });
 
-		this.room.onJoin.add(function () {
-			self.sessionId = self.room.sessionId;
+     this.room.onStateChange.add(function (state) {
+       self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
+     });
 
-			self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
-		});
+     this.room.listen(function(change) {
+       self.lastChange = change;
+       self.runtime.trigger(pluginProto.cnds.OnRoomListen, self);
+     });
+   };
 
-		this.room.onStateChange.add(function (state) {
-			self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
-		});
+   Acts.prototype.RoomSend = function (data)
+   {
+     this.room.send(data);
+   }
 
-		this.room.listen(function(change) {
-			self.lastChange = change;
-			self.runtime.trigger(pluginProto.cnds.OnRoomListen, self);
-		});
-	};
+   Acts.prototype.RoomLeave = function ()
+   {
+     if (this.room) {
+       this.room.leave()
+     }
+   }
 
-	Acts.prototype.RoomSend = function (data)
-	{
-		this.room.send(data);
-	}
+   pluginProto.acts = new Acts();
 
-	Acts.prototype.RoomLeave = function ()
-	{
-		if (this.room) {
-			this.room.leave()
-		}
-	}
+   //////////////////////////////////////
+   // Expressions
+   function Exps() {};
 
-	pluginProto.acts = new Acts();
+   Exps.prototype.SessionId = function (ret)
+   {
+     ret.set_string(this.room.sessionId);
+   };
 
-	//////////////////////////////////////
-	// Expressions
-	function Exps() {};
+   Exps.prototype.State = function (ret, variablePath)
+   {
+     var path = variablePath.split(".");
+     var value = this.room.data;
 
-	Exps.prototype.SessionId = function (ret)
-	{
-		ret.set_string(this.room.sessionId);
-	};
+     // deeply get the requested variable from the room's state.
+     do {
+       value = value[path.shift()];
+     } while (path.length > 0);
 
-	Exps.prototype.State = function (ret, variablePath)
-	{
-		var path = variablePath.split(".");
-		var value = this.room.data;
+     ret.set_any(value);
+   };
 
-		// deeply get the requested variable from the room's state.
-		do {
-			value = value[path.shift()];
-		} while (path.length > 0);
+   Exps.prototype.Path = function (ret, variable) {
+     ret.set_any(this.lastChange.path[variable]);
+   };
 
-		ret.set_any(value);
-	};
+   Exps.prototype.Value = function (ret) {
+     ret.set_any(this.lastChange.value);
+   };
 
-	Exps.prototype.Path = function (ret, variable) {
-        ret.set_any(this.lastChange.path[variable]);
-    };
+   pluginProto.exps = new Exps();
 
-	Exps.prototype.Value = function (ret) {
-        ret.set_any(this.lastChange.value);
-    };
-
-	pluginProto.exps = new Exps();
-
-}());
+ }());

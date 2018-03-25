@@ -14,10 +14,6 @@
     {
     }
 
-    Draw (iRenderer, iDrawParams) {
-        debugger;
-    }
-
     OnCreate()
     {
       // this._client = new Colyseus.Client();
