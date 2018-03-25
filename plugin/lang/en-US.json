@@ -5,7 +5,7 @@
     "plugins": {
 
       "colyseus": {
-        "name": "Colyseus Client",
+        "name": "Colyseus",
         "description": "Colyseus Multiplayer Client",
         "help-url": "http://colyseus.io/docs",
         "properties": {
@@ -20,17 +20,6 @@
         },
 
         "conditions": {
-          "is-large-number": {
-            "list-name": "Is large number",
-            "display-text": "[i]{0}[/i] is a large number",
-            "description": "Test if a number is greater than 100.",
-            "params": {
-              "number": {
-                "name": "Number",
-                "desc": "Number to test if greater than 100."
-              }
-            }
-          },
           "on-open": {
             "isStatic": true,
             "list-name": "On open",
@@ -53,61 +42,33 @@
           "on-join-room": {
             "isStatic": true,
             "list-name": "On join",
-            "display-text": "On join room {0}",
-            "description": "Triggered when joined successfully into a room.",
-            "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "Name of the room"
-              }
-            }
+            "display-text": "On join room",
+            "description": "Triggered when joined successfully into a room."
           },
           "on-leave-room": {
             "isStatic": true,
             "list-name": "On leave",
-            "display-text": "On leave room {0}",
-            "description": "Triggered when left from a room.",
-            "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "Name of the room"
-              }
-            }
+            "display-text": "On leave room",
+            "description": "Triggered when left from a room."
           },
           "on-room-error": {
             "isStatic": true,
             "list-name": "On error",
-            "display-text": "On error {0}",
-            "description": "Triggered when an error happened on the server.",
-            "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "Name of the room"
-              }
-            }
+            "display-text": "On error",
+            "description": "Triggered when an error happened on the server."
           },
           "on-room-statechange": {
             "isStatic": true,
             "list-name": "On state change",
-            "display-text": "On state of room {0} changes",
-            "description": "Triggered when the state of the room changes.",
-            "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "Name of the room"
-              }
-            }
+            "display-text": "On state of room changes",
+            "description": "Triggered when the state of the room changes."
           },
           "room-listen": {
             "isStatic": true,
             "list-name": "Listen",
-            "display-text": "Listen to {1} changes on room {0} ({2})",
+            "display-text": "Listen to {0} changes on room ({1})",
             "description": "Triggered when a variable at the selected path changes.",
             "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "Name of the room"
-              },
               "path": {
                 "name": "Path",
                 "desc": "Path of the variable you'd like to listen for. e.g. \"entities/:id/:axis\""
@@ -151,13 +112,9 @@
 
           "room-send": {
             "list-name": "Send message",
-            "display-text": "Send message {1} to room \"{0}\".",
+            "display-text": "Send message {0} to room.",
             "description": "Send message to a room",
             "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "Name of the room"
-              },
               "message": {
                 "name": "Message",
                 "desc": "This message will arrive at on server-side at \"onMessage\"."
@@ -167,14 +124,8 @@
 
           "room-leave": {
             "list-name": "Leave room",
-            "display-text": "Leave from room \"{0}\".",
-            "description": "Disconnect client from the room.",
-            "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "Name of the room"
-              }
-            }
+            "display-text": "Leave from the room",
+            "description": "Disconnect client from the room."
           }
         },
 

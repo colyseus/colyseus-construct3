@@ -33,7 +33,7 @@
       this._info.SetCategory(PLUGIN_CATEGORY);
       this._info.SetAuthor("Endel Dreyer");
       this._info.SetHelpUrl(lang(".help-url"));
-      this._info.SetIsSingleGlobal(true);
+      this._info.SetIsSingleGlobal(false);
 
       this._info.AddFileDependency({
         filename: "build/colyseus.js",

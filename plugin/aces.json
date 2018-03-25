@@ -32,41 +32,28 @@
       {
         "id": "on-join-room",
         "scriptName": "OnJoinRoom",
-        "isTrigger": true,
-        "params": [
-          { "id": "name", "type": "string" }
-        ]
+        "isTrigger": true
       },
       {
         "id": "on-leave-room",
         "scriptName": "OnLeaveRoom",
-        "isTrigger": true,
-        "params": [
-          { "id": "name", "type": "string" }
-        ]
+        "isTrigger": true
       },
       {
         "id": "on-room-error",
         "scriptName": "OnRoomError",
-        "isTrigger": true,
-        "params": [
-          { "id": "name", "type": "string" }
-        ]
+        "isTrigger": true
       },
       {
         "id": "on-room-statechange",
         "scriptName": "OnStateChange",
-        "isTrigger": true,
-        "params": [
-          { "id": "name", "type": "string" }
-        ]
+        "isTrigger": true
       },
       {
         "id": "room-listen",
         "scriptName": "OnRoomListen",
         "isTrigger": true,
         "params": [
-          { "id": "name", "type": "string" },
           { "id": "path", "type": "string" },
           { "id": "operation", "type": "string" }
         ]
@@ -87,16 +74,12 @@
         "id": "room-send",
         "scriptName": "RoomSend",
         "params": [
-          { "id": "name", "type": "string" },
           { "id": "message", "type": "any" }
         ]
       },
       {
         "id": "room-leave",
-        "scriptName": "RoomLeave",
-        "params": [
-          { "id": "name", "type": "string" }
-        ]
+        "scriptName": "RoomLeave"
       }
     ],
 

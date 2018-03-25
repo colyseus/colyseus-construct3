@@ -13,7 +13,6 @@ cr.plugins_.Colyseus = function(runtime)
 
 (function ()
 {
-	var rooms = {};
 	var pluginProto = cr.plugins_.Colyseus.prototype;
 
 	/////////////////////////////////////
@@ -79,23 +78,10 @@ cr.plugins_.Colyseus = function(runtime)
 	 * Conditions for Room
 	 */
 
-	Cnds.prototype.OnJoinRoom = function (roomName) { return true; };
-	Cnds.prototype.OnLeaveRoom = function (roomName) { return true; };
+	Cnds.prototype.OnJoinRoom = function () { return true; };
+	Cnds.prototype.OnLeaveRoom = function () { return true; };
 	Cnds.prototype.OnRoomError = function () { return true; };
-
-	Cnds.prototype.OnRoomListen = function (roomName, path, operation)
-	{
-		if (!rooms[roomName]) {
-			throw new Error("Room not instantiated: " + roomName);
-		}
-
-		rooms[roomName].listen(path, function(change) {
-			console.log(change);
-			if (operation === "" || change.operation === operation) {
-				console.log("SHOULD TRIGGER!");
-			}
-		});
-
+	Cnds.prototype.OnRoomListen = function (path, operation) {
 		return true;
 	};
 
@@ -132,32 +118,33 @@ cr.plugins_.Colyseus = function(runtime)
 			options[option[0]] = option[1];
 		}
 
-		rooms[roomName] = this.client.join(roomName, options);
+		this.room = this.client.join(roomName, options);
 
-		rooms[roomName].onError.add(function () {
+		this.room.onError.add(function () {
 			self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
 		});
 
-		rooms[roomName].onJoin.add(function () {
-			self.sessionId = rooms[roomName].sessionId;
-			self.room = rooms[roomName];
+		this.room.onJoin.add(function () {
+			self.sessionId = self.room.sessionId;
 
 			self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
 		});
 
-		rooms[roomName].onStateChange.add(function (state) {
+		this.room.onStateChange.add(function (state) {
 			self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
 		});
 	};
 
-	Acts.prototype.RoomSend = function (roomName, data)
+	Acts.prototype.RoomSend = function (data)
 	{
-		rooms[roomName].send(data);
+		this.room.send(data);
 	}
 
-	Acts.prototype.RoomLeave = function (roomName)
+	Acts.prototype.RoomLeave = function ()
 	{
-		rooms[roomName].leave()
+		if (this.room) {
+			this.room.leave()
+		}
 	}
 
 	pluginProto.acts = new Acts();
@@ -168,7 +155,7 @@ cr.plugins_.Colyseus = function(runtime)
 
 	Exps.prototype.SessionId = function (ret)
 	{
-		ret.set_string(this.sessionId);
+		ret.set_string(this.room.sessionId);
 	};
 
 	Exps.prototype.StateValue = function (ret, variablePath)
