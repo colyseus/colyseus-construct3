@@ -23,7 +23,7 @@
           "on-open": {
             "isStatic": true,
             "list-name": "On open",
-            "display-text": "On connection oppened",
+            "display-text": "On open",
             "description": "Triggered when connection with server is opened."
           },
           "on-client-error": {
@@ -35,20 +35,20 @@
           "on-close": {
             "isStatic": true,
             "list-name": "On close",
-            "display-text": "On connection closed",
+            "display-text": "On close",
             "description": "Triggered when connection with server is closed."
           },
 
           "on-join-room": {
             "isStatic": true,
             "list-name": "On join",
-            "display-text": "On join room",
+            "display-text": "On join",
             "description": "Triggered when joined successfully into a room."
           },
           "on-leave-room": {
             "isStatic": true,
             "list-name": "On leave",
-            "display-text": "On leave room",
+            "display-text": "On leave",
             "description": "Triggered when left from a room."
           },
           "on-room-error": {
@@ -57,16 +57,28 @@
             "display-text": "On error",
             "description": "Triggered when an error happened on the server."
           },
+          "on-room-message": {
+            "isStatic": true,
+            "list-name": "On message",
+            "display-text": "On message ({0})",
+            "description": "Triggered when the room broadcasts a message, or sends a message directly to this client.",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "The type of the message being sent/broadcasted."
+              }
+            }
+          },
           "on-room-statechange": {
             "isStatic": true,
             "list-name": "On state change",
-            "display-text": "On state of room changes",
+            "display-text": "On state change",
             "description": "Triggered when the state of the room changes."
           },
           "room-listen": {
             "isStatic": true,
             "list-name": "Listen",
-            "display-text": "Listen to {0} changes on room ({1})",
+            "display-text": "Listen for {0} ({1} operations)",
             "description": "Triggered when a variable at the selected path changes.",
             "params": {
               "path": {
@@ -75,7 +87,13 @@
               },
               "operation": {
                 "name": "Operation",
-                "desc": "Optional. You may limit to listen for \"add\", \"replace\" or \"remove\" operations on this variable."
+                "desc": "You may limit to listen for \"add\", \"replace\" or \"remove\" operations on this variable. \"any\" catches any operations.",
+                "items": {
+                  "any": "any",
+                  "add": "add",
+                  "replace": "replace",
+                  "remove": "remove"
+                }
               }
             }
           }

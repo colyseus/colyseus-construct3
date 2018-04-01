@@ -45,6 +45,14 @@
         "isTrigger": true
       },
       {
+        "id": "on-room-message",
+        "scriptName": "OnMessage",
+        "isTrigger": true,
+        "params": [
+          { "id": "type", "type": "string" }
+        ]
+      },
+      {
         "id": "on-room-statechange",
         "scriptName": "OnStateChange",
         "isTrigger": true
@@ -55,7 +63,7 @@
         "isTrigger": true,
         "params": [
           { "id": "path", "type": "string" },
-          { "id": "operation", "type": "string" }
+          { "id": "operation", "type": "combo", "items": ["any", "add", "replace", "remove"] }
         ]
       }
     ],

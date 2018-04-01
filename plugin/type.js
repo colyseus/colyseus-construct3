@@ -3,7 +3,7 @@
 {
   const PLUGIN_CLASS = SDK.Plugins.Colyseus;
 
-  PLUGIN_CLASS.Type = class MyCustomPluginType extends SDK.ITypeBase
+  PLUGIN_CLASS.Type = class ColyseusPluginType extends SDK.ITypeBase
   {
     constructor(sdkPlugin, iObjectType)
     {

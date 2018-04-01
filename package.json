@@ -5,13 +5,16 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "http-server plugin -p 5432 --cors",
-    "chrome": "open -a Google\\ Chrome --args https://editor.construct.net '--disable-web-security' '--disable-extensions' '--disable-plugins'",
-    "build": "pushd plugin && zip -r ../colyseus.c3addon . -x \"*.DS_Store\" && popd"
+    "start": "c3addon serve --root plugin",
+    "build": "c3addon pack --root plugin",
+    "chrome": "open -a Google\\ Chrome --args https://editor.construct.net '--disable-web-security' '--disable-extensions' '--disable-plugins'"
   },
   "author": "Endel Dreyer",
   "license": "MIT",
   "devDependencies": {
     "http-server": "^0.11.1"
+  },
+  "dependencies": {
+    "c3addon": "^0.0.7"
   }
 }

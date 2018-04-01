@@ -3,7 +3,7 @@
 {
   const PLUGIN_CLASS = SDK.Plugins.Colyseus;
 
-  PLUGIN_CLASS.Instance = class MyCustomInstance extends SDK.IInstanceBase
+  PLUGIN_CLASS.Instance = class ColyseusInstance extends SDK.IInstanceBase
   {
     constructor(sdkType, inst)
     {

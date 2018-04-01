@@ -82,12 +82,15 @@ cr.plugins_.Colyseus = function(runtime)
    Cnds.prototype.OnLeaveRoom = function () { return true; };
    Cnds.prototype.OnRoomError = function () { return true; };
    Cnds.prototype.OnStateChange = function () { return true; };
+   Cnds.prototype.OnMessage = function (type) {
+     return (this.lastType === type);
+   };
    Cnds.prototype.OnRoomListen = function (path, operation) {
      var self = this;
      var change = this.lastChange;
 
      // the operation doesn't match with the operation user is interested in.
-     if (operation !== "" && change.operation !== operation) {
+     if (operation !== "any" && change.operation !== operation) {
        return false;
      }
 
@@ -172,8 +175,15 @@ cr.plugins_.Colyseus = function(runtime)
        self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
      });
 
+     this.room.onMessage.add(function (message) {
+       self.lastValue = message;
+       self.lastType = message.type;
+       self.runtime.trigger(pluginProto.cnds.OnMessage, self);
+     });
+
      this.room.listen(function(change) {
        self.lastChange = change;
+       self.lastValue = change.value;
        self.runtime.trigger(pluginProto.cnds.OnRoomListen, self);
      });
    };
@@ -211,11 +221,11 @@ cr.plugins_.Colyseus = function(runtime)
    };
 
    Exps.prototype.Value = function (ret, path) {
-     ret.set_any(this.lastChange.value);
+     ret.set_any(this.lastValue);
    };
 
    Exps.prototype.ValueAt = function (ret, path) {
-     ret.set_any(getDeepVariable(path, this.lastChange.value));
+     ret.set_any(getDeepVariable(path, this.lastValue));
    };
 
    pluginProto.exps = new Exps();
