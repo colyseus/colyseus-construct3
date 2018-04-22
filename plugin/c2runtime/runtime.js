@@ -100,7 +100,7 @@ cr.plugins_.Colyseus = function(runtime)
        rules = rules.map(function(segment) {
          // replace placeholder matchers
          return (segment.indexOf(":") === 0)
-           ? self.room.matcherPlaceholders[segment] || this.matcherPlaceholders[":*"]
+           ? self.room.matcherPlaceholders[segment] || self.room.matcherPlaceholders[":*"]
            : new RegExp("^" + segment + "$");
        });
        this.listeners[path] = rules;
