@@ -96,11 +96,12 @@ cr.plugins_.Colyseus = function(runtime)
    Cnds.prototype.OnMessage = function (type) {
      return (this.lastType === type);
    };
-   Cnds.prototype.OnRoomListen = function (path, operation) {
-     var operationList = ['any', 'add', 'replace', 'remove'];
-     operation = operationList[operation];
+
+   var operations = ['any', 'add', 'replace', 'remove'];
+   Cnds.prototype.OnRoomListen = function (path, operationIndex) {
      var self = this;
      var change = this.lastChange;
+     var operation = operations[operationIndex];
 
      // the operation doesn't match with the operation user is interested in.
      if (operation !== "any" && change.operation !== operation) {
