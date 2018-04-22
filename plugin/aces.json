@@ -21,8 +21,11 @@
       {
         "id": "connect",
         "scriptName": "Connect"
+      },
+      {
+        "id": "disconnect",
+        "scriptName": "Disconnect"
       }
-
     ],
     "expressions": [ ]
   },

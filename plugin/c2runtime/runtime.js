@@ -13,6 +13,8 @@ cr.plugins_.Colyseus = function(runtime)
 
 (function ()
  {
+   var Colyseus = window['Colyseus'];
+
    var client;
    var pluginProto = cr.plugins_.Colyseus.prototype;
 
@@ -48,6 +50,15 @@ cr.plugins_.Colyseus = function(runtime)
      // Read properties set in C3
      this.endpoint = this.properties[0];
    };
+
+   // instanceProto.onDestroy = function()
+   // {
+   //   // leave the room
+   //   if (this.room) { this.room.leave(); }
+   //
+   //   // close the connection with server.
+   //   if (client) { client.close(); }
+   // };
 
    instanceProto.saveToJSON = function ()
    {
