@@ -21,6 +21,10 @@
   <h3>
 </div>
 
+## Examples
+
+- [Multiplayer Drawing Prototype using Construct3 and Colyseus](https://github.com/endel/multiplayer-drawing-prototype).
+
 ## Development
 
 This addon uses [c3addon](https://github.com/endel/c3addon) to help on Construct 3 Addon development.
