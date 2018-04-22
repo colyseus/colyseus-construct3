@@ -213,7 +213,7 @@ cr.plugins_.Colyseus = function(runtime)
 
    Exps.prototype.State = function (ret, variablePath)
    {
-     ret.set_any(getDeepVariable(variablePath, this.room.data));
+     ret.set_any(getDeepVariable(variablePath, this.room.state));
    };
 
    Exps.prototype.Path = function (ret, variable) {
