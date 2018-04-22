@@ -237,9 +237,14 @@ cr.plugins_.Colyseus = function(runtime)
      var value = container;
 
      // deeply get the requested variable from the room's state.
-     do {
-       value = value[path.shift()];
-     } while (path.length > 0);
+     try {
+       do {
+         value = value[path.shift()];
+       } while (path.length > 0);
+     } catch (e) {
+       console.warn(e);
+       return null;
+     }
 
      return value;
    }
