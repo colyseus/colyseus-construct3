@@ -86,6 +86,8 @@ cr.plugins_.Colyseus = function(runtime)
      return (this.lastType === type);
    };
    Cnds.prototype.OnRoomListen = function (path, operation) {
+     var operationList = ['any', 'add', 'replace', 'remove'];
+     operation = operationList[operation];
      var self = this;
      var change = this.lastChange;
 
