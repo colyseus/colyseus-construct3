@@ -36,7 +36,7 @@
       this._info.SetIsSingleGlobal(false);
 
       this._info.AddFileDependency({
-        filename: "build/colyseus.js",
+        filename: "colyseus.js",
         type: "external-script"
       });
 

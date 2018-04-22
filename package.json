@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "c3addon serve --root plugin",
     "build": "c3addon pack --root plugin",
-    "copy-dist": "cp ../colyseus.js/dist/colyseus.js ./plugin/build",
+    "copy-dist": "cp ../colyseus.js/dist/colyseus.js ./plugin",
     "chrome": "open -a Google\\ Chrome --args https://editor.construct.net '--disable-web-security' '--disable-extensions' '--disable-plugins'"
   },
   "author": "Endel Dreyer",
@@ -16,6 +16,6 @@
     "http-server": "^0.11.1"
   },
   "dependencies": {
-    "c3addon": "^0.0.9"
+    "c3addon": "^0.0.10"
   }
 }
