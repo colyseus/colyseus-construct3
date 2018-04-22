@@ -97,6 +97,8 @@ cr.plugins_.Colyseus = function(runtime)
      return (this.lastType === type);
    };
    Cnds.prototype.OnRoomListen = function (path, operation) {
+     var operationList = ['any', 'add', 'replace', 'remove'];
+     operation = operationList[operation];
      var self = this;
      var change = this.lastChange;
 
@@ -111,7 +113,7 @@ cr.plugins_.Colyseus = function(runtime)
        rules = rules.map(function(segment) {
          // replace placeholder matchers
          return (segment.indexOf(":") === 0)
-           ? self.room.matcherPlaceholders[segment] || this.matcherPlaceholders[":*"]
+           ? self.room.matcherPlaceholders[segment] || self.room.matcherPlaceholders[":*"]
            : new RegExp("^" + segment + "$");
        });
        this.listeners[path] = rules;
@@ -224,7 +226,7 @@ cr.plugins_.Colyseus = function(runtime)
 
    Exps.prototype.State = function (ret, variablePath)
    {
-     ret.set_any(getDeepVariable(variablePath, this.room.data));
+     ret.set_any(getDeepVariable(variablePath, this.room.state));
    };
 
    Exps.prototype.Path = function (ret, variable) {
@@ -248,9 +250,14 @@ cr.plugins_.Colyseus = function(runtime)
      var value = container;
 
      // deeply get the requested variable from the room's state.
-     do {
-       value = value[path.shift()];
-     } while (path.length > 0);
+     try {
+       do {
+         value = value[path.shift()];
+       } while (path.length > 0);
+     } catch (e) {
+       console.warn(e);
+       return null;
+     }
 
      return value;
    }
