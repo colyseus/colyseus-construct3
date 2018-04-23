@@ -23,7 +23,7 @@
 
 ## Examples
 
-- [Multiplayer Drawing Prototype using Construct3 and Colyseus](https://github.com/endel/multiplayer-drawing-prototype).
+- [Multiplayer Drawing Prototype](https://github.com/endel/multiplayer-drawing-prototype) ([live demo](https://drawing-prototype.herokuapp.com/))
 
 ## Development
 
