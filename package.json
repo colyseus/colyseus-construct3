@@ -12,9 +12,6 @@
   },
   "author": "Endel Dreyer",
   "license": "MIT",
-  "devDependencies": {
-    "http-server": "^0.11.1"
-  },
   "dependencies": {
     "c3addon": "^0.0.10"
   }
