@@ -15,19 +15,7 @@
 
     OnCreate()
     {
-      this.GetImageInfo().LoadAsset(this._runtime);
-    }
-
-    LoadTextures(renderer)
-    {
-      return this.GetImageInfo().LoadStaticTexture(renderer, {
-        linearSampling: this._runtime.IsLinearSampling()
-      });
-    }
-
-    ReleaseTextures()
-    {
-      this.GetImageInfo().ReleaseTexture();
+      // 
     }
   };
 }

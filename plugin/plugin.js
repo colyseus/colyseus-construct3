@@ -35,6 +35,9 @@
       this._info.SetHelpUrl(lang(".help-url"));
       this._info.SetIsSingleGlobal(false);
 
+			// Support both the C2 and C3 runtimes
+			this._info.SetSupportedRuntimes(["c2", "c3"]);
+
       this._info.AddFileDependency({
         filename: "colyseus.js",
         type: "external-script"
