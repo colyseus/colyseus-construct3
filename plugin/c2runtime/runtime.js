@@ -15,7 +15,6 @@ cr.plugins_.Colyseus = function(runtime)
  {
    var Colyseus = window['Colyseus'];
 
-   var client;
    var pluginProto = cr.plugins_.Colyseus.prototype;
 
    /////////////////////////////////////
@@ -51,14 +50,14 @@ cr.plugins_.Colyseus = function(runtime)
      this.endpoint = this.properties[0];
    };
 
-   // instanceProto.onDestroy = function()
-   // {
-   //   // leave the room
-   //   if (this.room) { this.room.leave(); }
-   //
-   //   // close the connection with server.
-   //   if (client) { client.close(); }
-   // };
+  //  instanceProto.onDestroy = function()
+  //  {
+  //    // leave the room
+  //    if (this.room) { this.room.leave(); }
+   
+  //    // close the connection with server.
+  //    if (client) { client.close(); }
+  //  };
 
    instanceProto.saveToJSON = function ()
    {
@@ -145,11 +144,7 @@ cr.plugins_.Colyseus = function(runtime)
    {
      var self = this;
 
-     if (!client) {
-       client = new Colyseus.Client(this.endpoint);
-     }
-
-     this.client = client;
+     this.client = new Colyseus.Client(this.endpoint);
      this.client.onError.add(function() { self.runtime.trigger(pluginProto.cnds.OnClientError, self); });
      this.client.onOpen.add(function() { self.runtime.trigger(pluginProto.cnds.OnOpen, self); });
      this.client.onClose.add(function() { self.runtime.trigger(pluginProto.cnds.OnClose, self); });
@@ -157,8 +152,8 @@ cr.plugins_.Colyseus = function(runtime)
 
    Acts.prototype.Disconnect = function ()
    {
-     if (client) {
-       client.close();
+     if (this.client) {
+       this.client.close();
      }
    };
 
@@ -172,7 +167,7 @@ cr.plugins_.Colyseus = function(runtime)
        options[option[0]] = option[1];
      }
 
-     this.room = client.join(roomName, options);
+     this.room = this.client.join(roomName, options);
      this.listeners = {};
 
      this.room.onError.add(function () {

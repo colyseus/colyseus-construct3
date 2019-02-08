@@ -1,7 +1,7 @@
 "use strict";
 
 {
-  C3.Plugins.Colyseus.Instance = class DrawingInstance extends C3.SDKWorldInstanceBase
+  C3.Plugins.Colyseus.Instance = class ColyseusInstance extends C3.SDKWorldInstanceBase
   {
     constructor(inst, properties)
     {

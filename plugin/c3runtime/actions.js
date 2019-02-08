@@ -2,7 +2,6 @@
 
 {
   var Colyseus = window['Colyseus'];
-  var client;
 
   C3.Plugins.Colyseus.Acts =
   {
@@ -10,14 +9,10 @@
     {
       var self = this;
 
-      if (!client) {
-        client = new Colyseus.Client(this.endpoint);
-      }
-
-      this.client = client;
-      this.client.onError.add(function() { self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnClientError, self); });
-      this.client.onOpen.add(function() { self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnOpen, self); });
-      this.client.onClose.add(function() { self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnClose, self); });
+      this.client = new Colyseus.Client(this.endpoint);
+      this.client.onError.add(function() { self.Trigger(C3.Plugins.Colyseus.Cnds.OnClientError); });
+      this.client.onOpen.add(function() { self.Trigger(C3.Plugins.Colyseus.Cnds.OnOpen); });
+      this.client.onClose.add(function() { self.Trigger(C3.Plugins.Colyseus.Cnds.OnClose); });
     },
 
     Disconnect()
@@ -41,29 +36,29 @@
       this.listeners = {};
 
       this.room.onError.add(function () {
-        self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnRoomError, self);
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnRoomError);
       });
 
       this.room.onJoin.add(function () {
         self.sessionId = self.room.sessionId;
 
-        self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnJoinRoom, self);
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnJoinRoom);
       });
 
       this.room.onStateChange.add(function (state) {
-        self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnStateChange, self);
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnStateChange);
       });
 
       this.room.onMessage.add(function (message) {
         self.lastValue = message;
         self.lastType = message.type;
-        self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnMessage, self);
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnMessage);
       });
 
       this.room.listen(function(change) {
         self.lastChange = change;
         self.lastValue = change.value;
-        self._runtime.trigger(C3.Plugins.Colyseus.Cnds.OnRoomListen, self);
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnRoomListen);
       });
     },
 
