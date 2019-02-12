@@ -45,7 +45,7 @@ Send message to a room
 ### Leave from the room
 Disconnect client from the room.
 
-## Actions
+## Conditions
 
 ### On open
 Triggered when connection with server is opened.
@@ -74,7 +74,7 @@ Triggered when the state of the room changes.
 ### Listen for {0} ({1} operations)
 Triggered when a variable at the selected path changes.
 
-## Actions
+## Expressions
 
 ### Value
 The value you're listening to. (Only avaliable during Listen)
@@ -91,7 +91,7 @@ Returns a value from room's state
 ### SessionId
 Unique sessionId of the current user
 
-## Development
+# Addon Development / Contribute
 
 This addon uses [c3addon](https://github.com/endel/c3addon) to help on Construct 3 Addon development.
 
