@@ -17,8 +17,8 @@
 
     Disconnect()
     {
-      if (client) {
-        client.close();
+      if (this.client) {
+        this.client.close();
       }
     },
 
@@ -32,7 +32,7 @@
         options[option[0]] = option[1];
       }
 
-      this.room = client.join(roomName, options);
+      this.room = this.client.join(roomName, options);
       this.listeners = {};
 
       this.room.onError.add(function () {
