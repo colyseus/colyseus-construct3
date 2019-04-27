@@ -149,6 +149,13 @@
         "params": [
           { "id": "index", "type": "string" }
         ]
+      },
+      {
+        "id": "schema-is-field",
+        "scriptName": "IsField",
+        "params": [
+          { "id": "field", "type": "string" }
+        ]
       }
     ],
 

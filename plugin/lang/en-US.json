@@ -162,8 +162,18 @@
                 "desc": "Index value (e.g. Colyseus.SessionId)"
               }
             }
+          },
+          "schema-is-field": {
+            "list-name": "Is field",
+            "display-text": "Is field {0}",
+            "description": "Check if a field name has changed (only available during \"On change\").",
+            "params": {
+              "field": {
+                "name": "Field",
+                "desc": "Field name"
+              }
+            }
           }
-
         },
 
         "actions": {
