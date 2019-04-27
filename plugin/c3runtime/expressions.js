@@ -35,15 +35,23 @@
       return getDeepVariable(variablePath, this.room.state);
     },
 
-    Path(variable) {
-      return this.lastChange.path[variable];
+    // Path(variable) {
+    //   return this.lastChange.path[variable];
+    // },
+
+    JSON(data) {
+      return JSON.stringify(eval(`(${data})`));
     },
 
-    Value(path) {
+    CurrentIndex() {
+      return this.lastIndex;
+    },
+
+    CurrentValue() {
       return this.lastValue;
     },
 
-    ValueAt(path) {
+    CurrentValueAt(path) {
       return getDeepVariable(path, this.lastValue);
     },
 

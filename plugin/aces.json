@@ -20,7 +20,10 @@
     "actions": [
       {
         "id": "connect",
-        "scriptName": "Connect"
+        "scriptName": "Connect",
+        "params": [
+          { "id": "endpoint", "type": "string" }
+        ]
       },
       {
         "id": "disconnect",
@@ -59,15 +62,6 @@
         "id": "on-room-statechange",
         "scriptName": "OnStateChange",
         "isTrigger": true
-      },
-      {
-        "id": "room-listen",
-        "scriptName": "OnRoomListen",
-        "isTrigger": true,
-        "params": [
-          { "id": "path", "type": "string" },
-          { "id": "operation", "type": "combo", "items": ["any", "add", "replace", "remove"] }
-        ]
       }
     ],
 
@@ -77,7 +71,7 @@
         "scriptName": "JoinRoom",
         "params": [
           { "id": "name", "type": "string" },
-          { "id": "options", "type": "variadic" }
+          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
         ]
       },
 
@@ -85,7 +79,8 @@
         "id": "room-send",
         "scriptName": "RoomSend",
         "params": [
-          { "id": "message", "type": "any" }
+          { "id": "type", "type": "string" },
+          { "id": "message", "type": "string" }
         ]
       },
       {
@@ -95,30 +90,6 @@
     ],
 
     "expressions": [
-      {
-        "id": "path",
-        "expressionName": "Path",
-        "scriptName": "Path",
-        "returnType": "any",
-        "params": [
-          { "id": "variable", "type": "string", "initialValue": "" }
-        ]
-      },
-      {
-        "id": "value",
-        "expressionName": "Value",
-        "scriptName": "Value",
-        "returnType": "any"
-      },
-      {
-        "id": "value-at",
-        "expressionName": "ValueAt",
-        "scriptName": "ValueAt",
-        "returnType": "any",
-        "params": [
-          { "id": "variable", "type": "string", "initialValue": "" }
-        ]
-      },
       {
         "id": "state-value",
         "expressionName": "State",
@@ -133,6 +104,84 @@
         "expressionName": "SessionId",
         "scriptName": "SessionId",
         "returnType": "any"
+      }
+    ]
+  },
+
+  "room-schema": {
+    "conditions": [
+      {
+        "id": "schema-item-add",
+        "scriptName": "OnSchemaAdd",
+        "isTrigger": true,
+        "params": [
+          { "id": "path", "type": "string" }
+        ]
+      },
+      {
+        "id": "schema-field-change",
+        "scriptName": "OnSchemaFieldChange",
+        "isTrigger": true,
+        "params": [
+          { "id": "path", "type": "string" },
+          { "id": "field", "type": "string" }
+        ]
+      },
+      {
+        "id": "schema-item-change",
+        "scriptName": "OnSchemaChange",
+        "isTrigger": true,
+        "params": [
+          { "id": "path", "type": "string" }
+        ]
+      },
+      {
+        "id": "schema-item-remove",
+        "scriptName": "OnSchemaRemove",
+        "isTrigger": true,
+        "params": [
+          { "id": "path", "type": "string" }
+        ]
+      },
+      {
+        "id": "schema-is-index",
+        "scriptName": "IsIndex",
+        "params": [
+          { "id": "index", "type": "string" }
+        ]
+      }
+    ],
+
+    "expressions": [
+      {
+        "id": "json",
+        "expressionName": "JSON",
+        "scriptName": "JSON",
+        "returnType": "string",
+        "params": [
+          { "id": "data", "type": "string", "initialValue": "{}" }
+        ]
+      },
+      {
+        "id": "current-index",
+        "expressionName": "CurrentIndex",
+        "scriptName": "CurrentIndex",
+        "returnType": "any"
+      },
+      {
+        "id": "current-value",
+        "expressionName": "CurrentValue",
+        "scriptName": "CurrentValue",
+        "returnType": "any"
+      },
+      {
+        "id": "current-value-at",
+        "expressionName": "CurrentValueAt",
+        "scriptName": "CurrentValueAt",
+        "returnType": "any",
+        "params": [
+          { "id": "variable", "type": "string", "initialValue": "" }
+        ]
       }
     ]
   }

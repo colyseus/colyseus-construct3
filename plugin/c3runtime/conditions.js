@@ -19,10 +19,17 @@
     OnLeaveRoom() { return true; },
     OnRoomError() { return true; },
     OnStateChange() { return true; },
-    OnMessage(type) {
-      return (this.lastType === type);
-    },
+    OnMessage(type) { return (this.lastType === type); },
 
+    /* Schema Serializer */
+    OnSchemaAdd(path) { return this.lastPath === path; },
+    OnSchemaChange(path) { return this.lastPath === path; },
+    OnSchemaFieldChange(path, field) { return (this.lastPath === path && this.lastField === field); },
+    OnSchemaRemove(path) { return this.lastPath === path; },
+
+    IsIndex(index) { return this.lastIndex === index; }
+
+    /* Fossil Delta Serializer 
     OnRoomListen(path, operationIndex) {
       var self = this;
       var change = this.lastChange;
@@ -58,7 +65,7 @@
 
       // alright! let's execute the callback!
       return true;
-    },
+    },*/
 
   };
 }
