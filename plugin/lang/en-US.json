@@ -77,29 +77,6 @@
             "description": "Triggered when the state of the room changes."
           },
 
-          "room-listen": {
-            "isStatic": true,
-            "list-name": "Listen",
-            "display-text": "Listen for {0} ({1} operations)",
-            "description": "Triggered when a variable at the selected path changes.",
-            "params": {
-              "path": {
-                "name": "Path",
-                "desc": "Path of the variable you'd like to listen for. e.g. \"entities/:id/:axis\""
-              },
-              "operation": {
-                "name": "Operation",
-                "desc": "You may limit to listen for \"add\", \"replace\" or \"remove\" operations on this variable. \"any\" catches any operations.",
-                "items": {
-                  "any": "any",
-                  "add": "add",
-                  "replace": "replace",
-                  "remove": "remove"
-                }
-              }
-            }
-          },
-
           "schema-item-add": {
             "isStatic": true,
             "list-name": "On Add",

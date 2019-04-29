@@ -35,9 +35,13 @@
 
       this.room.onJoin.add(function () {
         self.sessionId = self.room.sessionId;
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnJoinRoom);
+      });
 
+      this.room.onStateChange.addOnce(function() {
         function registerCallbacksOnStructure (instance, path) {
           instance.onChange = onChange.bind(undefined, [...path]);
+          instance.triggerAll();
 
           var schema = instance._schema;
           for (var field in schema) {
@@ -45,6 +49,7 @@
               instance[field].onAdd = onAdd.bind(undefined, [...path, field]);
               instance[field].onChange = onItemChange.bind(undefined, [...path, field]);
               instance[field].onRemove = onRemove.bind(undefined, [...path, field]);
+              instance[field].triggerAll();
             }
           }
         }
@@ -84,8 +89,6 @@
         }
 
         registerCallbacksOnStructure(self.room.state, []);
-
-        self.Trigger(C3.Plugins.Colyseus.Cnds.OnJoinRoom);
       });
 
       this.room.onStateChange.add(function (state) {

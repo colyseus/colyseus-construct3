@@ -20,14 +20,9 @@
 
   C3.Plugins.Colyseus.Exps =
   {
-    Double(number)
-    {
-      return number * 2;
-    },
-
     SessionId()
     {
-      return this.room.sessionId;
+      return this.room && this.room.sessionId;
     },
 
     State(variablePath)
