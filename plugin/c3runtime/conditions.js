@@ -3,6 +3,33 @@
 {
   const operations = ['any', 'add', 'replace', 'remove'];
 
+  var ANY = ":any:";
+
+  function checkPath (lastPath, path) {
+    if (lastPath === path) {
+      return true;
+
+    } else if (path.indexOf(ANY) >= 0) {
+      var lastSegments = lastPath.split(".");
+      var segments = path.split(".");
+
+      if (lastSegments.length === segments.length) {
+        for (var i = 0; i < segments.length; i++) {
+          if (segments[i] !== ANY && segments[i] !== lastSegments[i]) {
+            return false;
+          }
+        }
+        return true;
+
+      } else {
+        return false;
+      }
+
+    } else {
+      return false;
+    }
+  }
+
   C3.Plugins.Colyseus.Cnds =
   {
     /**
@@ -19,15 +46,16 @@
     OnLeaveRoom() { return true; },
     OnRoomError() { return true; },
     OnStateChange() { return true; },
-    OnMessage(type) { return (this.lastType === type); },
+    OnMessage(type) { return this.lastType === type; },
 
     /* Schema Serializer */
-    OnSchemaAdd(path) { return this.lastPath === path; },
-    OnSchemaChange(path) { return this.lastPath === path; },
-    OnSchemaFieldChange(path, field) { return (this.lastPath === path && this.lastField === field); },
-    OnSchemaRemove(path) { return this.lastPath === path; },
+    OnSchemaAdd(path) { return checkPath(this.lastPath, path); },
+    OnSchemaChange(path) { return checkPath(this.lastPath, path); },
+    OnSchemaFieldChange(path) { return checkPath(this.lastPath, path); },
+    OnSchemaRemove(path) { return checkPath(this.lastPath, path); },
 
-    IsIndex(index) { return this.lastIndex === index; }
+    IsIndex(index) { return this.lastIndex === index; },
+    IsField(field) { return this.lastField === field; }
 
     /* Fossil Delta Serializer 
     OnRoomListen(path, operationIndex) {

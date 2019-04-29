@@ -47,6 +47,10 @@
       return this.lastIndex;
     },
 
+    CurrentField() {
+      return this.lastField;
+    },
+
     CurrentValue() {
       return this.lastValue;
     },

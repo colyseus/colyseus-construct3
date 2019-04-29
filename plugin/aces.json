@@ -123,8 +123,7 @@
         "scriptName": "OnSchemaFieldChange",
         "isTrigger": true,
         "params": [
-          { "id": "path", "type": "string" },
-          { "id": "field", "type": "string" }
+          { "id": "path", "type": "string" }
         ]
       },
       {
@@ -176,9 +175,21 @@
         "returnType": "any"
       },
       {
+        "id": "current-field",
+        "expressionName": "CurrentField",
+        "scriptName": "CurrentField",
+        "returnType": "any"
+      },
+      {
         "id": "current-value",
         "expressionName": "CurrentValue",
         "scriptName": "CurrentValue",
+        "returnType": "any"
+      },
+      {
+        "id": "previous-value",
+        "expressionName": "PreviousValue",
+        "scriptName": "PreviousValue",
         "returnType": "any"
       },
       {

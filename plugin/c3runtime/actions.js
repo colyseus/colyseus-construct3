@@ -50,7 +50,7 @@
         }
 
         function onAdd (path, instance, index) {
-          registerCallbacksOnStructure(instance, path);
+          registerCallbacksOnStructure(instance, [...path, index]);
 
           self.lastPath = path.join(".");
           self.lastIndex = index;

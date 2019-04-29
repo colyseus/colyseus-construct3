@@ -103,7 +103,7 @@
           "schema-item-add": {
             "isStatic": true,
             "list-name": "On Add",
-            "display-text": "On add {0}",
+            "display-text": "On add at {0}",
             "description": "Triggers when an item is added to ArraySchema or MapSchema.",
             "params": {
               "path": {
@@ -115,23 +115,19 @@
           "schema-field-change": {
             "isStatic": true,
             "list-name": "On Field Change",
-            "display-text": "On {1} change on {0}",
-            "description": "Triggers when a field is changed inside a Schema instance.",
+            "display-text": "On field change at {0}",
+            "description": "Triggers when a field is changed inside a Schema instance. Need to use ",
             "params": {
               "path": {
                 "name": "Path",
                 "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
-              },
-              "field": {
-                "name": "Field",
-                "desc": "Field name"
               }
             }
           },
           "schema-item-change": {
             "isStatic": true,
             "list-name": "On Change",
-            "display-text": "On change {0}",
+            "display-text": "On change at {0}",
             "description": "Triggers when an item is changed inside ArraySchema or MapSchema.",
             "params": {
               "path": {
@@ -143,7 +139,7 @@
           "schema-item-remove": {
             "isStatic": true,
             "list-name": "On Remove",
-            "display-text": "On remove {0}",
+            "display-text": "On remove at {0}",
             "description": "Triggers when an item is removed from ArraySchema or MapSchema.",
             "params": {
               "path": {
@@ -155,7 +151,7 @@
           "schema-is-index": {
             "list-name": "Is index",
             "display-text": "Is index {0}",
-            "description": "Check if index of current item is equals to provided value.",
+            "description": "Only available for Arrays and Maps. Check if index of current item is equals to provided value.",
             "params": {
               "index": {
                 "name": "Index",
@@ -166,7 +162,7 @@
           "schema-is-field": {
             "list-name": "Is field",
             "display-text": "Is field {0}",
-            "description": "Check if a field name has changed (only available during \"On change\").",
+            "description": "Only available during \"On change\" of a direct object. Checks if a field name has changed.",
             "params": {
               "field": {
                 "name": "Field",
@@ -249,6 +245,10 @@
             "description": "Get value from current item",
             "translated-name": "CurrentValue"
           },
+          "previous-value": {
+            "description": "Get previous value from current field. Only available during \"On change\" on an instance variable. Not avaialble for arrays and maps.",
+            "translated-name": "PreviousValue"
+          },
           "current-value-at": {
             "description": "Get nested value from current item",
             "translated-name": "CurrentValueAt",
@@ -260,8 +260,12 @@
             }
           },
           "current-index": {
-            "description": "Get current index of a Schema item. Available during \"On Add\", \"On Change\" or \"On Remove\" ",
+            "description": "Get index of current item. Available during \"On Add\", \"On Change\" or \"On Remove\" ",
             "translated-name": "CurrentIndex"
+          },
+          "current-field": {
+            "description": "Get current field being changed. Available during \"On field change\"",
+            "translated-name": "CurrentField"
           },
           "state-value": {
             "description": "Get a value from room's state",
