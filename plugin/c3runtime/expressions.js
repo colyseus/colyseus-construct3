@@ -20,14 +20,9 @@
 
   C3.Plugins.Colyseus.Exps =
   {
-    Double(number)
-    {
-      return number * 2;
-    },
-
     SessionId()
     {
-      return this.room.sessionId;
+      return this.room && this.room.sessionId;
     },
 
     State(variablePath)
@@ -35,15 +30,27 @@
       return getDeepVariable(variablePath, this.room.state);
     },
 
-    Path(variable) {
-      return this.lastChange.path[variable];
+    // Path(variable) {
+    //   return this.lastChange.path[variable];
+    // },
+
+    JSON(data) {
+      return JSON.stringify(eval(`(${data})`));
     },
 
-    Value(path) {
+    CurrentIndex() {
+      return this.lastIndex;
+    },
+
+    CurrentField() {
+      return this.lastField;
+    },
+
+    CurrentValue() {
       return this.lastValue;
     },
 
-    ValueAt(path) {
+    CurrentValueAt(path) {
       return getDeepVariable(path, this.lastValue);
     },
 

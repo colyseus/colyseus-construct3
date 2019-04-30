@@ -10,57 +10,58 @@
         "help-url": "https://docs.colyseus.io/",
         "properties": {
           "endpoint": {
-            "name": "Endpoint",
-            "desc": "Endpoint of the Colyseus server"
+            "name": "Default Endpoint",
+            "desc": "Default Endpoint to use on \"Connect\" action."
           }
         },
         "aceCategories": {
           "colyseus": "Client",
-          "room": "Room"
+          "room": "Room",
+          "room-schema": "Schema"
         },
 
         "conditions": {
           "on-open": {
             "isStatic": true,
-            "list-name": "On open",
-            "display-text": "On open",
+            "list-name": "On Open",
+            "display-text": "On Open",
             "description": "Triggered when connection with server is opened."
           },
           "on-client-error": {
             "isStatic": true,
-            "list-name": "On error",
-            "display-text": "On error",
+            "list-name": "On Error",
+            "display-text": "On Error",
             "description": "Triggered when an error happened on the server."
           },
           "on-close": {
             "isStatic": true,
-            "list-name": "On close",
-            "display-text": "On close",
+            "list-name": "On Close",
+            "display-text": "On Close",
             "description": "Triggered when connection with server is closed."
           },
 
           "on-join-room": {
             "isStatic": true,
-            "list-name": "On join",
-            "display-text": "On join",
+            "list-name": "On Join",
+            "display-text": "On Join",
             "description": "Triggered when joined successfully into a room."
           },
           "on-leave-room": {
             "isStatic": true,
-            "list-name": "On leave",
-            "display-text": "On leave",
+            "list-name": "On Leave",
+            "display-text": "On Leave",
             "description": "Triggered when left from a room."
           },
           "on-room-error": {
             "isStatic": true,
-            "list-name": "On error",
-            "display-text": "On error",
+            "list-name": "On Error",
+            "display-text": "On Error",
             "description": "Triggered when an error happened on the server."
           },
           "on-room-message": {
             "isStatic": true,
-            "list-name": "On message",
-            "display-text": "On message ({0})",
+            "list-name": "On Message",
+            "display-text": "On Message ({0})",
             "description": "Triggered when the room broadcasts a message, or sends a message directly to this client.",
             "params": {
               "type": {
@@ -71,29 +72,78 @@
           },
           "on-room-statechange": {
             "isStatic": true,
-            "list-name": "On state change",
-            "display-text": "On state change",
+            "list-name": "On State Change",
+            "display-text": "On State Change",
             "description": "Triggered when the state of the room changes."
           },
-          "room-listen": {
+
+          "schema-item-add": {
             "isStatic": true,
-            "list-name": "Listen",
-            "display-text": "Listen for {0} ({1} operations)",
-            "description": "Triggered when a variable at the selected path changes.",
+            "list-name": "On Add",
+            "display-text": "On add at {0}",
+            "description": "Triggers when an item is added to ArraySchema or MapSchema.",
             "params": {
               "path": {
                 "name": "Path",
-                "desc": "Path of the variable you'd like to listen for. e.g. \"entities/:id/:axis\""
-              },
-              "operation": {
-                "name": "Operation",
-                "desc": "You may limit to listen for \"add\", \"replace\" or \"remove\" operations on this variable. \"any\" catches any operations.",
-                "items": {
-                  "any": "any",
-                  "add": "add",
-                  "replace": "replace",
-                  "remove": "remove"
-                }
+                "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
+              }
+            }
+          },
+          "schema-field-change": {
+            "isStatic": true,
+            "list-name": "On Field Change",
+            "display-text": "On field change at {0}",
+            "description": "Triggers when a field is changed inside a Schema instance. Need to use ",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
+              }
+            }
+          },
+          "schema-item-change": {
+            "isStatic": true,
+            "list-name": "On Change",
+            "display-text": "On change at {0}",
+            "description": "Triggers when an item is changed inside ArraySchema or MapSchema.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
+              }
+            }
+          },
+          "schema-item-remove": {
+            "isStatic": true,
+            "list-name": "On Remove",
+            "display-text": "On remove at {0}",
+            "description": "Triggers when an item is removed from ArraySchema or MapSchema.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
+              }
+            }
+          },
+          "schema-is-index": {
+            "list-name": "Is index",
+            "display-text": "Is index {0}",
+            "description": "Only available for Arrays and Maps. Check if index of current item is equals to provided value.",
+            "params": {
+              "index": {
+                "name": "Index",
+                "desc": "Index value (e.g. Colyseus.SessionId)"
+              }
+            }
+          },
+          "schema-is-field": {
+            "list-name": "Is field",
+            "display-text": "Is field {0}",
+            "description": "Only available during \"On change\" of a direct object. Checks if a field name has changed.",
+            "params": {
+              "field": {
+                "name": "Field",
+                "desc": "Field name"
               }
             }
           }
@@ -102,8 +152,14 @@
         "actions": {
           "connect": {
             "list-name": "Connect",
-            "display-text": "Connect",
-            "description": "Open connection with server"
+            "display-text": "Connect to {0}",
+            "description": "Open connection with server",
+            "params": {
+              "endpoint": {
+                "name": "Endpoint",
+                "desc": "Connect to {0} endpoint. If empty, uses the Default Endpoint property from the global Colyseus object type."
+              }
+            }
           },
 
           "disconnect": {
@@ -114,7 +170,7 @@
 
           "join-room": {
             "list-name": "Join room",
-            "display-text": "Join room \"{0}\" with options {1}, {...}.",
+            "display-text": "Join room {0} with options {1}.",
             "description": "Join a room by name",
             "params": {
               "name": {
@@ -123,19 +179,23 @@
               },
               "options": {
                 "name": "Options",
-                "desc": "The \"requestJoin\" options."
+                "desc": "The \"requestJoin\" options, in JSON format."
               }
             }
           },
 
           "room-send": {
             "list-name": "Send message",
-            "display-text": "Send message {0} to room.",
+            "display-text": "Send {0} with {1}",
             "description": "Send message to a room",
             "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Type of the message."
+              },
               "message": {
                 "name": "Message",
-                "desc": "This message will arrive at on server-side at \"onMessage\"."
+                "desc": "JSON representation of the message. Messages arrive on server-side at \"onMessage\"."
               }
             }
           },
@@ -148,13 +208,27 @@
         },
 
         "expressions": {
-          "value": {
-            "description": "The value you're listening to. (Only avaliable during Listen)",
-            "translated-name": "Value"
+          "json": {
+            "description": "Declare a JSON value.",
+            "translated-name": "JSON",
+            "params": {
+              "data": {
+                "name": "Data",
+                "desc": "Plain JavaScript Object inside a string"
+              }
+            }
           },
-          "value-at": {
-            "description": "The nested value you're listening to. (Only avaliable during Listen)",
-            "translated-name": "ValueAt",
+          "current-value": {
+            "description": "Get value from current item",
+            "translated-name": "CurrentValue"
+          },
+          "previous-value": {
+            "description": "Get previous value from current field. Only available during \"On change\" on an instance variable. Not avaialble for arrays and maps.",
+            "translated-name": "PreviousValue"
+          },
+          "current-value-at": {
+            "description": "Get nested value from current item",
+            "translated-name": "CurrentValueAt",
             "params": {
               "variable": {
                 "name": "Variable",
@@ -162,18 +236,16 @@
               }
             }
           },
-          "path": {
-            "description": "A variable present in the path you're listening to.",
-            "translated-name": "Path",
-            "params": {
-              "variable": {
-                "name": "Variable",
-                "desc": "Name of the variable. e.g. \"id\", \"number\", \"axis\""
-              }
-            }
+          "current-index": {
+            "description": "Get index of current item. Available during \"On Add\", \"On Change\" or \"On Remove\" ",
+            "translated-name": "CurrentIndex"
+          },
+          "current-field": {
+            "description": "Get current field being changed. Available during \"On field change\"",
+            "translated-name": "CurrentField"
           },
           "state-value": {
-            "description": "Returns a value from room's state",
+            "description": "Get a value from room's state",
             "translated-name": "State",
             "params": {
               "variable": {
