@@ -186,7 +186,7 @@
 
           "room-send": {
             "list-name": "Send message",
-            "display-text": "Send {0} with {1}",
+            "display-text": "Send a message with {0}",
             "description": "Send message to a room",
             "params": {
               "type": {

@@ -111,14 +111,14 @@
       // });
     },
 
-    RoomSend (type, data)
+    RoomSend (data)
     {
       if (
         this.room &&
         this.room.connection &&
         this.room.connection.readyState === WebSocket.OPEN
       ) {
-        this.room.send([type, JSON.parse(data)]);
+        this.room.send(JSON.parse(data));
 
       } else {
         console.log("RoomSend: not connected.");

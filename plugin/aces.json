@@ -79,7 +79,6 @@
         "id": "room-send",
         "scriptName": "RoomSend",
         "params": [
-          { "id": "type", "type": "string" },
           { "id": "message", "type": "string" }
         ]
       },
