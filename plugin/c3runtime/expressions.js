@@ -27,7 +27,7 @@
 
     State(variablePath)
     {
-      return getDeepVariable(variablePath, this.room.state);
+      return getDeepVariable(variablePath, (this.room && this.room.state) || {});
     },
 
     // Path(variable) {
