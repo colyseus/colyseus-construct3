@@ -54,7 +54,7 @@ cr.plugins_.Colyseus = function(runtime)
   //  {
   //    // leave the room
   //    if (this.room) { this.room.leave(); }
-   
+
   //    // close the connection with server.
   //    if (client) { client.close(); }
   //  };
@@ -99,7 +99,7 @@ cr.plugins_.Colyseus = function(runtime)
    Cnds.prototype.OnSchemaAdd = function (path) { return checkPath(this.lastPath, path); },
    Cnds.prototype.OnSchemaChange = function (path) {
      console.log("OnSchemaChange:", this.lastPath, path);
-     return checkPath(this.lastPath, path); 
+     return checkPath(this.lastPath, path);
    },
    Cnds.prototype.OnSchemaFieldChange = function (path) { return checkPath(this.lastPath, path); },
    Cnds.prototype.OnSchemaRemove = function (path) { return checkPath(this.lastPath, path); },
@@ -151,21 +151,9 @@ cr.plugins_.Colyseus = function(runtime)
    // Actions
    function Acts() {};
 
-   Acts.prototype.Connect = function (endpoint)
+   Acts.prototype.SetEndpoint = function (endpoint)
    {
-     var self = this;
-
      this.client = new Colyseus.Client(endpoint || this.endpoint);
-     this.client.onError.add(function() { self.runtime.trigger(pluginProto.cnds.OnClientError, self); });
-     this.client.onOpen.add(function() { self.runtime.trigger(pluginProto.cnds.OnOpen, self); });
-     this.client.onClose.add(function() { self.runtime.trigger(pluginProto.cnds.OnClose, self); });
-   };
-
-   Acts.prototype.Disconnect = function ()
-   {
-     if (this.client) {
-       this.client.close();
-     }
    };
 
    Acts.prototype.JoinRoom = function (roomName, options)

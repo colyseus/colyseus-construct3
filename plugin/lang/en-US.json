@@ -21,25 +21,6 @@
         },
 
         "conditions": {
-          "on-open": {
-            "isStatic": true,
-            "list-name": "On Open",
-            "display-text": "On Open",
-            "description": "Triggered when connection with server is opened."
-          },
-          "on-client-error": {
-            "isStatic": true,
-            "list-name": "On Error",
-            "display-text": "On Error",
-            "description": "Triggered when an error happened on the server."
-          },
-          "on-close": {
-            "isStatic": true,
-            "list-name": "On Close",
-            "display-text": "On Close",
-            "description": "Triggered when connection with server is closed."
-          },
-
           "on-join-room": {
             "isStatic": true,
             "list-name": "On Join",
@@ -150,26 +131,20 @@
         },
 
         "actions": {
-          "connect": {
-            "list-name": "Connect",
-            "display-text": "Connect to {0}",
-            "description": "Open connection with server",
+          "set-endpoint": {
+            "list-name": "Set endpoint",
+            "display-text": "Set endpoint to {0}",
+            "description": "Format: wss://example.com",
             "params": {
               "endpoint": {
                 "name": "Endpoint",
-                "desc": "Connect to {0} endpoint. If empty, uses the Default Endpoint property from the global Colyseus object type."
+                "desc": "Set endpoint to {0}. If empty, uses the Default Endpoint property from the global Colyseus object type."
               }
             }
           },
 
-          "disconnect": {
-            "list-name": "Disconnect",
-            "display-text": "Disconnect",
-            "description": "Close connection with server"
-          },
-
           "join-room": {
-            "list-name": "Join room",
+            "list-name": "Join existing room",
             "display-text": "Join room {0} with options {1}.",
             "description": "Join a room by name",
             "params": {
@@ -179,7 +154,71 @@
               },
               "options": {
                 "name": "Options",
-                "desc": "The \"requestJoin\" options, in JSON format."
+                "desc": "The \"onJoin\" options, in JSON format."
+              }
+            }
+          },
+
+          "join-or-create-room": {
+            "list-name": "Join existing or create",
+            "display-text": "Join room {0} with options {1}.",
+            "description": "Join a room by name",
+            "params": {
+              "name": {
+                "name": "Room name",
+                "desc": "Room name"
+              },
+              "options": {
+                "name": "Options",
+                "desc": "The \"onJoin\" options, in JSON format."
+              }
+            }
+          },
+
+          "create-room": {
+            "list-name": "Create a room",
+            "display-text": "Create room {0} with options {1}.",
+            "description": "Create a room by name",
+            "params": {
+              "name": {
+                "name": "Room name",
+                "desc": "Room name"
+              },
+              "options": {
+                "name": "Options",
+                "desc": "The \"onJoin\" options, in JSON format."
+              }
+            }
+          },
+
+          "join-room-by-id": {
+            "list-name": "Join existing by ID",
+            "display-text": "Join room {0} with options {1}.",
+            "description": "Join an existing room by its ID",
+            "params": {
+              "roomId": {
+                "name": "Room ID",
+                "desc": "Room ID"
+              },
+              "options": {
+                "name": "Options",
+                "desc": "The \"onJoin\" options, in JSON format."
+              }
+            }
+          },
+
+          "reconnect-room": {
+            "list-name": "Reconnect",
+            "display-text": "Reconnect into room {0} with sessionId {1}.",
+            "description": "Reconnect using a previously connected room",
+            "params": {
+              "roomId": {
+                "name": "Room ID",
+                "desc": "The roomId reference from previous connection."
+              },
+              "sessionId": {
+                "name": "SessionId",
+                "desc": "The sessionId from previous connection."
               }
             }
           },

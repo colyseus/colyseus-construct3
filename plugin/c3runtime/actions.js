@@ -5,23 +5,44 @@
 
   C3.Plugins.Colyseus.Acts =
   {
-    Connect(endpoint)
+    SetEndpoint(endpoint)
     {
       var self = this;
 
       this.client = new Colyseus.Client(endpoint || this.endpoint);
     },
 
-    Disconnect()
+    JoinRoom (roomName, options)
     {
+      this._MatchMake("join", roomName, options);
     },
 
-    JoinRoom (roomName, options)
+    JoinOrCreateRoom (roomName, options)
+    {
+      this._MatchMake("joinOrCreate", roomName, options);
+    },
+
+    CreateRoom (roomName, options)
+    {
+      this._MatchMake("create", roomName, options);
+    },
+
+    JoinRoomById (roomId, options)
+    {
+      this._MatchMake("joinById", roomId, options);
+    },
+
+    ReconnectRoom (roomId, sessionId)
+    {
+      this._MatchMake("reconnect", roomId, sessionId);
+    },
+
+    _MatchMake (methodName, roomName, options)
     {
       var self = this;
       var options = JSON.parse(options || "{}");
 
-      this.client.joinOrCreate(roomName, options).then(function(room) {
+      this.client[methodName](roomName, options).then(function(room) {
         self.room = room;
 
         self.sessionId = self.room.sessionId;
@@ -107,7 +128,8 @@
       //   self.lastValue = change.value;
       //   self.Trigger(C3.Plugins.Colyseus.Cnds.OnRoomListen);
       // });
-    },
+
+    }
 
     RoomSend (type, data)
     {

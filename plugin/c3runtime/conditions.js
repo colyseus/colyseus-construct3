@@ -33,13 +33,6 @@
   C3.Plugins.Colyseus.Cnds =
   {
     /**
-     * Conditions for Client
-     */
-    OnOpen() { return true; },
-    OnClose() { return true; },
-    OnClientError() { return true; },
-
-    /**
      * Conditions for Room
      */
     OnJoinRoom() { return true; },
@@ -57,7 +50,7 @@
     IsIndex(index) { return this.lastIndex === index; },
     IsField(field) { return this.lastField === field; }
 
-    /* Fossil Delta Serializer 
+    /* Fossil Delta Serializer
     OnRoomListen(path, operationIndex) {
       var self = this;
       var change = this.lastChange;

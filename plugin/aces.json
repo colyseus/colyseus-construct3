@@ -1,36 +1,16 @@
 {
   "colyseus": {
-    "conditions": [
-      {
-        "id": "on-open",
-        "scriptName": "OnOpen",
-        "isTrigger": true
-      },
-      {
-        "id": "on-client-error",
-        "scriptName": "OnClientError",
-        "isTrigger": true
-      },
-      {
-        "id": "on-close",
-        "scriptName": "OnClose",
-        "isTrigger": true
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
-        "id": "connect",
-        "scriptName": "Connect",
+        "id": "set-endpoint",
+        "scriptName": "SetEndpoint",
         "params": [
           { "id": "endpoint", "type": "string" }
         ]
-      },
-      {
-        "id": "disconnect",
-        "scriptName": "Disconnect"
       }
     ],
-    "expressions": [ ]
+    "expressions": []
   },
 
   "room": {
@@ -72,6 +52,42 @@
         "params": [
           { "id": "name", "type": "string" },
           { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
+        ]
+      },
+
+      {
+        "id": "join-or-create-room",
+        "scriptName": "JoinOrCreateRoom",
+        "params": [
+          { "id": "name", "type": "string" },
+          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
+        ]
+      },
+
+      {
+        "id": "create-room",
+        "scriptName": "CreateRoom",
+        "params": [
+          { "id": "name", "type": "string" },
+          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
+        ]
+      },
+
+      {
+        "id": "join-room-by-id",
+        "scriptName": "JoinRoomById",
+        "params": [
+          { "id": "roomId", "type": "string" },
+          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
+        ]
+      },
+
+      {
+        "id": "reconnect-room",
+        "scriptName": "ReconnectRoom",
+        "params": [
+          { "id": "roomId", "type": "string" },
+          { "id": "sessionId", "type": "string" }
         ]
       },
 
