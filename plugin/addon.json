@@ -3,10 +3,10 @@
   "type": "plugin",
   "name": "Colyseus Multiplayer Client",
   "id": "Colyseus",
-  "version": "0.11.0.0",
+  "version": "0.12.0.0",
   "author": "Endel Dreyer",
-  "website": "http://colyseus.io/",
-  "documentation": "http://colyseus.io/docs",
+  "website": "https://colyseus.io/",
+  "documentation": "https://docs.colyseus.io",
   "description": "Multiplayer Game Client",
   "editor-scripts": [
     "plugin.js",

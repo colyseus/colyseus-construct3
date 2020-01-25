@@ -13,6 +13,6 @@
   "author": "Endel Dreyer",
   "license": "MIT",
   "dependencies": {
-    "c3addon": "^0.0.10"
+    "c3addon": "^0.1.3"
   }
 }
