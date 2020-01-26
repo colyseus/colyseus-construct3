@@ -118,17 +118,6 @@
       }).catch(function(err) {
           self.Trigger(C3.Plugins.Colyseus.Cnds.OnRoomError);
       });
-
-
-      // this.listeners = {};
-
-      // // disable fossil-delta for now
-      // this.room.listen(function(change) {
-      //   self.lastChange = change;
-      //   self.lastValue = change.value;
-      //   self.Trigger(C3.Plugins.Colyseus.Cnds.OnRoomListen);
-      // });
-
     }
 
     RoomSend (type, data)

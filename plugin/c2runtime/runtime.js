@@ -158,90 +158,106 @@ cr.plugins_.Colyseus = function(runtime)
 
    Acts.prototype.JoinRoom = function (roomName, options)
    {
+     this._MatchMake("join", roomName, options);
+   };
+
+   Acts.prototype.JoinOrCreateRoom = function (roomName, options)
+   {
+     this._MatchMake("joinOrCreate", roomName, options);
+   };
+
+   Acts.prototype.CreateRoom = function (roomName, options)
+   {
+     this._MatchMake("create", roomName, options);
+   };
+
+   Acts.prototype.JoinRoomById = function (roomId, options)
+   {
+     this._MatchMake("joinById", roomId, options);
+   };
+
+   Acts.prototype.ReconnectRoom = function (roomId, sessionId)
+   {
+     this._MatchMake("reconnect", roomId, sessionid);
+   };
+
+   Acts.prototype._MatchMake = function (methodName, roomName, options) {
      var self = this;
      var options = JSON.parse(options || "{}");
 
-     this.room = this.client.join(roomName, options);
-     this.listeners = {};
+     this.client[methodName](roomName, options).then(function(room) {
+       self.room = room;
 
-     this.room.onError.add(function () {
-       self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
-     });
-
-     this.room.onJoin.add(function () {
        self.sessionId = self.room.sessionId;
        self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
-     });
 
-     this.room.onStateChange.addOnce(function() {
-       function registerCallbacksOnStructure(instance, path) {
-         instance.onChange = onChange.bind(undefined, [...path]);
-         instance.triggerAll();
+       room.onStateChange.once(function() {
+         function registerCallbacksOnStructure(instance, path) {
+           instance.onChange = onChange.bind(undefined, [...path]);
+           instance.triggerAll();
 
-         var schema = instance._schema;
-         for (var field in schema) {
-           if (schema[field].map || Array.isArray(schema[field])) {
-             instance[field].onAdd = onAdd.bind(undefined, [...path, field]);
-             instance[field].onChange = onItemChange.bind(undefined, [...path, field]);
-             instance[field].onRemove = onRemove.bind(undefined, [...path, field]);
-             instance[field].triggerAll();
+           var schema = instance._schema;
+           for (var field in schema) {
+             if (schema[field].map || Array.isArray(schema[field])) {
+               instance[field].onAdd = onAdd.bind(undefined, [...path, field]);
+               instance[field].onChange = onItemChange.bind(undefined, [...path, field]);
+               instance[field].onRemove = onRemove.bind(undefined, [...path, field]);
+               instance[field].triggerAll();
+             }
            }
          }
-       }
 
-       function onAdd(path, instance, index) {
-         registerCallbacksOnStructure(instance, [...path, index]);
+         function onAdd(path, instance, index) {
+           registerCallbacksOnStructure(instance, [...path, index]);
 
-         self.lastPath = path.join(".");
-         self.lastIndex = index;
-         self.lastValue = instance;
-         self.runtime.trigger(pluginProto.cnds.OnSchemaAdd, self);
-       }
-
-       function onItemChange(path, instance, index) {
-         self.lastPath = path.join(".");
-         self.lastIndex = index;
-         self.lastValue = instance;
-         self.runtime.trigger(pluginProto.cnds.OnSchemaChange, self);
-       }
-
-       function onChange(path, changes) {
-         self.lastIndex = undefined;
-         self.lastPath = path.join(".");
-         for (var i = 0; i < changes.length; i++) {
-           self.lastField = changes[i].field;
-           self.lastValue = changes[i].value;
-           self.lastPreviousValue = changes[i].previousValue;
-           self.runtime.trigger(pluginProto.cnds.OnSchemaFieldChange, self);
+           self.lastPath = path.join(".");
+           self.lastIndex = index;
+           self.lastValue = instance;
+           self.runtime.trigger(pluginProto.cnds.OnSchemaAdd, self);
          }
-       }
 
-       function onRemove(path, instance, index) {
-         self.lastPath = path.join(".");
-         self.lastIndex = index;
-         self.lastValue = instance;
-         self.runtime.trigger(pluginProto.cnds.OnSchemaRemove, self);
-       }
+         function onItemChange(path, instance, index) {
+           self.lastPath = path.join(".");
+           self.lastIndex = index;
+           self.lastValue = instance;
+           self.runtime.trigger(pluginProto.cnds.OnSchemaChange, self);
+         }
 
-       registerCallbacksOnStructure(self.room.state, []);
+         function onChange(path, changes) {
+           self.lastIndex = undefined;
+           self.lastPath = path.join(".");
+           for (var i = 0; i < changes.length; i++) {
+             self.lastField = changes[i].field;
+             self.lastValue = changes[i].value;
+             self.lastPreviousValue = changes[i].previousValue;
+             self.runtime.trigger(pluginProto.cnds.OnSchemaFieldChange, self);
+           }
+         }
+
+         function onRemove(path, instance, index) {
+           self.lastPath = path.join(".");
+           self.lastIndex = index;
+           self.lastValue = instance;
+           self.runtime.trigger(pluginProto.cnds.OnSchemaRemove, self);
+         }
+
+         registerCallbacksOnStructure(self.room.state, []);
+       });
+
+       room.onStateChange(function (state) {
+         self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
+       });
+
+       room.onMessage(function (message) {
+         self.lastValue = message;
+         self.lastType = message.type;
+         self.runtime.trigger(pluginProto.cnds.OnMessage, self);
+       });
+
+     }).catch(function(e) {
+       self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
      });
-
-     this.room.onStateChange.add(function (state) {
-       self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
-     });
-
-     this.room.onMessage.add(function (message) {
-       self.lastValue = message;
-       self.lastType = message.type;
-       self.runtime.trigger(pluginProto.cnds.OnMessage, self);
-     });
-
-     //  this.room.listen(function(change) {
-     //    self.lastChange = change;
-     //    self.lastValue = change.value;
-     //    self.runtime.trigger(pluginProto.cnds.OnRoomListen, self);
-     //  });
-   };
+   }
 
    Acts.prototype.RoomSend = function (type, data)
    {
