@@ -42,6 +42,11 @@
         "id": "on-room-statechange",
         "scriptName": "OnStateChange",
         "isTrigger": true
+      },
+      {
+        "id": "on-get-available-rooms",
+        "scriptName": "OnGetAvailableRooms",
+        "isTrigger": true
       }
     ],
 
@@ -102,6 +107,14 @@
       {
         "id": "room-leave",
         "scriptName": "RoomLeave"
+      },
+
+      {
+        "id": "get-available-rooms",
+        "scriptName": "GetAvailableRooms",
+        "params": [
+          { "id": "name", "type": "string" }
+        ]
       }
     ],
 
