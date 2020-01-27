@@ -57,6 +57,12 @@
             "display-text": "On State Change",
             "description": "Triggered when the state of the room changes."
           },
+          "on-get-available-rooms": {
+            "isStatic": true,
+            "list-name": "On Get Available Rooms",
+            "display-text": "On Get Available Rooms",
+            "description": "Triggers when available rooms data is ready in the CurrentValue expresssion."
+          },
 
           "schema-item-add": {
             "isStatic": true,
@@ -243,6 +249,18 @@
             "list-name": "Leave room",
             "display-text": "Leave from the room",
             "description": "Disconnect client from the room."
+          },
+
+          "get-available-rooms": {
+            "list-name": "Get available rooms",
+            "display-text": "Get available {0} rooms.",
+            "description": "Get available rooms by name, OnGetAvailableRooms triggered when data is available. Data returned as JSON string in expression CurrentValue",
+            "params": {
+              "name": {
+                "name": "Room name",
+                "desc": "Room name"
+              }
+            }
           }
         },
 

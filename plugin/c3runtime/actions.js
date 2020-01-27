@@ -58,6 +58,31 @@
       }
     },
 
+    GetAvailableRooms(roomName)
+    {
+      var self = this;
+      this.client.getAvailableRooms(roomName).then(rooms => {
+        self.lastValue = JSON.stringify(rooms);
+        if (self.debug)
+        {
+          console.info("Colyseus Rooms: ");
+          rooms.forEach((room) => {
+            console.info(room.roomId);
+            console.info(room.clients);
+            console.info(room.maxClients);
+            console.info(room.metadata);
+          });
+        }
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnGetAvailableRooms);
+      }).catch(function(err) {
+        if (self.debug)
+        {
+          console.error("Colyseus GetAvailableRooms error: "+err);
+        }
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnRoomError);
+      });
+    },
+
   };
 
 }

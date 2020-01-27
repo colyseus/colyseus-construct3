@@ -40,6 +40,7 @@
     OnRoomError() { return true; },
     OnStateChange() { return true; },
     OnMessage(type) { return this.lastType === type; },
+    OnGetAvailableRooms() { return true; },
 
     /* Schema Serializer */
     OnSchemaAdd(path) { return checkPath(this.lastPath, path); },
