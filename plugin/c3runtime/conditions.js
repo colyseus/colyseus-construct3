@@ -37,7 +37,7 @@
      */
     OnJoinRoom() { return true; },
     OnLeaveRoom() { return true; },
-    OnRoomError() { return true; },
+    OnError() { return true; },
     OnStateChange() { return true; },
     OnMessage(type) { return this.lastType === type; },
     OnGetAvailableRooms() { return true; },

@@ -54,5 +54,13 @@
       return getDeepVariable(path, this.lastValue);
     },
 
+    ErrorMessage() {
+      return this.lastError && this.lastError.message;
+    },
+
+    ErrorCode() {
+      return this.lastError && this.lastError.code;
+    },
+
   };
 }
