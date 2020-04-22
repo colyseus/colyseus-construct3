@@ -12,7 +12,7 @@
   const PLUGIN_ID = "Colyseus";
   ////////////////////////////////////////////
 
-  const PLUGIN_VERSION = "0.12.0.0";
+  const PLUGIN_VERSION = "0.13.0.0";
   const PLUGIN_CATEGORY = "web";
   const PLUGIN_AUTHOR = "Endel Dreyer";
 
@@ -40,7 +40,8 @@
 
       this._info.AddFileDependency({
         filename: "colyseus.js",
-        type: "external-script"
+        // type: "external-script"
+        type: "external-runtime-script"
       });
 
       SDK.Lang.PushContext(".properties");

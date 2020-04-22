@@ -48,6 +48,7 @@ cr.plugins_.Colyseus = function(runtime)
    {
      // Read properties set in C3
      this.endpoint = this.properties[0];
+     this.client = new Colyseus.Client(this.endpoint);
    };
 
   //  instanceProto.onDestroy = function()
@@ -90,7 +91,7 @@ cr.plugins_.Colyseus = function(runtime)
     */
    Cnds.prototype.OnJoinRoom = function () { return true; };
    Cnds.prototype.OnLeaveRoom = function () { return true; };
-   Cnds.prototype.OnRoomError = function () { return true; };
+   Cnds.prototype.OnError = function () { return true; };
    Cnds.prototype.OnStateChange = function () { return true; };
    Cnds.prototype.OnMessage = function (type) { return this.lastType === type; };
 
@@ -248,25 +249,28 @@ cr.plugins_.Colyseus = function(runtime)
          self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
        });
 
-       room.onMessage(function (message) {
+       room.onMessage("*", function (type, message) {
+         if (self.debug) {
+           console.info("Colyseus: onMessage", type, message);
+         }
+         self.lastType = type;
          self.lastValue = message;
-         self.lastType = message.type;
          self.runtime.trigger(pluginProto.cnds.OnMessage, self);
        });
 
      }).catch(function(e) {
-       self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
+       self.runtime.trigger(pluginProto.cnds.OnError, self);
      });
    }
 
-   Acts.prototype.RoomSend = function (type, data)
+   Acts.prototype.RoomSend = function (type, message)
    {
      if (
        this.room &&
        this.room.connection &&
        this.room.connection.readyState === WebSocket.OPEN
      ) {
-       this.room.send([type, JSON.parse(data)]);
+       this.room.send(type, message);
 
      } else {
        console.log("RoomSend: not connected.");
@@ -297,7 +301,6 @@ cr.plugins_.Colyseus = function(runtime)
    };
 
    Exps.prototype.JSON = function (ret, data) {
-     console.log("JSON =>", JSON.stringify(eval(`(${data})`)));
      ret.set_string(JSON.stringify(eval(`(${data})`)));
    };
 
@@ -323,6 +326,14 @@ cr.plugins_.Colyseus = function(runtime)
 
    Exps.prototype.ValueAt = function (ret, path) {
      ret.set_any(getDeepVariable(path, this.lastValue));
+   };
+
+   Exps.prototype.ErrorMessage = function (ret) {
+     ret.set_string(this.lastError && this.lastError.message);
+   };
+
+   Exps.prototype.ErrorCode = function (ret) {
+     ret.set_number(this.lastError && this.lastError.code);
    };
 
    pluginProto.exps = new Exps();

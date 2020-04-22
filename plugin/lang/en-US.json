@@ -33,7 +33,7 @@
             "display-text": "On Leave",
             "description": "Triggered when left from a room."
           },
-          "on-room-error": {
+          "on-error": {
             "isStatic": true,
             "list-name": "On Error",
             "display-text": "On Error",
@@ -166,7 +166,7 @@
           },
 
           "join-or-create-room": {
-            "list-name": "Join existing or create",
+            "list-name": "Join or create",
             "display-text": "Join room {0} with options {1}.",
             "description": "Join a room by name",
             "params": {
@@ -182,7 +182,7 @@
           },
 
           "create-room": {
-            "list-name": "Create a room",
+            "list-name": "Create room",
             "display-text": "Create room {0} with options {1}.",
             "description": "Create a room by name",
             "params": {
@@ -198,7 +198,7 @@
           },
 
           "join-room-by-id": {
-            "list-name": "Join existing by ID",
+            "list-name": "Join by ID",
             "display-text": "Join room {0} with options {1}.",
             "description": "Join an existing room by its ID",
             "params": {
@@ -314,6 +314,14 @@
           "session-id": {
             "description": "Unique sessionId of the current user",
             "translated-name": "SessionId"
+          },
+          "error-code": {
+            "description": "Get last error code",
+            "translated-name": "ErrorCode"
+          },
+          "error-message": {
+            "description": "Get last error message",
+            "translated-name": "ErrorMessage"
           }
         }
       }

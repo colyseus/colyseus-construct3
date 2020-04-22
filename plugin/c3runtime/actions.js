@@ -1,14 +1,12 @@
 "use strict";
 
 {
-  var Colyseus = window['Colyseus'];
+  var Colyseus = globalThis['Colyseus'];
 
   C3.Plugins.Colyseus.Acts =
   {
     SetEndpoint(endpoint)
     {
-      var self = this;
-
       this.client = new Colyseus.Client(endpoint || this.endpoint);
     },
 
@@ -37,14 +35,14 @@
       this._MatchMake("reconnect", roomId, sessionId);
     },
 
-    RoomSend (type, data)
+    RoomSend (type, message)
     {
       if (
         this.room &&
         this.room.connection &&
         this.room.connection.readyState === WebSocket.OPEN
       ) {
-        this.room.send([type, JSON.parse(data)]);
+        this.room.send(type, message);
 
       } else {
         console.log("RoomSend: not connected.");
@@ -79,7 +77,7 @@
         {
           console.error("Colyseus GetAvailableRooms error: "+err);
         }
-        self.Trigger(C3.Plugins.Colyseus.Cnds.OnRoomError);
+        self.Trigger(C3.Plugins.Colyseus.Cnds.OnError);
       });
     },
 

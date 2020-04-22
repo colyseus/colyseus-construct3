@@ -26,8 +26,8 @@
         "isTrigger": true
       },
       {
-        "id": "on-room-error",
-        "scriptName": "OnRoomError",
+        "id": "on-error",
+        "scriptName": "OnError",
         "isTrigger": true
       },
       {
@@ -133,6 +133,18 @@
         "expressionName": "SessionId",
         "scriptName": "SessionId",
         "returnType": "any"
+      },
+      {
+        "id": "error-code",
+        "expressionName": "ErrorCode",
+        "scriptName": "ErrorCode",
+        "returnType": "number"
+      },
+      {
+        "id": "error-message",
+        "expressionName": "ErrorMessage",
+        "scriptName": "ErrorMessage",
+        "returnType": "string"
       }
     ]
   },
