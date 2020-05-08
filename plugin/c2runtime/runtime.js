@@ -277,6 +277,11 @@ cr.plugins_.Colyseus = function(runtime)
      }
    }
 
+   Acts.prototype.RoomSendJSON = function (type, message)
+   {
+     this.RoomSend(type, JSON.parse(message));
+   }
+
    Acts.prototype.RoomLeave = function ()
    {
      if (this.room) {

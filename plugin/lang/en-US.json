@@ -240,7 +240,23 @@
               },
               "message": {
                 "name": "Message",
-                "desc": "JSON representation of the message. Messages arrive on server-side at \"onMessage\"."
+                "desc": "Data of your message. Messages arrive on server-side at \"onMessage(type, ...)\"."
+              }
+            }
+          },
+
+          "room-send-json": {
+            "list-name": "Send JSON message",
+            "display-text": "Send {0} with {1}",
+            "description": "Send JSON message to a room",
+            "params": {
+              "type": {
+                "name": "Type",
+                "desc": "Type of the message."
+              },
+              "message": {
+                "name": "JSON Message",
+                "desc": "JSON representation of the message. Messages arrive on server-side at \"onMessage(type, ...)\"."
               }
             }
           },

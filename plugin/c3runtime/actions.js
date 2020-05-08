@@ -49,6 +49,11 @@
       }
     },
 
+    RoomSendJSON (type, message)
+    {
+      this.RoomSend(type, JSON.parse(message));
+    },
+
     RoomLeave()
     {
       if (this.room) {

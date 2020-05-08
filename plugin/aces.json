@@ -101,6 +101,14 @@
         "scriptName": "RoomSend",
         "params": [
           { "id": "type", "type": "string" },
+          { "id": "message", "type": "any" }
+        ]
+      },
+      {
+        "id": "room-send-json",
+        "scriptName": "RoomSendJSON",
+        "params": [
+          { "id": "type", "type": "string" },
           { "id": "message", "type": "string" }
         ]
       },
