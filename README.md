@@ -21,7 +21,6 @@
   </h3>
 </div>
 
-See [Multiplayer Drawing Prototype](https://github.com/endel/multiplayer-drawing-prototype) made with this plugin. ([live demo](https://drawing-prototype.herokuapp.com/))
 
 # Addon Development / Contribute
 
