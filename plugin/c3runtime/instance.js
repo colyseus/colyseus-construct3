@@ -38,7 +38,7 @@
       // load state for savegames
     }
 
-    _MatchMake = function(methodName, roomName, options)
+    _MatchMake (methodName, roomName, options)
     {
         var self = this;
         var options = JSON.parse(options || "{}");
