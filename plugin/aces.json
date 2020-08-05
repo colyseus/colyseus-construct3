@@ -88,6 +88,14 @@
       },
 
       {
+        "id": "consume-seat-reservation",
+        "scriptName": "ConsumeSeatReservation",
+        "params": [
+          { "id": "reservation", "type": "string" }
+        ]
+      },
+
+      {
         "id": "reconnect-room",
         "scriptName": "ReconnectRoom",
         "params": [

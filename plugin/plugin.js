@@ -12,7 +12,7 @@
   const PLUGIN_ID = "Colyseus";
   ////////////////////////////////////////////
 
-  const PLUGIN_VERSION = "0.13.1.0";
+  const PLUGIN_VERSION = "0.13.3.0";
   const PLUGIN_CATEGORY = "web";
   const PLUGIN_AUTHOR = "Endel Dreyer";
 
@@ -31,7 +31,7 @@
       this._info.SetDescription(lang(".description"));
       this._info.SetVersion(PLUGIN_VERSION);
       this._info.SetCategory(PLUGIN_CATEGORY);
-      this._info.SetAuthor("Endel Dreyer");
+      this._info.SetAuthor(PLUGIN_AUTHOR);
       this._info.SetHelpUrl(lang(".help-url"));
       this._info.SetIsSingleGlobal(false);
 

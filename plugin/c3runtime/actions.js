@@ -30,6 +30,10 @@
       this._MatchMake("joinById", roomId, options);
     },
 
+    ConsumeSeatReservation (reservation) {
+      this._MatchMake("consumeSeatReservation", JSON.parse(reservation));
+    },
+
     ReconnectRoom (roomId, sessionId)
     {
       this._MatchMake("reconnect", roomId, sessionId);

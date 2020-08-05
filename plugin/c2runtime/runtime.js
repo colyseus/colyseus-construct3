@@ -177,6 +177,11 @@ cr.plugins_.Colyseus = function(runtime)
      this._MatchMake("joinById", roomId, options);
    };
 
+   Acts.prototype.ConsumeSeatReservation = function (reservation)
+   {
+     this._MatchMake("consumeSeatReservation", JSON.parse(reservation));
+   };
+
    Acts.prototype.ReconnectRoom = function (roomId, sessionId)
    {
      this._MatchMake("reconnect", roomId, sessionid);

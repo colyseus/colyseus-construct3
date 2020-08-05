@@ -213,6 +213,18 @@
             }
           },
 
+          "consume-seat-reservation": {
+            "list-name": "Consume Seat Reservation",
+            "display-text": "Consume seat reservation with {0}",
+            "description": "Consume a seat reservation made from the server-side",
+            "params": {
+              "reservation": {
+                "name": "Seat reservation data",
+                "desc": "JSON containing the reservation made from the server-side"
+              }
+            }
+          },
+
           "reconnect-room": {
             "list-name": "Reconnect",
             "display-text": "Reconnect into room {0} with sessionId {1}.",
