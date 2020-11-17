@@ -57,21 +57,25 @@
           room.onStateChange.once(function() {
             function registerCallbacksOnStructure (instance, path) {
               instance.onChange = onChange.bind(undefined, [...path]);
-              instance.triggerAll();
 
-              var schema = instance._schema;
+              var schema = instance['_definition'].schema;
               for (var field in schema) {
-                if (schema[field].map || Array.isArray(schema[field])) {
+                var schemaType = typeof(schema[field]);
+                if (schemaType === "object" || schemaType === "function") {
                   instance[field].onAdd = onAdd.bind(undefined, [...path, field]);
                   instance[field].onChange = onItemChange.bind(undefined, [...path, field]);
                   instance[field].onRemove = onRemove.bind(undefined, [...path, field]);
-                  instance[field].triggerAll();
                 }
               }
+
+              instance.triggerAll();
             }
 
             function onAdd (path, instance, index) {
-              registerCallbacksOnStructure(instance, [...path, index]);
+              // only register callbacks on child Schema structures.
+              if (instance['_definition']) {
+                registerCallbacksOnStructure(instance, [...path, index]);
+              }
 
               self.lastPath = path.join(".");
               self.lastIndex = index;
@@ -89,7 +93,7 @@
             function onChange (path, changes) {
               self.lastIndex = undefined;
               self.lastPath = path.join(".");
-              for (var i=0; i<changes.length; i++) {
+              for (var i = 0, l = changes.length; i < l; i++) {
                 self.lastField = changes[i].field;
                 self.lastValue = changes[i].value;
                 self.lastPreviousValue = changes[i].previousValue;

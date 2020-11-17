@@ -6,7 +6,7 @@
 
       "colyseus": {
         "name": "Colyseus",
-        "description": "Multiplayer Game Client",
+        "description": "Colyseus Multiplayer Client SDK",
         "help-url": "https://docs.colyseus.io/",
         "properties": {
           "endpoint": {
