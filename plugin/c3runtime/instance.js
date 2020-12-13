@@ -112,6 +112,9 @@
           });
 
           room.onStateChange(function (state) {
+            self.lastPath = ".";
+            self.lastIndex = undefined;
+            self.lastValue = state;
             self.Trigger(C3.Plugins.Colyseus.Cnds.OnStateChange);
           });
 

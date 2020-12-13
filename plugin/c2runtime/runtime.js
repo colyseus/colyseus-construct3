@@ -255,6 +255,9 @@ cr.plugins_.Colyseus = function(runtime)
        });
 
        room.onStateChange(function (state) {
+         self.lastPath = ".";
+         self.lastIndex = undefined;
+         self.lastValue = state;
          self.runtime.trigger(pluginProto.cnds.OnStateChange, self);
        });
 
