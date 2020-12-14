@@ -12,7 +12,7 @@
   const PLUGIN_ID = "Colyseus";
   ////////////////////////////////////////////
 
-  const PLUGIN_VERSION = "0.14.1.2";
+  const PLUGIN_VERSION = "0.14.1.3";
   const PLUGIN_CATEGORY = "web";
   const PLUGIN_AUTHOR = "Endel Dreyer";
 
