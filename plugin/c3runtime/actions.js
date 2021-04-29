@@ -41,11 +41,7 @@
 
     RoomSend (type, message)
     {
-      if (
-        this.room &&
-        this.room.connection &&
-        this.room.connection.readyState === WebSocket.OPEN
-      ) {
+      if (this.room && this.room.connection) {
         this.room.send(type, message);
 
       } else {

@@ -277,11 +277,7 @@ cr.plugins_.Colyseus = function(runtime)
 
    Acts.prototype.RoomSend = function (type, message)
    {
-     if (
-       this.room &&
-       this.room.connection &&
-       this.room.connection.readyState === WebSocket.OPEN
-     ) {
+     if (this.room && this.room.connection) {
        this.room.send(type, message);
 
      } else {
