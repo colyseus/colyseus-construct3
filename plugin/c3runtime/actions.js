@@ -36,7 +36,7 @@
 
     ReconnectRoom (roomId, sessionId)
     {
-      this._MatchMake("reconnect", roomId, sessionId);
+      this.client.reconnect(roomId, sessionId);
     },
 
     RoomSend (type, message)
