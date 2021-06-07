@@ -54,6 +54,11 @@
             self.Trigger(C3.Plugins.Colyseus.Cnds.OnError);
           });
 
+          room.onLeave(function (code) {
+            self.lastError = code;
+            self.Trigger(C3.Plugins.Colyseus.Cnds.OnLeaveRoom);
+          });
+
           room.onStateChange.once(function() {
             function registerCallbacksOnStructure (instance, path) {
               instance.onChange = onChange.bind(undefined, [...path]);
