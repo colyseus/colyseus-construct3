@@ -197,6 +197,16 @@ cr.plugins_.Colyseus = function(runtime)
        self.sessionId = self.room.sessionId;
        self.runtime.trigger(pluginProto.cnds.OnJoinRoom, self);
 
+       room.onError(function (code, message) {
+         self.lastError = { code: code, message: message };
+         self.runtime.trigger(pluginProto.cnds.OnError, self);
+       });
+
+       room.onLeave(function (code) {
+         self.lastError = code;
+         self.runtime.trigger(pluginProto.cnds.OnLeaveRoom, self);
+       });
+
        room.onStateChange.once(function() {
          function registerCallbacksOnStructure(instance, path) {
            instance.onChange = onChange.bind(undefined, [...path]);
@@ -271,6 +281,7 @@ cr.plugins_.Colyseus = function(runtime)
        });
 
      }).catch(function(e) {
+       self.lastError = e;
        self.runtime.trigger(pluginProto.cnds.OnError, self);
      });
    }
