@@ -99,7 +99,6 @@ cr.plugins_.Colyseus = function(runtime)
    /* Schema Serializer */
    Cnds.prototype.OnSchemaAdd = function (path) { return checkPath(this.lastPath, path); },
    Cnds.prototype.OnSchemaChange = function (path) {
-     console.log("OnSchemaChange:", this.lastPath, path);
      return checkPath(this.lastPath, path);
    },
    Cnds.prototype.OnSchemaFieldChange = function (path) { return checkPath(this.lastPath, path); },
@@ -209,19 +208,17 @@ cr.plugins_.Colyseus = function(runtime)
 
        room.onStateChange.once(function() {
          function registerCallbacksOnStructure(instance, path) {
-           instance.onChange = onChange.bind(undefined, [...path]);
+           instance.onChange(function(_) { onChange([...path], []) });
 
            var schema = instance['_definition'].schema;
            for (var field in schema) {
              var schemaType = typeof (schema[field]);
              if (schemaType === "object" || schemaType === "function") {
-               instance[field].onAdd = onAdd.bind(undefined, [...path, field]);
-               instance[field].onChange = onItemChange.bind(undefined, [...path, field]);
-               instance[field].onRemove = onRemove.bind(undefined, [...path, field]);
+               instance[field].onAdd(function (instance, index) { onAdd([...path, field], instance, index); })
+               instance[field].onChange(function (instance, index) { onItemChange([...path, field], instance, index); });
+               instance[field].onRemove(function (instance, index) { onRemove([...path, field], instance, index); })
              }
            }
-
-           instance.triggerAll();
          }
 
          function onAdd(path, instance, index) {
@@ -371,7 +368,9 @@ cr.plugins_.Colyseus = function(runtime)
      // deeply get the requested variable from the room's state.
      try {
        do {
-         value = value[path.shift()];
+        value = (typeof(value.get)!=="function") // MapSchema's .get() method
+          ? value[path.shift()]
+          : value.get(path.shift());
        } while (path.length > 0);
      } catch (e) {
        console.warn(e);

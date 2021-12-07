@@ -12,9 +12,9 @@
   const PLUGIN_ID = "Colyseus";
   ////////////////////////////////////////////
 
-  const PLUGIN_VERSION = "0.14.9.2";
+  const PLUGIN_VERSION = "0.15.0.0";
   const PLUGIN_CATEGORY = "web";
-  const PLUGIN_AUTHOR = "Endel Dreyer";
+  const PLUGIN_AUTHOR = "Lucid Sight, Inc.";
 
   let app = null;
 

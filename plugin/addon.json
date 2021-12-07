@@ -1,13 +1,13 @@
 {
   "is-c3-addon": true,
   "type": "plugin",
-  "name": "Colyseus Multiplayer Client",
+  "name": "Colyseus SDK for Construct 3",
   "id": "Colyseus",
-  "version": "0.14.9.2",
-  "author": "Endel Dreyer",
+  "version": "0.15.0.0",
+  "author": "Lucid Sight, Inc.",
   "website": "https://colyseus.io/",
   "documentation": "https://docs.colyseus.io",
-  "description": "Colyseus Multiplayer Client SDK",
+  "description": "Colyseus SDK for Construct 3",
   "editor-scripts": [
     "plugin.js",
     "type.js",

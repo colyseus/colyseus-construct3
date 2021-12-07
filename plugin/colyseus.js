@@ -1,7 +1,7 @@
-// colyseus.js@0.14.9 (@colyseus/schema 1.0.22)
+// colyseus.js@0.15.0 (@colyseus/schema 2.0.0)
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    typeof define === 'function' && define.amd ? define('colyseus.js', ['exports'], factory) :
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Colyseus = {}));
 }(this, (function (exports) { 'use strict';
 
@@ -15,6 +15,13 @@
         ArrayBuffer.isView = function (a) {
             return a !== null && typeof (a) === 'object' && a.buffer instanceof ArrayBuffer;
         };
+    }
+    // Define globalThis if not available.
+    // https://github.com/colyseus/colyseus.js/issues/86
+    if (typeof (globalThis) === "undefined" &&
+        typeof (window) !== "undefined") {
+        // @ts-ignore
+        window['globalThis'] = window;
     }
 
     /*! *****************************************************************************
@@ -87,59 +94,62 @@
     }
 
     function apply(src, tar) {
+    	tar.headers = src.headers || {};
     	tar.statusMessage = src.statusText;
     	tar.statusCode = src.status;
-    	tar.data = src.body;
+    	tar.data = src.response;
     }
 
     function send(method, uri, opts) {
-    	opts = opts || {};
-    	var timer, ctrl, tmp=opts.body;
+    	return new Promise(function (res, rej) {
+    		opts = opts || {};
+    		var req = new XMLHttpRequest;
+    		var k, tmp, arr, str=opts.body;
+    		var headers = opts.headers || {};
 
-    	opts.method = method;
-    	opts.headers = opts.headers || {};
-
-    	if (tmp instanceof FormData) ; else if (tmp && typeof tmp == 'object') {
-    		opts.headers['content-type'] = 'application/json';
-    		opts.body = JSON.stringify(tmp);
-    	}
-
-    	if (opts.withCredentials) {
-    		opts.credentials = 'include';
-    	}
-
-    	if (opts.timeout) {
-    		ctrl = new AbortController;
-    		opts.signal = ctrl.signal;
-    		timer = setTimeout(ctrl.abort, opts.timeout);
-    	}
-
-    	return new Promise((res, rej) => {
-    		fetch(uri, opts).then((rr, reply) => {
-    			clearTimeout(timer);
-
-    			apply(rr, rr); //=> rr.headers
-    			reply = rr.status >= 400 ? rej : res;
-
-    			tmp = rr.headers.get('content-type');
-    			if (!tmp || !~tmp.indexOf('application/json')) {
-    				reply(rr);
-    			} else {
-    				rr.text().then(str => {
-    					try {
-    						rr.data = JSON.parse(str, opts.reviver);
-    						reply(rr);
-    					} catch (err) {
-    						err.headers = rr.headers;
-    						apply(rr, err);
-    						rej(err);
-    					}
-    				});
-    			}
-    		}).catch(err => {
-    			err.timeout = ctrl && ctrl.signal.aborted;
+    		// IE compatible
+    		if (opts.timeout) req.timeout = opts.timeout;
+    		req.ontimeout = req.onerror = function (err) {
+    			err.timeout = err.type == 'timeout';
     			rej(err);
-    		});
+    		};
+
+    		req.open(method, uri.href || uri);
+
+    		req.onload = function () {
+    			arr = req.getAllResponseHeaders().trim().split(/[\r\n]+/);
+    			apply(req, req); //=> req.headers
+
+    			while (tmp = arr.shift()) {
+    				tmp = tmp.split(': ');
+    				req.headers[tmp.shift().toLowerCase()] = tmp.join(': ');
+    			}
+
+    			tmp = req.headers['content-type'];
+    			if (tmp && !!~tmp.indexOf('application/json')) {
+    				try {
+    					req.data = JSON.parse(req.data, opts.reviver);
+    				} catch (err) {
+    					apply(req, err);
+    					return rej(err);
+    				}
+    			}
+
+    			(req.status >= 400 ? rej : res)(req);
+    		};
+
+    		if (typeof FormData < 'u' && str instanceof FormData) ; else if (str && typeof str == 'object') {
+    			headers['content-type'] = 'application/json';
+    			str = JSON.stringify(str);
+    		}
+
+    		req.withCredentials = !!opts.withCredentials;
+
+    		for (k in headers) {
+    			req.setRequestHeader(k, headers[k]);
+    		}
+
+    		req.send(str);
     	});
     }
 
@@ -156,7 +166,7 @@
     var put_1 = put;
     var send_1 = send;
 
-    var fetch_1 = {
+    var xhr = {
     	del: del_1,
     	get: get_1,
     	patch: patch_1,
@@ -165,8 +175,8 @@
     	send: send_1
     };
 
-    var http = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(null), fetch_1, {
-        'default': fetch_1,
+    var http = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(null), xhr, {
+        'default': xhr,
         del: del_1,
         get: get_1,
         patch: patch_1,
@@ -1095,76 +1105,6 @@
         //     CLEAR = 10,
         // }
 
-        //
-        // Root holds all schema references by unique id
-        //
-        var Root = /** @class */ (function () {
-            function Root() {
-                //
-                // Relation of refId => Schema structure
-                // For direct access of structures during decoding time.
-                //
-                this.refs = new Map();
-                this.refCounts = {};
-                this.deletedRefs = new Set();
-                this.nextUniqueId = 0;
-            }
-            Root.prototype.getNextUniqueId = function () {
-                return this.nextUniqueId++;
-            };
-            // for decoding
-            Root.prototype.addRef = function (refId, ref, incrementCount) {
-                if (incrementCount === void 0) { incrementCount = true; }
-                this.refs.set(refId, ref);
-                if (incrementCount) {
-                    this.refCounts[refId] = (this.refCounts[refId] || 0) + 1;
-                }
-            };
-            // for decoding
-            Root.prototype.removeRef = function (refId) {
-                this.refCounts[refId] = this.refCounts[refId] - 1;
-                this.deletedRefs.add(refId);
-            };
-            Root.prototype.clearRefs = function () {
-                this.refs.clear();
-                this.deletedRefs.clear();
-                this.refCounts = {};
-            };
-            // for decoding
-            Root.prototype.garbageCollectDeletedRefs = function () {
-                var _this = this;
-                this.deletedRefs.forEach(function (refId) {
-                    if (_this.refCounts[refId] <= 0) {
-                        var ref = _this.refs.get(refId);
-                        //
-                        // Ensure child schema instances have their references removed as well.
-                        //
-                        if (ref instanceof Schema) {
-                            for (var fieldName in ref['_definition'].schema) {
-                                if (typeof (ref['_definition'].schema[fieldName]) !== "string" &&
-                                    ref[fieldName] &&
-                                    ref[fieldName]['$changes']) {
-                                    _this.removeRef(ref[fieldName]['$changes'].refId);
-                                }
-                            }
-                        }
-                        else {
-                            var definition = ref['$changes'].parent._definition;
-                            var type = definition.schema[definition.fieldsByIndex[ref['$changes'].parentIndex]];
-                            if (typeof (Object.values(type)[0]) === "function") {
-                                Array.from(ref.values())
-                                    .forEach(function (child) { return _this.removeRef(child['$changes'].refId); });
-                            }
-                        }
-                        _this.refs.delete(refId);
-                        delete _this.refCounts[refId];
-                    }
-                });
-                // clear deleted refs.
-                this.deletedRefs.clear();
-            };
-            return Root;
-        }());
         var ChangeTree = /** @class */ (function () {
             function ChangeTree(ref, parent, root) {
                 this.changed = false;
@@ -1368,13 +1308,49 @@
             return ChangeTree;
         }());
 
-        //
-        // Notes:
-        // -----
-        //
-        // - The tsconfig.json of @colyseus/schema uses ES2018.
-        // - ES2019 introduces `flatMap` / `flat`, which is not currently relevant, and caused other issues.
-        //
+        function addCallback($callbacks, op, callback, existing) {
+            // initialize list of callbacks
+            if (!$callbacks[op]) {
+                $callbacks[op] = [];
+            }
+            $callbacks[op].push(callback);
+            //
+            // Trigger callback for existing elements
+            // - OPERATION.ADD
+            // - OPERATION.REPLACE
+            //
+            existing === null || existing === void 0 ? void 0 : existing.forEach(function (item, key) { return callback(item, key); });
+            return function () { return spliceOne($callbacks[op], $callbacks[op].indexOf(callback)); };
+        }
+        function removeChildRefs(changes) {
+            var _this = this;
+            var needRemoveRef = (typeof (this.$changes.getType()) !== "string");
+            this.$items.forEach(function (item, key) {
+                changes.push({
+                    refId: _this.$changes.refId,
+                    op: exports.OPERATION.DELETE,
+                    field: key,
+                    value: undefined,
+                    previousValue: item
+                });
+                if (needRemoveRef) {
+                    _this.$changes.root.removeRef(item['$changes'].refId);
+                }
+            });
+        }
+        function spliceOne(arr, index) {
+            // manually splice an array
+            if (index === -1 || index >= arr.length) {
+                return false;
+            }
+            var len = arr.length - 1;
+            for (var i = index; i < len; i++) {
+                arr[i] = arr[i + 1];
+            }
+            arr.length = len;
+            return true;
+        }
+
         var DEFAULT_SORT = function (a, b) {
             var A = a.toString();
             var B = b.toString();
@@ -1445,8 +1421,20 @@
                 this.$refId = 0;
                 this.push.apply(this, items);
             }
+            ArraySchema.prototype.onAdd = function (callback, triggerAll) {
+                if (triggerAll === void 0) { triggerAll = true; }
+                return addCallback((this.$callbacks || (this.$callbacks = [])), exports.OPERATION.ADD, callback, (triggerAll)
+                    ? this.$items
+                    : undefined);
+            };
+            ArraySchema.prototype.onRemove = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.DELETE, callback); };
+            ArraySchema.prototype.onChange = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.REPLACE, callback); };
             ArraySchema.is = function (type) {
-                return Array.isArray(type);
+                return (
+                // type format: ["string"]
+                Array.isArray(type) ||
+                    // type format: { array: "string" }
+                    (type['array'] !== undefined));
             };
             Object.defineProperty(ArraySchema.prototype, "length", {
                 get: function () {
@@ -1522,18 +1510,19 @@
                 this.$indexes.delete(index);
                 return this.$items.delete(index);
             };
-            ArraySchema.prototype.clear = function (isDecoding) {
-                var _this = this;
+            ArraySchema.prototype.clear = function (changes) {
                 // discard previous operations.
                 this.$changes.discard(true, true);
                 this.$changes.indexes = {};
                 // clear previous indexes
                 this.$indexes.clear();
-                // flag child items for garbage collection.
-                if (isDecoding && typeof (this.$changes.getType()) !== "string") {
-                    this.$items.forEach(function (item) {
-                        _this.$changes.root.removeRef(item['$changes'].refId);
-                    });
+                //
+                // When decoding:
+                // - enqueue items for DELETE callback.
+                // - flag child items for garbage collection.
+                //
+                if (changes) {
+                    removeChildRefs.call(this, changes);
                 }
                 // clear items
                 this.$items.clear();
@@ -1884,9 +1873,6 @@
                 }
                 return cloned;
             };
-            ArraySchema.prototype.triggerAll = function () {
-                Schema.prototype.triggerAll.apply(this);
-            };
             return ArraySchema;
         }());
 
@@ -1940,6 +1926,14 @@
                     }
                 }
             }
+            MapSchema.prototype.onAdd = function (callback, triggerAll) {
+                if (triggerAll === void 0) { triggerAll = true; }
+                return addCallback((this.$callbacks || (this.$callbacks = [])), exports.OPERATION.ADD, callback, (triggerAll)
+                    ? this.$items
+                    : undefined);
+            };
+            MapSchema.prototype.onRemove = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.DELETE, callback); };
+            MapSchema.prototype.onChange = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.REPLACE, callback); };
             MapSchema.is = function (type) {
                 return type['map'] !== undefined;
             };
@@ -1951,6 +1945,9 @@
                 configurable: true
             });
             MapSchema.prototype.set = function (key, value) {
+                if (value === undefined || value === null) {
+                    throw new Error("MapSchema#set('" + key + "', " + value + "): trying to set " + value + " value on '" + key + "'.");
+                }
                 // get "index" for this value.
                 var hasIndex = typeof (this.$changes.indexes[key]) !== "undefined";
                 var index = (hasIndex)
@@ -1994,18 +1991,19 @@
                 this.$changes.delete(key);
                 return this.$items.delete(key);
             };
-            MapSchema.prototype.clear = function (isDecoding) {
-                var _this = this;
+            MapSchema.prototype.clear = function (changes) {
                 // discard previous operations.
                 this.$changes.discard(true, true);
                 this.$changes.indexes = {};
                 // clear previous indexes
                 this.$indexes.clear();
-                // flag child items for garbage collection.
-                if (isDecoding && typeof (this.$changes.getType()) !== "string") {
-                    this.$items.forEach(function (item) {
-                        _this.$changes.root.removeRef(item['$changes'].refId);
-                    });
+                //
+                // When decoding:
+                // - enqueue items for DELETE callback.
+                // - flag child items for garbage collection.
+                //
+                if (changes) {
+                    removeChildRefs.call(this, changes);
                 }
                 // clear items
                 this.$items.clear();
@@ -2081,9 +2079,6 @@
                 }
                 return cloned;
             };
-            MapSchema.prototype.triggerAll = function () {
-                Schema.prototype.triggerAll.apply(this);
-            };
             return MapSchema;
         }());
 
@@ -2122,6 +2117,9 @@
                 this.schema[field] = (Array.isArray(type))
                     ? { array: type[0] }
                     : type;
+            };
+            SchemaDefinition.prototype.hasField = function (field) {
+                return this.indexes[field] !== undefined;
             };
             SchemaDefinition.prototype.addFilter = function (field, cb) {
                 if (!this.filters) {
@@ -2178,21 +2176,38 @@
                 this.types[typeid] = schema;
                 this.schemas.set(schema, typeid);
             };
-            Context.create = function (context) {
-                if (context === void 0) { context = new Context; }
+            Context.create = function (options) {
+                if (options === void 0) { options = {}; }
                 return function (definition) {
-                    return type(definition, context);
+                    if (!options.context) {
+                        options.context = new Context();
+                    }
+                    return type(definition, options);
                 };
             };
             return Context;
         }());
         var globalContext = new Context();
         /**
-         * `@type()` decorator for proxies
+         * [See documentation](https://docs.colyseus.io/state/schema/)
+         *
+         * Annotate a Schema property to be serializeable.
+         * \@type()'d fields are automatically flagged as "dirty" for the next patch.
+         *
+         * @example Standard usage, with automatic change tracking.
+         * ```
+         * \@type("string") propertyName: string;
+         * ```
+         *
+         * @example You can provide the "manual" option if you'd like to manually control your patches via .setDirty().
+         * ```
+         * \@type("string", { manual: true })
+         * ```
          */
-        function type(type, context) {
-            if (context === void 0) { context = globalContext; }
+        function type(type, options) {
+            if (options === void 0) { options = {}; }
             return function (target, field) {
+                var context = options.context || globalContext;
                 var constructor = target.constructor;
                 constructor._context = context;
                 /*
@@ -2233,6 +2248,15 @@
                     if (typeof (childType) !== "string" && !context.has(childType)) {
                         context.add(childType);
                     }
+                }
+                if (options.manual) {
+                    // do not declare getter/setter descriptor
+                    definition.descriptors[field] = {
+                        enumerable: true,
+                        configurable: true,
+                        writable: true,
+                    };
+                    return;
                 }
                 var fieldCached = "_" + field;
                 definition.descriptors[fieldCached] = {
@@ -2319,7 +2343,7 @@
          * `@deprecated()` flag a field as deprecated.
          * The previous `@type()` annotation should remain along with this one.
          */
-        function deprecated(throws, context) {
+        function deprecated(throws) {
             if (throws === void 0) { throws = true; }
             return function (target, field) {
                 var constructor = target.constructor;
@@ -2335,10 +2359,13 @@
                 }
             };
         }
-        function defineTypes(target, fields, context) {
-            if (context === void 0) { context = target._context || globalContext; }
+        function defineTypes(target, fields, options) {
+            if (options === void 0) { options = {}; }
+            if (!options.context) {
+                options.context = target._context || options.context || globalContext;
+            }
             for (var field in fields) {
-                type(fields[field], context)(target.prototype, field);
+                type(fields[field], options)(target.prototype, field);
             }
             return target;
         }
@@ -2876,6 +2903,14 @@
                     initialValues.forEach(function (v) { return _this.add(v); });
                 }
             }
+            CollectionSchema.prototype.onAdd = function (callback, triggerAll) {
+                if (triggerAll === void 0) { triggerAll = true; }
+                return addCallback((this.$callbacks || (this.$callbacks = [])), exports.OPERATION.ADD, callback, (triggerAll)
+                    ? this.$items
+                    : undefined);
+            };
+            CollectionSchema.prototype.onRemove = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.DELETE, callback); };
+            CollectionSchema.prototype.onChange = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.REPLACE, callback); };
             CollectionSchema.is = function (type) {
                 return type['collection'] !== undefined;
             };
@@ -2919,18 +2954,19 @@
                 this.$indexes.delete(index);
                 return this.$items.delete(index);
             };
-            CollectionSchema.prototype.clear = function (isDecoding) {
-                var _this = this;
+            CollectionSchema.prototype.clear = function (changes) {
                 // discard previous operations.
                 this.$changes.discard(true, true);
                 this.$changes.indexes = {};
                 // clear previous indexes
                 this.$indexes.clear();
-                // flag child items for garbage collection.
-                if (isDecoding && typeof (this.$changes.getType()) !== "string") {
-                    this.$items.forEach(function (item) {
-                        _this.$changes.root.removeRef(item['$changes'].refId);
-                    });
+                //
+                // When decoding:
+                // - enqueue items for DELETE callback.
+                // - flag child items for garbage collection.
+                //
+                if (changes) {
+                    removeChildRefs.call(this, changes);
                 }
                 // clear items
                 this.$items.clear();
@@ -3004,9 +3040,6 @@
                 }
                 return cloned;
             };
-            CollectionSchema.prototype.triggerAll = function () {
-                Schema.prototype.triggerAll.apply(this);
-            };
             return CollectionSchema;
         }());
 
@@ -3021,6 +3054,14 @@
                     initialValues.forEach(function (v) { return _this.add(v); });
                 }
             }
+            SetSchema.prototype.onAdd = function (callback, triggerAll) {
+                if (triggerAll === void 0) { triggerAll = true; }
+                return addCallback((this.$callbacks || (this.$callbacks = [])), exports.OPERATION.ADD, callback, (triggerAll)
+                    ? this.$items
+                    : undefined);
+            };
+            SetSchema.prototype.onRemove = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.DELETE, callback); };
+            SetSchema.prototype.onChange = function (callback) { return addCallback(this.$callbacks || (this.$callbacks = []), exports.OPERATION.REPLACE, callback); };
             SetSchema.is = function (type) {
                 return type['set'] !== undefined;
             };
@@ -3065,18 +3106,19 @@
                 this.$indexes.delete(index);
                 return this.$items.delete(index);
             };
-            SetSchema.prototype.clear = function (isDecoding) {
-                var _this = this;
+            SetSchema.prototype.clear = function (changes) {
                 // discard previous operations.
                 this.$changes.discard(true, true);
                 this.$changes.indexes = {};
                 // clear previous indexes
                 this.$indexes.clear();
-                // flag child items for garbage collection.
-                if (isDecoding && typeof (this.$changes.getType()) !== "string") {
-                    this.$items.forEach(function (item) {
-                        _this.$changes.root.removeRef(item['$changes'].refId);
-                    });
+                //
+                // When decoding:
+                // - enqueue items for DELETE callback.
+                // - flag child items for garbage collection.
+                //
+                if (changes) {
+                    removeChildRefs.call(this, changes);
                 }
                 // clear items
                 this.$items.clear();
@@ -3162,46 +3204,7 @@
                 }
                 return cloned;
             };
-            SetSchema.prototype.triggerAll = function () {
-                Schema.prototype.triggerAll.apply(this);
-            };
             return SetSchema;
-        }());
-
-        /**
-         * Extracted from https://www.npmjs.com/package/strong-events
-         */
-        var EventEmitter_ = /** @class */ (function () {
-            function EventEmitter_() {
-                this.handlers = [];
-            }
-            EventEmitter_.prototype.register = function (cb, once) {
-                this.handlers.push(cb);
-                return this;
-            };
-            EventEmitter_.prototype.invoke = function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
-                }
-                this.handlers.forEach(function (handler) { return handler.apply(void 0, args); });
-            };
-            EventEmitter_.prototype.invokeAsync = function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
-                }
-                return Promise.all(this.handlers.map(function (handler) { return handler.apply(void 0, args); }));
-            };
-            EventEmitter_.prototype.remove = function (cb) {
-                var index = this.handlers.indexOf(cb);
-                this.handlers[index] = this.handlers[this.handlers.length - 1];
-                this.handlers.pop();
-            };
-            EventEmitter_.prototype.clear = function () {
-                this.handlers = [];
-            };
-            return EventEmitter_;
         }());
 
         var ClientState = /** @class */ (function () {
@@ -3223,6 +3226,78 @@
                 return client.$filterState;
             };
             return ClientState;
+        }());
+
+        var ReferenceTracker = /** @class */ (function () {
+            function ReferenceTracker() {
+                //
+                // Relation of refId => Schema structure
+                // For direct access of structures during decoding time.
+                //
+                this.refs = new Map();
+                this.refCounts = {};
+                this.deletedRefs = new Set();
+                this.nextUniqueId = 0;
+            }
+            ReferenceTracker.prototype.getNextUniqueId = function () {
+                return this.nextUniqueId++;
+            };
+            // for decoding
+            ReferenceTracker.prototype.addRef = function (refId, ref, incrementCount) {
+                if (incrementCount === void 0) { incrementCount = true; }
+                this.refs.set(refId, ref);
+                if (incrementCount) {
+                    this.refCounts[refId] = (this.refCounts[refId] || 0) + 1;
+                }
+            };
+            // for decoding
+            ReferenceTracker.prototype.removeRef = function (refId) {
+                this.refCounts[refId] = this.refCounts[refId] - 1;
+                this.deletedRefs.add(refId);
+            };
+            ReferenceTracker.prototype.clearRefs = function () {
+                this.refs.clear();
+                this.deletedRefs.clear();
+                this.refCounts = {};
+            };
+            // for decoding
+            ReferenceTracker.prototype.garbageCollectDeletedRefs = function () {
+                var _this = this;
+                this.deletedRefs.forEach(function (refId) {
+                    //
+                    // Skip active references.
+                    //
+                    if (_this.refCounts[refId] > 0) {
+                        return;
+                    }
+                    var ref = _this.refs.get(refId);
+                    //
+                    // Ensure child schema instances have their references removed as well.
+                    //
+                    if (ref instanceof Schema) {
+                        for (var fieldName in ref['_definition'].schema) {
+                            if (typeof (ref['_definition'].schema[fieldName]) !== "string" &&
+                                ref[fieldName] &&
+                                ref[fieldName]['$changes']) {
+                                _this.removeRef(ref[fieldName]['$changes'].refId);
+                            }
+                        }
+                    }
+                    else {
+                        var definition = ref['$changes'].parent._definition;
+                        var type = definition.schema[definition.fieldsByIndex[ref['$changes'].parentIndex]];
+                        if (typeof (Object.values(type)[0]) === "function") {
+                            Array.from(ref.values())
+                                .forEach(function (child) { return _this.removeRef(child['$changes'].refId); });
+                        }
+                    }
+                    _this.refs.delete(refId);
+                    delete _this.refCounts[refId];
+                });
+                // clear deleted refs.
+                this.deletedRefs.clear();
+            };
+            return ReferenceTracker;
         }());
 
         var EncodeSchemaError = /** @class */ (function (_super) {
@@ -3296,12 +3371,17 @@
                 // fix enumerability of fields for end-user
                 Object.defineProperties(this, {
                     $changes: {
-                        value: new ChangeTree(this, undefined, new Root()),
+                        value: new ChangeTree(this, undefined, new ReferenceTracker()),
                         enumerable: false,
                         writable: true
                     },
-                    $listeners: {
-                        value: {},
+                    // $listeners: {
+                    //     value: undefined,
+                    //     enumerable: false,
+                    //     writable: true
+                    // },
+                    $callbacks: {
+                        value: undefined,
                         enumerable: false,
                         writable: true
                     },
@@ -3324,6 +3404,12 @@
                 return (type['_definition'] &&
                     type['_definition'].schema !== undefined);
             };
+            Schema.prototype.onChange = function (callback) {
+                return addCallback((this.$callbacks || (this.$callbacks = [])), exports.OPERATION.REPLACE, callback);
+            };
+            Schema.prototype.onRemove = function (callback) {
+                return addCallback((this.$callbacks || (this.$callbacks = [])), exports.OPERATION.DELETE, callback);
+            };
             Schema.prototype.assign = function (props) {
                 Object.assign(this, props);
                 return this;
@@ -3333,27 +3419,35 @@
                 enumerable: false,
                 configurable: true
             });
+            /**
+             * (Server-side): Flag a property to be encoded for the next patch.
+             * @param instance Schema instance
+             * @param property string representing the property name, or number representing the index of the property.
+             * @param operation OPERATION to perform (detected automatically)
+             */
+            Schema.prototype.setDirty = function (property, operation) {
+                this.$changes.change(property, operation);
+            };
             Schema.prototype.listen = function (attr, callback) {
                 var _this = this;
-                if (!this.$listeners[attr]) {
-                    this.$listeners[attr] = new EventEmitter_();
+                if (!this.$callbacks) {
+                    this.$callbacks = {};
                 }
-                this.$listeners[attr].register(callback);
+                if (!this.$callbacks[attr]) {
+                    this.$callbacks[attr] = [];
+                }
+                this.$callbacks[attr].push(callback);
                 // return un-register callback.
-                return function () {
-                    return _this.$listeners[attr].remove(callback);
-                };
+                return function () { return spliceOne(_this.$callbacks[attr], _this.$callbacks[attr].indexOf(callback)); };
             };
-            Schema.prototype.decode = function (bytes, it, ref, allChanges) {
+            Schema.prototype.decode = function (bytes, it, ref) {
                 if (it === void 0) { it = { offset: 0 }; }
                 if (ref === void 0) { ref = this; }
-                if (allChanges === void 0) { allChanges = new Map(); }
+                var allChanges = [];
                 var $root = this.$changes.root;
                 var totalBytes = bytes.length;
                 var refId = 0;
-                var changes = [];
                 $root.refs.set(refId, this);
-                allChanges.set(refId, changes);
                 while (it.offset < totalBytes) {
                     var byte = bytes[it.offset++];
                     if (byte == SWITCH_TO_STRUCTURE) {
@@ -3366,9 +3460,6 @@
                             throw new Error("\"refId\" not found: " + refId);
                         }
                         ref = nextRef;
-                        // create empty list of changes for this refId.
-                        changes = [];
-                        allChanges.set(refId, changes);
                         continue;
                     }
                     var changeTree = ref['$changes'];
@@ -3382,7 +3473,7 @@
                         // The `.clear()` method is calling `$root.removeRef(refId)` for
                         // each item inside this collection
                         //
-                        ref.clear(true);
+                        ref.clear(allChanges);
                         continue;
                     }
                     var fieldIndex = (isSchema)
@@ -3452,9 +3543,8 @@
                                 value = this.createTypeInstance(childType);
                                 value.$changes.refId = refId_1;
                                 if (previousValue) {
-                                    value.onChange = previousValue.onChange;
-                                    value.onRemove = previousValue.onRemove;
-                                    value.$listeners = previousValue.$listeners;
+                                    value.$callbacks = previousValue.$callbacks;
+                                    // value.$listeners = previousValue.$listeners;
                                     if (previousValue['$changes'].refId &&
                                         refId_1 !== previousValue['$changes'].refId) {
                                         $root.removeRef(previousValue['$changes'].refId);
@@ -3480,40 +3570,29 @@
                         value.$changes.refId = refId_2;
                         // preserve schema callbacks
                         if (previousValue) {
-                            value.onAdd = previousValue.onAdd;
-                            value.onRemove = previousValue.onRemove;
-                            value.onChange = previousValue.onChange;
+                            value['$callbacks'] = previousValue['$callbacks'];
                             if (previousValue['$changes'].refId &&
                                 refId_2 !== previousValue['$changes'].refId) {
                                 $root.removeRef(previousValue['$changes'].refId);
                                 //
                                 // Trigger onRemove if structure has been replaced.
                                 //
-                                var deletes = [];
                                 var entries = previousValue.entries();
                                 var iter = void 0;
                                 while ((iter = entries.next()) && !iter.done) {
                                     var _a = iter.value, key = _a[0], value_1 = _a[1];
-                                    deletes.push({
+                                    allChanges.push({
+                                        refId: refId_2,
                                         op: exports.OPERATION.DELETE,
                                         field: key,
                                         value: undefined,
                                         previousValue: value_1,
                                     });
                                 }
-                                allChanges.set(previousValue['$changes'].refId, deletes);
                             }
                         }
                         $root.addRef(refId_2, value, (valueRef !== previousValue));
-                        //
-                        // TODO: deprecate proxies on next version.
-                        // get proxy to target value.
-                        //
-                        if (typeDef.getProxy) {
-                            value = typeDef.getProxy(value);
-                        }
                     }
-                    var hasChange = (previousValue !== value);
                     if (value !== null &&
                         value !== undefined) {
                         if (value['$changes']) {
@@ -3521,14 +3600,7 @@
                         }
                         if (ref instanceof Schema) {
                             ref[fieldName] = value;
-                            //
-                            // FIXME: use `_field` instead of `field`.
-                            //
-                            // `field` is going to use the setter of the PropertyDescriptor
-                            // and create a proxy for array/map. This is only useful for
-                            // backwards-compatibility with @colyseus/schema@0.5.x
-                            //
-                            // // ref[_field] = value;
+                            // ref[`_${fieldName}`] = value;
                         }
                         else if (ref instanceof MapSchema) {
                             // const key = ref['$indexes'].get(field);
@@ -3553,13 +3625,9 @@
                             }
                         }
                     }
-                    if (hasChange
-                    // &&
-                    // (
-                    //     this.onChange || ref.$listeners[field]
-                    // )
-                    ) {
-                        changes.push({
+                    if (previousValue !== value) {
+                        allChanges.push({
+                            refId: refId,
                             op: operation,
                             field: fieldName,
                             dynamicIndex: dynamicIndex,
@@ -3713,6 +3781,7 @@
                 return this.encode(true, [], useFilters);
             };
             Schema.prototype.applyFilters = function (client, encodeAll) {
+                var _a, _b;
                 if (encodeAll === void 0) { encodeAll = false; }
                 var root = this;
                 var refIdsDissallowed = new Set();
@@ -3831,7 +3900,7 @@
                                 //
                                 // use cached bytes directly if is from Schema type.
                                 //
-                                filteredBytes = filteredBytes.concat(changeTree.caches[fieldIndex]);
+                                filteredBytes.push.apply(filteredBytes, (_a = changeTree.caches[fieldIndex]) !== null && _a !== void 0 ? _a : []);
                                 containerIndexes.add(fieldIndex);
                             }
                             else {
@@ -3839,7 +3908,7 @@
                                     //
                                     // use cached bytes if already has the field
                                     //
-                                    filteredBytes = filteredBytes.concat(changeTree.caches[fieldIndex]);
+                                    filteredBytes.push.apply(filteredBytes, (_b = changeTree.caches[fieldIndex]) !== null && _b !== void 0 ? _b : []);
                                 }
                                 else {
                                     //
@@ -3907,20 +3976,6 @@
                 }
                 return cloned;
             };
-            Schema.prototype.triggerAll = function () {
-                // skip if haven't received any remote refs yet.
-                if (this.$changes.root.refs.size === 0) {
-                    return;
-                }
-                var allChanges = new Map();
-                Schema.prototype._triggerAllFillChanges.call(this, this, allChanges);
-                try {
-                    Schema.prototype._triggerChanges.call(this, allChanges);
-                }
-                catch (e) {
-                    Schema.onError(e);
-                }
-            };
             Schema.prototype.toJSON = function () {
                 var schema = this._definition.schema;
                 var deprecated = this._definition.deprecated;
@@ -3963,111 +4018,81 @@
                 instance.$changes.root = this.$changes.root;
                 return instance;
             };
-            Schema.prototype._triggerAllFillChanges = function (ref, allChanges) {
-                if (allChanges.has(ref['$changes'].refId)) {
-                    return;
-                }
-                var changes = [];
-                allChanges.set(ref['$changes'].refId || 0, changes);
-                if (ref instanceof Schema) {
-                    var schema = ref._definition.schema;
-                    for (var fieldName in schema) {
-                        var _field = "_" + fieldName;
-                        var value = ref[_field];
-                        if (value !== undefined) {
-                            changes.push({
-                                op: exports.OPERATION.ADD,
-                                field: fieldName,
-                                value: value,
-                                previousValue: undefined
+            Schema.prototype._triggerChanges = function (changes) {
+                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+                var uniqueRefIds = new Set();
+                var $refs = this.$changes.root.refs;
+                var _loop_2 = function (i) {
+                    var change = changes[i];
+                    var refId = change.refId;
+                    var ref = $refs.get(refId);
+                    var $callbacks = ref['$callbacks'];
+                    //
+                    // trigger onRemove on child structure.
+                    //
+                    if ((change.op & exports.OPERATION.DELETE) === exports.OPERATION.DELETE &&
+                        change.previousValue instanceof Schema) {
+                        (_b = (_a = change.previousValue['$callbacks']) === null || _a === void 0 ? void 0 : _a[exports.OPERATION.DELETE]) === null || _b === void 0 ? void 0 : _b.forEach(function (callback) { return callback(); });
+                    }
+                    // no callbacks defined, skip this structure!
+                    if (!$callbacks) {
+                        return "continue";
+                    }
+                    if (ref instanceof Schema) {
+                        if (!uniqueRefIds.has(refId)) {
+                            try {
+                                // trigger onChange
+                                (_d = (_c = $callbacks) === null || _c === void 0 ? void 0 : _c[exports.OPERATION.REPLACE]) === null || _d === void 0 ? void 0 : _d.forEach(function (callback) {
+                                    return callback(changes);
+                                });
+                            }
+                            catch (e) {
+                                Schema.onError(e);
+                            }
+                        }
+                        try {
+                            (_e = $callbacks[change.field]) === null || _e === void 0 ? void 0 : _e.forEach(function (callback) {
+                                return callback(change.value, change.previousValue);
                             });
-                            if (value['$changes'] !== undefined) {
-                                Schema.prototype._triggerAllFillChanges.call(this, value, allChanges);
-                            }
+                        }
+                        catch (e) {
+                            Schema.onError(e);
                         }
                     }
-                }
-                else {
-                    var entries = ref.entries();
-                    var iter = void 0;
-                    while ((iter = entries.next()) && !iter.done) {
-                        var _a = iter.value, key = _a[0], value = _a[1];
-                        changes.push({
-                            op: exports.OPERATION.ADD,
-                            field: key,
-                            dynamicIndex: key,
-                            value: value,
-                            previousValue: undefined,
-                        });
-                        if (value['$changes'] !== undefined) {
-                            Schema.prototype._triggerAllFillChanges.call(this, value, allChanges);
+                    else {
+                        // is a collection of items
+                        if (change.op === exports.OPERATION.ADD && change.previousValue === undefined) {
+                            // triger onAdd
+                            (_f = $callbacks[exports.OPERATION.ADD]) === null || _f === void 0 ? void 0 : _f.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                         }
-                    }
-                }
-            };
-            Schema.prototype._triggerChanges = function (allChanges) {
-                var _this = this;
-                allChanges.forEach(function (changes, refId) {
-                    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
-                    if (changes.length > 0) {
-                        var ref = _this.$changes.root.refs.get(refId);
-                        var isSchema = ref instanceof Schema;
-                        for (var i = 0; i < changes.length; i++) {
-                            var change = changes[i];
-                            var listener = ref['$listeners'] && ref['$listeners'][change.field];
-                            if (!isSchema) {
-                                if (change.op === exports.OPERATION.ADD && change.previousValue === undefined) {
-                                    (_b = (_a = ref).onAdd) === null || _b === void 0 ? void 0 : _b.call(_a, change.value, (_c = change.dynamicIndex) !== null && _c !== void 0 ? _c : change.field);
-                                }
-                                else if (change.op === exports.OPERATION.DELETE) {
-                                    //
-                                    // FIXME: `previousValue` should always be avaiiable.
-                                    // ADD + DELETE operations are still encoding DELETE operation.
-                                    //
-                                    if (change.previousValue !== undefined) {
-                                        (_e = (_d = ref).onRemove) === null || _e === void 0 ? void 0 : _e.call(_d, change.previousValue, (_f = change.dynamicIndex) !== null && _f !== void 0 ? _f : change.field);
-                                    }
-                                }
-                                else if (change.op === exports.OPERATION.DELETE_AND_ADD) {
-                                    if (change.previousValue !== undefined) {
-                                        (_h = (_g = ref).onRemove) === null || _h === void 0 ? void 0 : _h.call(_g, change.previousValue, change.dynamicIndex);
-                                    }
-                                    (_k = (_j = ref).onAdd) === null || _k === void 0 ? void 0 : _k.call(_j, change.value, change.dynamicIndex);
-                                }
-                                else if (change.op === exports.OPERATION.REPLACE ||
-                                    change.value !== change.previousValue) {
-                                    (_m = (_l = ref).onChange) === null || _m === void 0 ? void 0 : _m.call(_l, change.value, change.dynamicIndex);
-                                }
-                            }
+                        else if (change.op === exports.OPERATION.DELETE) {
                             //
-                            // trigger onRemove on child structure.
+                            // FIXME: `previousValue` should always be available.
+                            // ADD + DELETE operations are still encoding DELETE operation.
                             //
-                            if ((change.op & exports.OPERATION.DELETE) === exports.OPERATION.DELETE &&
-                                change.previousValue instanceof Schema &&
-                                change.previousValue.onRemove) {
-                                change.previousValue.onRemove();
-                            }
-                            if (listener) {
-                                try {
-                                    listener.invoke(change.value, change.previousValue);
-                                }
-                                catch (e) {
-                                    Schema.onError(e);
-                                }
+                            if (change.previousValue !== undefined) {
+                                // triger onRemove
+                                (_g = $callbacks[exports.OPERATION.DELETE]) === null || _g === void 0 ? void 0 : _g.forEach(function (callback) { var _a; return callback(change.previousValue, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                             }
                         }
-                        if (isSchema) {
-                            if (ref.onChange) {
-                                try {
-                                    ref.onChange(changes);
-                                }
-                                catch (e) {
-                                    Schema.onError(e);
-                                }
+                        else if (change.op === exports.OPERATION.DELETE_AND_ADD) {
+                            // triger onRemove
+                            if (change.previousValue !== undefined) {
+                                (_h = $callbacks[exports.OPERATION.DELETE]) === null || _h === void 0 ? void 0 : _h.forEach(function (callback) { var _a; return callback(change.previousValue, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                             }
+                            // triger onAdd
+                            (_j = $callbacks[exports.OPERATION.ADD]) === null || _j === void 0 ? void 0 : _j.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
+                        }
+                        // trigger onChange
+                        if (change.value !== change.previousValue) {
+                            (_k = $callbacks[exports.OPERATION.REPLACE]) === null || _k === void 0 ? void 0 : _k.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                         }
                     }
-                });
+                    uniqueRefIds.add(refId);
+                };
+                for (var i = 0; i < changes.length; i++) {
+                    _loop_2(i);
+                }
             };
             Schema._definition = SchemaDefinition.create();
             return Schema;
@@ -4095,7 +4120,7 @@
             return dump;
         }
 
-        var reflectionContext = new Context();
+        var reflectionContext = { context: new Context() };
         /**
          * Reflection
          */
@@ -4216,14 +4241,14 @@
                                 refType = typeInfo[1];
                             }
                             if (fieldType === "ref") {
-                                type(refType, context)(schemaType.prototype, field.name);
+                                type(refType, { context: context })(schemaType.prototype, field.name);
                             }
                             else {
-                                type((_a = {}, _a[fieldType] = refType, _a), context)(schemaType.prototype, field.name);
+                                type((_a = {}, _a[fieldType] = refType, _a), { context: context })(schemaType.prototype, field.name);
                             }
                         }
                         else {
-                            type(field.type, context)(schemaType.prototype, field.name);
+                            type(field.type, { context: context })(schemaType.prototype, field.name);
                         }
                     });
                 });
@@ -4252,8 +4277,8 @@
             return Reflection;
         }(Schema));
 
-        registerType("map", { constructor: MapSchema, getProxy: getMapProxy });
-        registerType("array", { constructor: ArraySchema, getProxy: getArrayProxy });
+        registerType("map", { constructor: MapSchema });
+        registerType("array", { constructor: ArraySchema });
         registerType("set", { constructor: SetSchema });
         registerType("collection", { constructor: CollectionSchema, });
 
@@ -4293,7 +4318,7 @@
             this.onJoin = createSignal();
             this.hasJoined = false;
             this.onMessageHandlers = createNanoEvents();
-            this.id = null;
+            this.roomId = null;
             this.name = name;
             if (rootSchema) {
                 this.serializer = new (getSerializer("schema"));
@@ -4303,6 +4328,12 @@
             this.onError(function (code, message) { return console.warn("colyseus.js - onError => (" + code + ") " + message); });
             this.onLeave(function () { return _this.removeAllListeners(); });
         }
+        Object.defineProperty(Room.prototype, "id", {
+            // TODO: deprecate me on version 1.0
+            get: function () { return this.roomId; },
+            enumerable: false,
+            configurable: true
+        });
         Room.prototype.connect = function (endpoint) {
             var _this = this;
             this.connection = new Connection();
@@ -4323,18 +4354,22 @@
             this.connection.connect(endpoint);
         };
         Room.prototype.leave = function (consented) {
+            var _this = this;
             if (consented === void 0) { consented = true; }
-            if (this.connection) {
-                if (consented) {
-                    this.connection.send([exports.Protocol.LEAVE_ROOM]);
+            return new Promise(function (resolve) {
+                _this.onLeave(function (code) { return resolve(code); });
+                if (_this.connection) {
+                    if (consented) {
+                        _this.connection.send([exports.Protocol.LEAVE_ROOM]);
+                    }
+                    else {
+                        _this.connection.close();
+                    }
                 }
                 else {
-                    this.connection.close();
+                    _this.onLeave.invoke(4000); // "consented" code
                 }
-            }
-            else {
-                this.onLeave.invoke(4000); // "consented" code
-            }
+            });
         };
         Room.prototype.onMessage = function (type, callback) {
             return this.onMessageHandlers.on(this.getMessageHandlerKey(type), callback);
@@ -4378,6 +4413,8 @@
             var code = bytes[0];
             if (code === exports.Protocol.JOIN_ROOM) {
                 var offset = 1;
+                var reconnectionToken = utf8Read(bytes, offset);
+                offset += utf8Length(reconnectionToken);
                 this.serializerId = utf8Read(bytes, offset);
                 offset += utf8Length(this.serializerId);
                 // Instantiate serializer if not locally available.
@@ -4388,6 +4425,7 @@
                 if (bytes.length > offset && this.serializer.handshake) {
                     this.serializer.handshake(bytes, { offset: offset });
                 }
+                this.reconnectionToken = this.roomId + ":" + reconnectionToken;
                 this.hasJoined = true;
                 this.onJoin.invoke();
                 // acknowledge successfull JOIN_ROOM
@@ -4446,7 +4484,7 @@
                 this.onMessageHandlers.emit('*', type, message);
             }
             else {
-                console.warn("onMessage not registered for type '" + type + "'.");
+                console.warn("colyseus.js: onMessage() not registered for type '" + type + "'.");
             }
         };
         Room.prototype.destroy = function () {
@@ -4466,6 +4504,206 @@
             }
         };
         return Room;
+    }());
+
+    var _a;
+    var MatchMakeError = /** @class */ (function (_super) {
+        __extends(MatchMakeError, _super);
+        function MatchMakeError(message, code) {
+            var _this = _super.call(this, message) || this;
+            _this.code = code;
+            Object.setPrototypeOf(_this, MatchMakeError.prototype);
+            return _this;
+        }
+        return MatchMakeError;
+    }(Error));
+    // - React Native does not provide `window.location`
+    // - Cocos Creator (Native) does not provide `window.location.hostname`
+    var DEFAULT_ENDPOINT = (typeof (window) !== "undefined" && typeof ((_a = window === null || window === void 0 ? void 0 : window.location) === null || _a === void 0 ? void 0 : _a.hostname) !== "undefined")
+        ? window.location.protocol.replace("http", "ws") + "//" + window.location.hostname + (window.location.port && ":" + window.location.port)
+        : "ws://127.0.0.1:2567";
+    var Client = /** @class */ (function () {
+        function Client(settings) {
+            if (settings === void 0) { settings = DEFAULT_ENDPOINT; }
+            if (typeof (settings) === "string") {
+                var url = new URL(settings);
+                var useSSL = (url.protocol === "https:" || url.protocol === "wss:");
+                var port = Number(url.port || (useSSL ? 443 : 80));
+                this.settings = {
+                    hostname: url.hostname,
+                    port: port,
+                    useSSL: useSSL
+                };
+            }
+            else {
+                this.settings = settings;
+            }
+        }
+        Client.prototype.joinOrCreate = function (roomName, options, rootSchema) {
+            if (options === void 0) { options = {}; }
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('joinOrCreate', roomName, options, rootSchema)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
+            });
+        };
+        Client.prototype.create = function (roomName, options, rootSchema) {
+            if (options === void 0) { options = {}; }
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('create', roomName, options, rootSchema)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
+            });
+        };
+        Client.prototype.join = function (roomName, options, rootSchema) {
+            if (options === void 0) { options = {}; }
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('join', roomName, options, rootSchema)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
+            });
+        };
+        Client.prototype.joinById = function (roomId, options, rootSchema) {
+            if (options === void 0) { options = {}; }
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('joinById', roomId, options, rootSchema)];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
+                });
+            });
+        };
+        /**
+         * Re-establish connection with a room this client was previously connected to.
+         *
+         * @param reconnectionToken The `room.reconnectionToken` from previously connected room.
+         * @param rootSchema (optional) Concrete root schema definition
+         * @returns Promise<Room>
+         */
+        Client.prototype.reconnect = function (reconnectionToken, rootSchema) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _a, roomId, token;
+                return __generator(this, function (_b) {
+                    switch (_b.label) {
+                        case 0:
+                            if (typeof (reconnectionToken) === "string" && typeof (rootSchema) === "string") {
+                                throw new Error("DEPRECATED: .reconnect() now only accepts 'reconnectionToken' as argument.\nYou can get this token from previously connected `room.reconnectionToken`");
+                            }
+                            _a = reconnectionToken.split(":"), roomId = _a[0], token = _a[1];
+                            return [4 /*yield*/, this.createMatchMakeRequest('reconnect', roomId, { reconnectionToken: token }, rootSchema)];
+                        case 1: return [2 /*return*/, _b.sent()];
+                    }
+                });
+            });
+        };
+        Client.prototype.getAvailableRooms = function (roomName) {
+            if (roomName === void 0) { roomName = ""; }
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, get_1(this.getHttpEndpoint("" + roomName), {
+                                headers: {
+                                    'Accept': 'application/json'
+                                }
+                            })];
+                        case 1: return [2 /*return*/, (_a.sent()).data];
+                    }
+                });
+            });
+        };
+        Client.prototype.consumeSeatReservation = function (response, rootSchema) {
+            return __awaiter(this, void 0, void 0, function () {
+                var room, options;
+                return __generator(this, function (_a) {
+                    room = this.createRoom(response.room.name, rootSchema);
+                    room.roomId = response.room.roomId;
+                    room.sessionId = response.sessionId;
+                    options = { sessionId: room.sessionId };
+                    // forward "reconnection token" in case of reconnection.
+                    if (response.reconnectionToken) {
+                        options.reconnectionToken = response.reconnectionToken;
+                    }
+                    room.connect(this.buildEndpoint(response.room, options));
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            var onError = function (code, message) { return reject(new ServerError(code, message)); };
+                            room.onError.once(onError);
+                            room['onJoin'].once(function () {
+                                room.onError.remove(onError);
+                                resolve(room);
+                            });
+                        })];
+                });
+            });
+        };
+        Client.prototype.createMatchMakeRequest = function (method, roomName, options, rootSchema) {
+            if (options === void 0) { options = {}; }
+            return __awaiter(this, void 0, void 0, function () {
+                var response;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, post_1(this.getHttpEndpoint(method + "/" + roomName), {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(options)
+                            })];
+                        case 1:
+                            response = (_a.sent()).data;
+                            if (response.error) {
+                                throw new MatchMakeError(response.error, response.code);
+                            }
+                            // forward reconnection token during "reconnect" methods.
+                            if (method === "reconnect") {
+                                response.reconnectionToken = options.reconnectionToken;
+                            }
+                            return [2 /*return*/, this.consumeSeatReservation(response, rootSchema)];
+                    }
+                });
+            });
+        };
+        Client.prototype.createRoom = function (roomName, rootSchema) {
+            return new Room(roomName, rootSchema);
+        };
+        Client.prototype.buildEndpoint = function (room, options) {
+            if (options === void 0) { options = {}; }
+            var params = [];
+            for (var name_1 in options) {
+                if (!options.hasOwnProperty(name_1)) {
+                    continue;
+                }
+                params.push(name_1 + "=" + options[name_1]);
+            }
+            var endpoint = (this.settings.useSSL)
+                ? "wss://"
+                : "ws://";
+            if (room.publicAddress) {
+                endpoint += "" + room.publicAddress;
+            }
+            else {
+                endpoint += "" + this.settings.hostname + this.getEndpointPort();
+            }
+            return endpoint + "/" + room.processId + "/" + room.roomId + "?" + params.join('&');
+        };
+        Client.prototype.getHttpEndpoint = function (segments) {
+            return ((this.settings.useSSL) ? "https" : "http") + "://" + this.settings.hostname + this.getEndpointPort() + "/matchmake/" + segments;
+        };
+        Client.prototype.getEndpointPort = function () {
+            return (this.settings.port !== 80 && this.settings.port !== 443)
+                ? ":" + this.settings.port
+                : "";
+        };
+        return Client;
     }());
 
     /// <reference path="../typings/cocos-creator.d.ts" />
@@ -4723,179 +4961,17 @@
         return Auth;
     }());
 
-    var MatchMakeError = /** @class */ (function (_super) {
-        __extends(MatchMakeError, _super);
-        function MatchMakeError(message, code) {
-            var _this = _super.call(this, message) || this;
-            _this.code = code;
-            Object.setPrototypeOf(_this, MatchMakeError.prototype);
-            return _this;
-        }
-        return MatchMakeError;
-    }(Error));
-    // React Native does not provide `window.location`
-    var DEFAULT_ENDPOINT = (typeof (window) !== "undefined" && typeof (window.location) !== "undefined")
-        ? window.location.protocol.replace("http", "ws") + "//" + window.location.hostname + (window.location.port && ":" + window.location.port)
-        : "ws://127.0.0.1:2567";
-    var Client = /** @class */ (function () {
-        function Client(endpoint) {
-            if (endpoint === void 0) { endpoint = DEFAULT_ENDPOINT; }
-            this.endpoint = endpoint;
-        }
-        Object.defineProperty(Client.prototype, "auth", {
-            get: function () {
-                if (!this._auth) {
-                    this._auth = new Auth(this.endpoint);
-                }
-                return this._auth;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Client.prototype.joinOrCreate = function (roomName, options, rootSchema) {
-            if (options === void 0) { options = {}; }
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('joinOrCreate', roomName, options, rootSchema)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
-                });
-            });
-        };
-        Client.prototype.create = function (roomName, options, rootSchema) {
-            if (options === void 0) { options = {}; }
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('create', roomName, options, rootSchema)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
-                });
-            });
-        };
-        Client.prototype.join = function (roomName, options, rootSchema) {
-            if (options === void 0) { options = {}; }
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('join', roomName, options, rootSchema)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
-                });
-            });
-        };
-        Client.prototype.joinById = function (roomId, options, rootSchema) {
-            if (options === void 0) { options = {}; }
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('joinById', roomId, options, rootSchema)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
-                });
-            });
-        };
-        Client.prototype.reconnect = function (roomId, sessionId, rootSchema) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, this.createMatchMakeRequest('joinById', roomId, { sessionId: sessionId }, rootSchema)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
-                });
-            });
-        };
-        Client.prototype.getAvailableRooms = function (roomName) {
-            if (roomName === void 0) { roomName = ""; }
-            return __awaiter(this, void 0, void 0, function () {
-                var url;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.endpoint.replace("ws", "http") + "/matchmake/" + roomName;
-                            return [4 /*yield*/, get_1(url, { headers: { 'Accept': 'application/json' } })];
-                        case 1: return [2 /*return*/, (_a.sent()).data];
-                    }
-                });
-            });
-        };
-        Client.prototype.consumeSeatReservation = function (response, rootSchema) {
-            return __awaiter(this, void 0, void 0, function () {
-                var room;
-                return __generator(this, function (_a) {
-                    room = this.createRoom(response.room.name, rootSchema);
-                    room.id = response.room.roomId;
-                    room.sessionId = response.sessionId;
-                    room.connect(this.buildEndpoint(response.room, { sessionId: room.sessionId }));
-                    return [2 /*return*/, new Promise(function (resolve, reject) {
-                            var onError = function (code, message) { return reject(new ServerError(code, message)); };
-                            room.onError.once(onError);
-                            room['onJoin'].once(function () {
-                                room.onError.remove(onError);
-                                resolve(room);
-                            });
-                        })];
-                });
-            });
-        };
-        Client.prototype.createMatchMakeRequest = function (method, roomName, options, rootSchema) {
-            if (options === void 0) { options = {}; }
-            return __awaiter(this, void 0, void 0, function () {
-                var url, response;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.endpoint.replace("ws", "http") + "/matchmake/" + method + "/" + roomName;
-                            // automatically forward auth token, if present
-                            if (this._auth && this._auth.hasToken) {
-                                options.token = this._auth.token;
-                            }
-                            return [4 /*yield*/, post_1(url, {
-                                    headers: {
-                                        'Accept': 'application/json',
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify(options)
-                                })];
-                        case 1:
-                            response = (_a.sent()).data;
-                            if (response.error) {
-                                throw new MatchMakeError(response.error, response.code);
-                            }
-                            return [2 /*return*/, this.consumeSeatReservation(response, rootSchema)];
-                    }
-                });
-            });
-        };
-        Client.prototype.createRoom = function (roomName, rootSchema) {
-            return new Room(roomName, rootSchema);
-        };
-        Client.prototype.buildEndpoint = function (room, options) {
-            if (options === void 0) { options = {}; }
-            var params = [];
-            for (var name_1 in options) {
-                if (!options.hasOwnProperty(name_1)) {
-                    continue;
-                }
-                params.push(name_1 + "=" + options[name_1]);
-            }
-            return this.endpoint + "/" + room.processId + "/" + room.roomId + "?" + params.join('&');
-        };
-        return Client;
-    }());
-
     var SchemaSerializer = /** @class */ (function () {
         function SchemaSerializer() {
         }
         SchemaSerializer.prototype.setState = function (rawState) {
-            this.state.decode(rawState);
+            return this.state.decode(rawState);
         };
         SchemaSerializer.prototype.getState = function () {
             return this.state;
         };
         SchemaSerializer.prototype.patch = function (patches) {
-            this.state.decode(patches);
+            return this.state.decode(patches);
         };
         SchemaSerializer.prototype.teardown = function () {
             var _a, _b;

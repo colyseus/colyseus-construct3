@@ -6,7 +6,7 @@
 
       "colyseus": {
         "name": "Colyseus",
-        "description": "Colyseus Multiplayer Client SDK",
+        "description": "Colyseus SDK for Construct 3",
         "help-url": "https://docs.colyseus.io/",
         "properties": {
           "endpoint": {

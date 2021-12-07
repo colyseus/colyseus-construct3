@@ -8,7 +8,9 @@
     // deeply get the requested variable from the room's state.
     try {
       do {
-        value = value[path.shift()];
+        value = (typeof(value.get)!=="function") // MapSchema's .get() method
+          ? value[path.shift()]
+          : value.get(path.shift());
       } while (path.length > 0);
     } catch (e) {
       console.warn(e);

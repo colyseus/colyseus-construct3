@@ -1,7 +1,7 @@
 {
   "name": "colyseus-construct3",
   "version": "0.0.0",
-  "description": "Colyseus Multiplayer Client Plugin for Construct3.",
+  "description": "Colyseus SDK for Construct 3 Plugin for Construct3.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
