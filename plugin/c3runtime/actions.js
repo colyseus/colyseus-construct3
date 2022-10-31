@@ -51,7 +51,7 @@
 
     RoomSendJSON (type, message)
     {
-      this.RoomSend(type, JSON.parse(message));
+      this.room.send(type, JSON.parse(message));
     },
 
     RoomLeave()
