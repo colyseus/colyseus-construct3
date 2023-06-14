@@ -20,11 +20,21 @@
     return value;
   }
 
-  C3.Plugins.Colyseus.Exps =
+  C3.Plugins.Colyseus_SDK.Exps =
   {
+    RoomId()
+    {
+      return this.room && this.room.roomId;
+    },
+
     SessionId()
     {
       return this.room && this.room.sessionId;
+    },
+
+    ReconnectionToken()
+    {
+      return this.room && this.room.reconnectionToken;
     },
 
     State(variablePath)
@@ -50,6 +60,22 @@
 
     CurrentValue() {
       return this.lastValue;
+    },
+
+    CurrentMessage() {
+      return this.lastMessage;
+    },
+
+    CurrentMessageAt(path) {
+      return getDeepVariable(path, this.lastMessage);
+    },
+
+    CurrentMessageType() {
+      return this.lastType;
+    },
+
+    CurrentVariablePath() {
+      return this.lastPath;
     },
 
     CurrentValueAt(path) {

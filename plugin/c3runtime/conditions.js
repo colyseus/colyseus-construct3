@@ -30,7 +30,7 @@
     }
   }
 
-  C3.Plugins.Colyseus.Cnds =
+  C3.Plugins.Colyseus_SDK.Cnds =
   {
     /**
      * Conditions for Room
@@ -39,8 +39,13 @@
     OnLeaveRoom() { return true; },
     OnError() { return true; },
     OnStateChange() { return true; },
-    OnMessage(type) { return this.lastType === type; },
     OnGetAvailableRooms() { return true; },
+    OnMessage(type) {
+      return (
+        type === "*" ||
+        this.lastType === type
+      );
+    },
 
     /* Schema Serializer */
     OnSchemaAdd(path) { return checkPath(this.lastPath, path); },

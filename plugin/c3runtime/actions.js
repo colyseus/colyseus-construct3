@@ -3,7 +3,7 @@
 {
   var Colyseus = globalThis['Colyseus'];
 
-  C3.Plugins.Colyseus.Acts =
+  C3.Plugins.Colyseus_SDK.Acts =
   {
     SetEndpoint(endpoint)
     {
@@ -76,13 +76,13 @@
             console.info(room.metadata);
           });
         }
-        self.Trigger(C3.Plugins.Colyseus.Cnds.OnGetAvailableRooms);
+        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnGetAvailableRooms);
       }).catch(function(err) {
         if (self.debug)
         {
           console.error("Colyseus GetAvailableRooms error: "+err);
         }
-        self.Trigger(C3.Plugins.Colyseus.Cnds.OnError);
+        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
       });
     },
 

@@ -15,7 +15,7 @@ cr.plugins_.Colyseus = function(runtime)
  {
    var Colyseus = window['Colyseus'];
 
-   var pluginProto = cr.plugins_.Colyseus.prototype;
+   var pluginProto = cr.plugins_.Colyseus_SDK.prototype;
 
    /////////////////////////////////////
    // Object type class
@@ -91,6 +91,7 @@ cr.plugins_.Colyseus = function(runtime)
     */
    Cnds.prototype.OnJoinRoom = function () { return true; };
    Cnds.prototype.OnLeaveRoom = function () { return true; };
+   Cnds.prototype.OnJoinError = function () { return true; };
    Cnds.prototype.OnError = function () { return true; };
    Cnds.prototype.OnStateChange = function () { return true; };
    Cnds.prototype.OnMessage = function (type) { return this.lastType === type; };

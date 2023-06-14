@@ -1,7 +1,7 @@
 "use strict";
 
 {
-  const PLUGIN_CLASS = SDK.Plugins.Colyseus;
+  const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK;
 
   PLUGIN_CLASS.Instance = class ColyseusInstance extends SDK.IInstanceBase
   {

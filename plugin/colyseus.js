@@ -1,9 +1,24 @@
-// colyseus.js@0.15.0 (@colyseus/schema 2.0.0)
+// colyseus.js@0.15.9 (@colyseus/schema 2.0.9)
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('colyseus.js', ['exports'], factory) :
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Colyseus = {}));
-}(this, (function (exports) { 'use strict';
+})(this, (function (exports) { 'use strict';
+
+    function _mergeNamespaces(n, m) {
+        m.forEach(function (e) {
+            e && typeof e !== 'string' && !Array.isArray(e) && Object.keys(e).forEach(function (k) {
+                if (k !== 'default' && !(k in n)) {
+                    var d = Object.getOwnPropertyDescriptor(e, k);
+                    Object.defineProperty(n, k, d.get ? d : {
+                        enumerable: true,
+                        get: function () { return e[k]; }
+                    });
+                }
+            });
+        });
+        return Object.freeze(n);
+    }
 
     //
     // Polyfills for legacy environments
@@ -24,7 +39,7 @@
         window['globalThis'] = window;
     }
 
-    /*! *****************************************************************************
+    /******************************************************************************
     Copyright (c) Microsoft Corporation.
 
     Permission to use, copy, modify, and/or distribute this software for any
@@ -71,7 +86,7 @@
         function verb(n) { return function (v) { return step([n, v]); }; }
         function step(op) {
             if (f) throw new TypeError("Generator is already executing.");
-            while (_) try {
+            while (g && (g = 0, op[0] && (_ = 0)), _) try {
                 if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
                 if (y = 0, t) op = [op[0] & 2, t.value];
                 switch (op[0]) {
@@ -175,7 +190,8 @@
     	send: send_1
     };
 
-    var http = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.assign(/*#__PURE__*/Object.create(null), xhr, {
+    var http = /*#__PURE__*/_mergeNamespaces({
+        __proto__: null,
         'default': xhr,
         del: del_1,
         get: get_1,
@@ -183,8 +199,13 @@
         post: post_1,
         put: put_1,
         send: send_1
-    }));
+    }, [xhr]);
 
+    var CloseCode;
+    (function (CloseCode) {
+        CloseCode[CloseCode["CONSENTED"] = 4000] = "CONSENTED";
+        CloseCode[CloseCode["DEVMODE_RESTART"] = 4010] = "DEVMODE_RESTART";
+    })(CloseCode || (CloseCode = {}));
     var ServerError = /** @class */ (function (_super) {
         __extends(ServerError, _super);
         function ServerError(code, message) {
@@ -221,13 +242,14 @@
     /**
      * Patch for Colyseus:
      * -------------------
+     * notepack.io@3.0.1
      *
      * added `offset` on Decoder constructor, for messages arriving with a code
      * before actual msgpack data
      */
-    // 
+    //
     // DECODER
-    // 
+    //
     function Decoder(buffer, offset) {
         this._offset = offset;
         if (buffer instanceof ArrayBuffer) {
@@ -355,6 +377,14 @@
                 length = this._view.getUint8(this._offset);
                 type = this._view.getInt8(this._offset + 1);
                 this._offset += 2;
+                if (type === -1) {
+                    // timestamp 96
+                    var ns = this._view.getUint32(this._offset);
+                    hi = this._view.getInt32(this._offset + 4);
+                    lo = this._view.getUint32(this._offset + 8);
+                    this._offset += 12;
+                    return new Date((hi * 0x100000000 + lo) * 1e3 + ns / 1e6);
+                }
                 return [type, this._bin(length)];
             case 0xc8:
                 length = this._view.getUint16(this._offset);
@@ -416,6 +446,7 @@
                 type = this._view.getInt8(this._offset);
                 this._offset += 1;
                 if (type === 0x00) {
+                    // custom encoding for 'undefined' (kept for backward-compatibility)
                     this._offset += 1;
                     return void 0;
                 }
@@ -427,15 +458,30 @@
             case 0xd6:
                 type = this._view.getInt8(this._offset);
                 this._offset += 1;
+                if (type === -1) {
+                    // timestamp 32
+                    value = this._view.getUint32(this._offset);
+                    this._offset += 4;
+                    return new Date(value * 1e3);
+                }
                 return [type, this._bin(4)];
             case 0xd7:
                 type = this._view.getInt8(this._offset);
                 this._offset += 1;
                 if (type === 0x00) {
+                    // custom date encoding (kept for backward-compatibility)
                     hi = this._view.getInt32(this._offset) * Math.pow(2, 32);
                     lo = this._view.getUint32(this._offset + 4);
                     this._offset += 8;
                     return new Date(hi + lo);
+                }
+                if (type === -1) {
+                    // timestamp 64
+                    hi = this._view.getUint32(this._offset);
+                    lo = this._view.getUint32(this._offset + 4);
+                    this._offset += 8;
+                    var s = (hi & 0x3) * 0x100000000 + lo;
+                    return new Date(s * 1e3 + (hi >>> 2) / 1e6);
                 }
                 return [type, this._bin(8)];
             case 0xd8:
@@ -485,9 +531,11 @@
         }
         return value;
     }
-    // 
+    //
     // ENCODER
-    // 
+    //
+    var TIMESTAMP32_MAX_SEC = 0x100000000 - 1; // 32-bit unsigned int
+    var TIMESTAMP64_MAX_SEC = 0x400000000 - 1; // 34-bit unsigned int
     function utf8Write(view, offset, str) {
         var c = 0;
         for (var i = 0, l = str.length; i < l; i++) {
@@ -658,13 +706,31 @@
                 }
                 return size;
             }
-            // fixext 8 / Date
             if (value instanceof Date) {
-                var time = value.getTime();
-                hi = Math.floor(time / Math.pow(2, 32));
-                lo = time >>> 0;
-                bytes.push(0xd7, 0, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
-                return 10;
+                var ms = value.getTime();
+                var s = Math.floor(ms / 1e3);
+                var ns = (ms - s * 1e3) * 1e6;
+                if (s >= 0 && ns >= 0 && s <= TIMESTAMP64_MAX_SEC) {
+                    if (ns === 0 && s <= TIMESTAMP32_MAX_SEC) {
+                        // timestamp 32
+                        bytes.push(0xd6, 0xff, s >> 24, s >> 16, s >> 8, s);
+                        return 6;
+                    }
+                    else {
+                        // timestamp 64
+                        hi = s / 0x100000000;
+                        lo = s & 0xffffffff;
+                        bytes.push(0xd7, 0xff, ns >> 22, ns >> 14, ns >> 6, hi, lo >> 24, lo >> 16, lo >> 8, lo);
+                        return 10;
+                    }
+                }
+                else {
+                    // timestamp 96
+                    hi = Math.floor(s / 0x100000000);
+                    lo = s >>> 0;
+                    bytes.push(0xc7, 0x0c, 0xff, ns >> 24, ns >> 16, ns >> 8, ns, hi >> 24, hi >> 16, hi >> 8, hi, lo >> 24, lo >> 16, lo >> 8, lo);
+                    return 15;
+                }
             }
             if (value instanceof ArrayBuffer) {
                 length = value.byteLength;
@@ -698,7 +764,7 @@
             var allKeys = Object.keys(value);
             for (i = 0, l = allKeys.length; i < l; i++) {
                 key = allKeys[i];
-                if (typeof value[key] !== 'function') {
+                if (value[key] !== undefined && typeof value[key] !== 'function') {
                     keys.push(key);
                 }
             }
@@ -733,10 +799,13 @@
             bytes.push(value ? 0xc3 : 0xc2);
             return 1;
         }
-        // fixext 1 / undefined
         if (type === 'undefined') {
-            bytes.push(0xd4, 0, 0);
-            return 3;
+            bytes.push(0xc0);
+            return 1;
+        }
+        // custom types like BigInt (typeof value === 'bigint')
+        if (typeof value.toJSON === 'function') {
+            return _encode(bytes, defers, value.toJSON());
         }
         throw new Error('Could not encode');
     }
@@ -813,6 +882,13 @@
         WebSocketTransport.prototype.close = function (code, reason) {
             this.ws.close(code, reason);
         };
+        Object.defineProperty(WebSocketTransport.prototype, "isOpen", {
+            get: function () {
+                return this.ws.readyState === WebSocket.OPEN;
+            },
+            enumerable: false,
+            configurable: true
+        });
         return WebSocketTransport;
     }());
 
@@ -830,20 +906,15 @@
         Connection.prototype.close = function (code, reason) {
             this.transport.close(code, reason);
         };
+        Object.defineProperty(Connection.prototype, "isOpen", {
+            get: function () {
+                return this.transport.isOpen;
+            },
+            enumerable: false,
+            configurable: true
+        });
         return Connection;
     }());
-
-    var serializers = {};
-    function registerSerializer(id, serializer) {
-        serializers[id] = serializer;
-    }
-    function getSerializer(id) {
-        var serializer = serializers[id];
-        if (!serializer) {
-            throw new Error("missing serializer: " + id);
-        }
-        return serializer;
-    }
 
     // Use codes between 0~127 for lesser throughput (1 byte)
     exports.Protocol = void 0;
@@ -857,6 +928,7 @@
         Protocol[Protocol["ROOM_STATE"] = 14] = "ROOM_STATE";
         Protocol[Protocol["ROOM_STATE_PATCH"] = 15] = "ROOM_STATE_PATCH";
         Protocol[Protocol["ROOM_DATA_SCHEMA"] = 16] = "ROOM_DATA_SCHEMA";
+        Protocol[Protocol["ROOM_DATA_BYTES"] = 17] = "ROOM_DATA_BYTES";
     })(exports.Protocol || (exports.Protocol = {}));
     exports.ErrorCode = void 0;
     (function (ErrorCode) {
@@ -930,12 +1002,24 @@
         return length + 1;
     }
 
+    var serializers = {};
+    function registerSerializer(id, serializer) {
+        serializers[id] = serializer;
+    }
+    function getSerializer(id) {
+        var serializer = serializers[id];
+        if (!serializer) {
+            throw new Error("missing serializer: " + id);
+        }
+        return serializer;
+    }
+
     let createNanoEvents = () => ({
       events: {},
-      emit (event, ...args) {
+      emit(event, ...args) {
     (this.events[event] || []).forEach(i => i(...args));
       },
-      on (event, cb) {
+      on(event, cb) {
     (this.events[event] = this.events[event] || []).push(cb);
         return () =>
           (this.events[event] = (this.events[event] || []).filter(i => i !== cb))
@@ -1021,8 +1105,8 @@
     var umd = createCommonjsModule(function (module, exports) {
     (function (global, factory) {
         factory(exports) ;
-    }(commonjsGlobal, (function (exports) {
-        /*! *****************************************************************************
+    })(commonjsGlobal, (function (exports) {
+        /******************************************************************************
         Copyright (c) Microsoft Corporation.
 
         Permission to use, copy, modify, and/or distribute this software for any
@@ -1060,10 +1144,14 @@
             return c > 3 && r && Object.defineProperty(target, key, r), r;
         }
 
-        function __spreadArray(to, from) {
-            for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-                to[j] = from[i];
-            return to;
+        function __spreadArray(to, from, pack) {
+            if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+                if (ar || !(i in from)) {
+                    if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+                    ar[i] = from[i];
+                }
+            }
+            return to.concat(ar || Array.prototype.slice.call(from));
         }
 
         // export const SWITCH_TO_STRUCTURE = 193; (easily collides with DELETE_AND_ADD + fieldIndex = 2)
@@ -1230,7 +1318,7 @@
                     ? fieldName
                     : this.indexes[fieldName];
                 if (index === undefined) {
-                    console.warn("@colyseus/schema " + this.ref.constructor.name + ": trying to delete non-existing index: " + fieldName + " (" + index + ")");
+                    console.warn("@colyseus/schema ".concat(this.ref.constructor.name, ": trying to delete non-existing index: ").concat(fieldName, " (").concat(index, ")"));
                     return;
                 }
                 var previousValue = this.getValue(index);
@@ -1302,7 +1390,7 @@
             };
             ChangeTree.prototype.assertValidIndex = function (index, fieldName) {
                 if (index === undefined) {
-                    throw new Error("ChangeTree: missing index for field \"" + fieldName + "\"");
+                    throw new Error("ChangeTree: missing index for field \"".concat(fieldName, "\""));
                 }
             };
             return ChangeTree;
@@ -1534,13 +1622,14 @@
              * Combines two or more arrays.
              * @param items Additional items to add to the end of array1.
              */
+            // @ts-ignore
             ArraySchema.prototype.concat = function () {
                 var _a;
                 var items = [];
                 for (var _i = 0; _i < arguments.length; _i++) {
                     items[_i] = arguments[_i];
                 }
-                return new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], (_a = Array.from(this.$items.values())).concat.apply(_a, items))))();
+                return new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], (_a = Array.from(this.$items.values())).concat.apply(_a, items), false)))();
             };
             /**
              * Adds all the elements of an array separated by the specified separator string.
@@ -1552,6 +1641,7 @@
             /**
              * Reverses the elements in an Array.
              */
+            // @ts-ignore
             ArraySchema.prototype.reverse = function () {
                 var _this = this;
                 var indexes = Array.from(this.$items.keys());
@@ -1580,7 +1670,9 @@
              * @param end The end of the specified portion of the array. This is exclusive of the element at the index 'end'.
              */
             ArraySchema.prototype.slice = function (start, end) {
-                return new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], Array.from(this.$items.values()).slice(start, end))))();
+                var sliced = new ArraySchema();
+                sliced.push.apply(sliced, Array.from(this.$items.values()).slice(start, end));
+                return sliced;
             };
             /**
              * Sorts an array.
@@ -1609,10 +1701,6 @@
              */
             ArraySchema.prototype.splice = function (start, deleteCount) {
                 if (deleteCount === void 0) { deleteCount = this.length - start; }
-                var items = [];
-                for (var _i = 2; _i < arguments.length; _i++) {
-                    items[_i - 2] = arguments[_i];
-                }
                 var indexes = Array.from(this.$items.keys());
                 var removedItems = [];
                 for (var i = start; i < start + deleteCount; i++) {
@@ -1707,7 +1795,7 @@
              * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
              */
             ArraySchema.prototype.reduce = function (callbackfn, initialValue) {
-                return Array.from(this.$items.values()).reduce(callbackfn, initialValue);
+                return Array.prototype.reduce.apply(Array.from(this.$items.values()), arguments);
             };
             /**
              * Calls the specified callback function for all the elements in an array, in descending order. The return value of the callback function is the accumulated result, and is provided as an argument in the next call to the callback function.
@@ -1715,7 +1803,7 @@
              * @param initialValue If initialValue is specified, it is used as the initial value to start the accumulation. The first call to the callbackfn function provides this value as an argument instead of an array value.
              */
             ArraySchema.prototype.reduceRight = function (callbackfn, initialValue) {
-                return Array.from(this.$items.values()).reduceRight(callbackfn, initialValue);
+                return Array.prototype.reduceRight.apply(Array.from(this.$items.values()), arguments);
             };
             /**
              * Returns the value of the first element in the array where predicate is true, and undefined
@@ -1782,9 +1870,6 @@
             ArraySchema.prototype[Symbol.iterator] = function () {
                 return Array.from(this.$items.values())[Symbol.iterator]();
             };
-            ArraySchema.prototype[Symbol.unscopables] = function () {
-                return this.$items[Symbol.unscopables]();
-            };
             /**
              * Returns an iterable of key, value pairs for every entry in the array
              */
@@ -1828,8 +1913,17 @@
              */
             // @ts-ignore
             ArraySchema.prototype.flat = function (depth) {
-                // @ts-ignore
                 throw new Error("ArraySchema#flat() is not supported.");
+            };
+            ArraySchema.prototype.findLast = function () {
+                var arr = Array.from(this.$items.values());
+                // @ts-ignore
+                return arr.findLast.apply(arr, arguments);
+            };
+            ArraySchema.prototype.findLastIndex = function () {
+                var arr = Array.from(this.$items.values());
+                // @ts-ignore
+                return arr.findLastIndex.apply(arr, arguments);
             };
             // get size () {
             //     return this.$items.size;
@@ -1864,12 +1958,12 @@
             ArraySchema.prototype.clone = function (isDecoding) {
                 var cloned;
                 if (isDecoding) {
-                    cloned = new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], Array.from(this.$items.values()))))();
+                    cloned = new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], Array.from(this.$items.values()), false)))();
                 }
                 else {
                     cloned = new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], this.map(function (item) { return ((item['$changes'])
                         ? item.clone()
-                        : item); }))))();
+                        : item); }), false)))();
                 }
                 return cloned;
             };
@@ -1916,7 +2010,8 @@
                 this.$indexes = new Map();
                 this.$refId = 0;
                 if (initialValues) {
-                    if (initialValues instanceof Map) {
+                    if (initialValues instanceof Map ||
+                        initialValues instanceof MapSchema) {
                         initialValues.forEach(function (v, k) { return _this.set(k, v); });
                     }
                     else {
@@ -1946,7 +2041,7 @@
             });
             MapSchema.prototype.set = function (key, value) {
                 if (value === undefined || value === null) {
-                    throw new Error("MapSchema#set('" + key + "', " + value + "): trying to set " + value + " value on '" + key + "'.");
+                    throw new Error("MapSchema#set('".concat(key, "', ").concat(value, "): trying to set ").concat(value, " value on '").concat(key, "'."));
                 }
                 // get "index" for this value.
                 var hasIndex = typeof (this.$changes.indexes[key]) !== "undefined";
@@ -2141,7 +2236,7 @@
                     return true;
                 }
                 else {
-                    console.warn("@filterChildren: field '" + field + "' can't have children. Ignoring filter.");
+                    console.warn("@filterChildren: field '".concat(field, "' can't have children. Ignoring filter."));
                 }
             };
             SchemaDefinition.prototype.getChildrenFilter = function (field) {
@@ -2210,6 +2305,9 @@
                 var context = options.context || globalContext;
                 var constructor = target.constructor;
                 constructor._context = context;
+                if (!type) {
+                    throw new Error("".concat(constructor.name, ": @type() reference provided for \"").concat(field, "\" is undefined. Make sure you don't have any circular dependencies."));
+                }
                 /*
                  * static schema
                  */
@@ -2230,11 +2328,11 @@
                         // trying to define same property multiple times across inheritance.
                         // https://github.com/colyseus/colyseus-unity3d/issues/131#issuecomment-814308572
                         try {
-                            throw new Error("@colyseus/schema: Duplicate '" + field + "' definition on '" + constructor.name + "'.\nCheck @type() annotation");
+                            throw new Error("@colyseus/schema: Duplicate '".concat(field, "' definition on '").concat(constructor.name, "'.\nCheck @type() annotation"));
                         }
                         catch (e) {
                             var definitionAtLine = e.stack.split("\n")[4].trim();
-                            throw new Error(e.message + " " + definitionAtLine);
+                            throw new Error("".concat(e.message, " ").concat(definitionAtLine));
                         }
                     }
                 }
@@ -2258,7 +2356,7 @@
                     };
                     return;
                 }
-                var fieldCached = "_" + field;
+                var fieldCached = "_".concat(field);
                 definition.descriptors[fieldCached] = {
                     enumerable: false,
                     configurable: false,
@@ -2280,7 +2378,7 @@
                             value !== null) {
                             // automaticallty transform Array into ArraySchema
                             if (isArray && !(value instanceof ArraySchema)) {
-                                value = new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], value)))();
+                                value = new (ArraySchema.bind.apply(ArraySchema, __spreadArray([void 0], value, false)))();
                             }
                             // automaticallty transform Map into MapSchema
                             if (isMap && !(value instanceof MapSchema)) {
@@ -2305,7 +2403,7 @@
                                 value['$changes'].setParent(this, this.$changes.root, this._definition.indexes[field]);
                             }
                         }
-                        else {
+                        else if (this[fieldCached]) {
                             //
                             // Setting a field to `null` or `undefined` will delete it.
                             //
@@ -2351,7 +2449,7 @@
                 definition.deprecated[field] = true;
                 if (throws) {
                     definition.descriptors[field] = {
-                        get: function () { throw new Error(field + " is deprecated."); },
+                        get: function () { throw new Error("".concat(field, " is deprecated.")); },
                         set: function (value) { },
                         enumerable: false,
                         configurable: true
@@ -3324,7 +3422,7 @@
                 case "float64":
                     typeofTarget = "number";
                     if (isNaN(value)) {
-                        console.log("trying to encode \"NaN\" in " + klass.constructor.name + "#" + field);
+                        console.log("trying to encode \"NaN\" in ".concat(klass.constructor.name, "#").concat(field));
                     }
                     break;
                 case "string":
@@ -3336,13 +3434,13 @@
                     return;
             }
             if (typeof (value) !== typeofTarget && (!allowNull || (allowNull && value !== null))) {
-                var foundValue = "'" + JSON.stringify(value) + "'" + ((value && value.constructor && " (" + value.constructor.name + ")") || '');
-                throw new EncodeSchemaError("a '" + typeofTarget + "' was expected, but " + foundValue + " was provided in " + klass.constructor.name + "#" + field);
+                var foundValue = "'".concat(JSON.stringify(value), "'").concat((value && value.constructor && " (".concat(value.constructor.name, ")")) || '');
+                throw new EncodeSchemaError("a '".concat(typeofTarget, "' was expected, but ").concat(foundValue, " was provided in ").concat(klass.constructor.name, "#").concat(field));
             }
         }
         function assertInstanceType(value, type, klass, field) {
             if (!(value instanceof type)) {
-                throw new EncodeSchemaError("a '" + type.name + "' was expected, but '" + value.constructor.name + "' was provided in " + klass.constructor.name + "#" + field);
+                throw new EncodeSchemaError("a '".concat(type.name, "' was expected, but '").concat(value.constructor.name, "' was provided in ").concat(klass.constructor.name, "#").concat(field));
             }
         }
         function encodePrimitiveType(type, bytes, value, klass, field) {
@@ -3352,7 +3450,7 @@
                 encodeFunc(bytes, value);
             }
             else {
-                throw new EncodeSchemaError("a '" + type + "' was expected, but " + value + " was provided in " + klass.constructor.name + "#" + field);
+                throw new EncodeSchemaError("a '".concat(type, "' was expected, but ").concat(value, " was provided in ").concat(klass.constructor.name, "#").concat(field));
             }
         }
         function decodePrimitiveType(type, bytes, it) {
@@ -3428,19 +3526,30 @@
             Schema.prototype.setDirty = function (property, operation) {
                 this.$changes.change(property, operation);
             };
-            Schema.prototype.listen = function (attr, callback) {
+            /**
+             * Client-side: listen for changes on property.
+             * @param prop the property name
+             * @param callback callback to be triggered on property change
+             * @param immediate trigger immediatelly if property has been already set.
+             */
+            Schema.prototype.listen = function (prop, callback, immediate) {
                 var _this = this;
+                if (immediate === void 0) { immediate = true; }
                 if (!this.$callbacks) {
                     this.$callbacks = {};
                 }
-                if (!this.$callbacks[attr]) {
-                    this.$callbacks[attr] = [];
+                if (!this.$callbacks[prop]) {
+                    this.$callbacks[prop] = [];
                 }
-                this.$callbacks[attr].push(callback);
+                this.$callbacks[prop].push(callback);
+                if (immediate && this[prop] !== undefined) {
+                    callback(this[prop], undefined);
+                }
                 // return un-register callback.
-                return function () { return spliceOne(_this.$callbacks[attr], _this.$callbacks[attr].indexOf(callback)); };
+                return function () { return spliceOne(_this.$callbacks[prop], _this.$callbacks[prop].indexOf(callback)); };
             };
             Schema.prototype.decode = function (bytes, it, ref) {
+                var _a;
                 if (it === void 0) { it = { offset: 0 }; }
                 if (ref === void 0) { ref = this; }
                 var allChanges = [];
@@ -3457,7 +3566,7 @@
                         // Trying to access a reference that haven't been decoded yet.
                         //
                         if (!nextRef) {
-                            throw new Error("\"refId\" not found: " + refId);
+                            throw new Error("\"refId\" not found: ".concat(refId));
                         }
                         ref = nextRef;
                         continue;
@@ -3500,7 +3609,7 @@
                         }
                     }
                     else {
-                        previousValue = ref["_" + fieldName];
+                        previousValue = ref["_".concat(fieldName)];
                     }
                     //
                     // Delete operations
@@ -3580,7 +3689,7 @@
                                 var entries = previousValue.entries();
                                 var iter = void 0;
                                 while ((iter = entries.next()) && !iter.done) {
-                                    var _a = iter.value, key = _a[0], value_1 = _a[1];
+                                    var key = (_a = iter.value, _a[0]), value_1 = _a[1];
                                     allChanges.push({
                                         refId: refId_2,
                                         op: exports.OPERATION.DELETE,
@@ -3607,6 +3716,7 @@
                             var key = dynamicIndex;
                             // ref.set(key, value);
                             ref['$items'].set(key, value);
+                            ref['$changes'].allChanges.add(fieldIndex);
                         }
                         else if (ref instanceof ArraySchema) {
                             // const key = ref['$indexes'][field];
@@ -3759,7 +3869,7 @@
                             //
                             // ensure a ArraySchema has been provided
                             //
-                            assertInstanceType(ref["_" + field], definition.constructor, ref, field);
+                            assertInstanceType(ref["_".concat(field)], definition.constructor, ref, field);
                             //
                             // Encode refId for this instance.
                             // The actual instance is going to be encoded on next `changeTree` iteration.
@@ -3961,11 +4071,12 @@
                 return filteredBytes;
             };
             Schema.prototype.clone = function () {
+                var _a;
                 var cloned = new (this.constructor);
                 var schema = this._definition.schema;
                 for (var field in schema) {
                     if (typeof (this[field]) === "object" &&
-                        typeof (this[field].clone) === "function") {
+                        typeof ((_a = this[field]) === null || _a === void 0 ? void 0 : _a.clone) === "function") {
                         // deep clone
                         cloned[field] = this[field].clone();
                     }
@@ -3984,7 +4095,7 @@
                     if (!deprecated[field] && this[field] !== null && typeof (this[field]) !== "undefined") {
                         obj[field] = (typeof (this[field]['toJSON']) === "function")
                             ? this[field]['toJSON']()
-                            : this["_" + field];
+                            : this["_".concat(field)];
                     }
                 }
                 return obj;
@@ -4019,7 +4130,7 @@
                 return instance;
             };
             Schema.prototype._triggerChanges = function (changes) {
-                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+                var _a, _b, _c, _d, _e, _f, _g, _h, _j;
                 var uniqueRefIds = new Set();
                 var $refs = this.$changes.root.refs;
                 var _loop_2 = function (i) {
@@ -4042,7 +4153,7 @@
                         if (!uniqueRefIds.has(refId)) {
                             try {
                                 // trigger onChange
-                                (_d = (_c = $callbacks) === null || _c === void 0 ? void 0 : _c[exports.OPERATION.REPLACE]) === null || _d === void 0 ? void 0 : _d.forEach(function (callback) {
+                                (_c = $callbacks === null || $callbacks === void 0 ? void 0 : $callbacks[exports.OPERATION.REPLACE]) === null || _c === void 0 ? void 0 : _c.forEach(function (callback) {
                                     return callback(changes);
                                 });
                             }
@@ -4051,9 +4162,11 @@
                             }
                         }
                         try {
-                            (_e = $callbacks[change.field]) === null || _e === void 0 ? void 0 : _e.forEach(function (callback) {
-                                return callback(change.value, change.previousValue);
-                            });
+                            if ($callbacks.hasOwnProperty(change.field)) {
+                                (_d = $callbacks[change.field]) === null || _d === void 0 ? void 0 : _d.forEach(function (callback) {
+                                    return callback(change.value, change.previousValue);
+                                });
+                            }
                         }
                         catch (e) {
                             Schema.onError(e);
@@ -4063,7 +4176,7 @@
                         // is a collection of items
                         if (change.op === exports.OPERATION.ADD && change.previousValue === undefined) {
                             // triger onAdd
-                            (_f = $callbacks[exports.OPERATION.ADD]) === null || _f === void 0 ? void 0 : _f.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
+                            (_e = $callbacks[exports.OPERATION.ADD]) === null || _e === void 0 ? void 0 : _e.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                         }
                         else if (change.op === exports.OPERATION.DELETE) {
                             //
@@ -4072,20 +4185,20 @@
                             //
                             if (change.previousValue !== undefined) {
                                 // triger onRemove
-                                (_g = $callbacks[exports.OPERATION.DELETE]) === null || _g === void 0 ? void 0 : _g.forEach(function (callback) { var _a; return callback(change.previousValue, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
+                                (_f = $callbacks[exports.OPERATION.DELETE]) === null || _f === void 0 ? void 0 : _f.forEach(function (callback) { var _a; return callback(change.previousValue, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                             }
                         }
                         else if (change.op === exports.OPERATION.DELETE_AND_ADD) {
                             // triger onRemove
                             if (change.previousValue !== undefined) {
-                                (_h = $callbacks[exports.OPERATION.DELETE]) === null || _h === void 0 ? void 0 : _h.forEach(function (callback) { var _a; return callback(change.previousValue, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
+                                (_g = $callbacks[exports.OPERATION.DELETE]) === null || _g === void 0 ? void 0 : _g.forEach(function (callback) { var _a; return callback(change.previousValue, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                             }
                             // triger onAdd
-                            (_j = $callbacks[exports.OPERATION.ADD]) === null || _j === void 0 ? void 0 : _j.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
+                            (_h = $callbacks[exports.OPERATION.ADD]) === null || _h === void 0 ? void 0 : _h.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                         }
                         // trigger onChange
                         if (change.value !== change.previousValue) {
-                            (_k = $callbacks[exports.OPERATION.REPLACE]) === null || _k === void 0 ? void 0 : _k.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
+                            (_j = $callbacks[exports.OPERATION.REPLACE]) === null || _j === void 0 ? void 0 : _j.forEach(function (callback) { var _a; return callback(change.value, (_a = change.dynamicIndex) !== null && _a !== void 0 ? _a : change.field); });
                         }
                     }
                     uniqueRefIds.add(refId);
@@ -4305,7 +4418,7 @@
 
         Object.defineProperty(exports, '__esModule', { value: true });
 
-    })));
+    }));
     });
 
     var Room = /** @class */ (function () {
@@ -4325,7 +4438,7 @@
                 this.rootSchema = rootSchema;
                 this.serializer.state = new rootSchema();
             }
-            this.onError(function (code, message) { return console.warn("colyseus.js - onError => (" + code + ") " + message); });
+            this.onError(function (code, message) { return console.warn("colyseus.js - onError => (".concat(code, ") ").concat(message)); });
             this.onLeave(function () { return _this.removeAllListeners(); });
         }
         Object.defineProperty(Room.prototype, "id", {
@@ -4334,24 +4447,31 @@
             enumerable: false,
             configurable: true
         });
-        Room.prototype.connect = function (endpoint) {
-            var _this = this;
-            this.connection = new Connection();
-            this.connection.events.onmessage = this.onMessageCallback.bind(this);
-            this.connection.events.onclose = function (e) {
-                if (!_this.hasJoined) {
-                    console.warn("Room connection was closed unexpectedly (" + e.code + "): " + e.reason);
-                    _this.onError.invoke(e.code, e.reason);
+        Room.prototype.connect = function (endpoint, devModeCloseCallback, room // when reconnecting on devMode, re-use previous room intance for handling events.
+        ) {
+            if (room === void 0) { room = this; }
+            var connection = new Connection();
+            room.connection = connection;
+            connection.events.onmessage = Room.prototype.onMessageCallback.bind(room);
+            connection.events.onclose = function (e) {
+                if (!room.hasJoined) {
+                    console.warn("Room connection was closed unexpectedly (".concat(e.code, "): ").concat(e.reason));
+                    room.onError.invoke(e.code, e.reason);
                     return;
                 }
-                _this.onLeave.invoke(e.code);
-                _this.destroy();
+                if (e.code === CloseCode.DEVMODE_RESTART && devModeCloseCallback) {
+                    devModeCloseCallback();
+                }
+                else {
+                    room.onLeave.invoke(e.code);
+                    room.destroy();
+                }
             };
-            this.connection.events.onerror = function (e) {
-                console.warn("Room, onError (" + e.code + "): " + e.reason);
-                _this.onError.invoke(e.code, e.reason);
+            connection.events.onerror = function (e) {
+                console.warn("Room, onError (".concat(e.code, "): ").concat(e.reason));
+                room.onError.invoke(e.code, e.reason);
             };
-            this.connection.connect(endpoint);
+            connection.connect(endpoint);
         };
         Room.prototype.leave = function (consented) {
             var _this = this;
@@ -4367,7 +4487,7 @@
                     }
                 }
                 else {
-                    _this.onLeave.invoke(4000); // "consented" code
+                    _this.onLeave.invoke(CloseCode.CONSENTED);
                 }
             });
         };
@@ -4392,6 +4512,20 @@
             else {
                 arr = new Uint8Array(initialBytes);
             }
+            this.connection.send(arr.buffer);
+        };
+        Room.prototype.sendBytes = function (type, bytes) {
+            var initialBytes = [exports.Protocol.ROOM_DATA_BYTES];
+            if (typeof (type) === "string") {
+                umd.encode.string(initialBytes, type);
+            }
+            else {
+                umd.encode.number(initialBytes, type);
+            }
+            var arr;
+            arr = new Uint8Array(initialBytes.length + (bytes.byteLength || bytes.length));
+            arr.set(new Uint8Array(initialBytes), 0);
+            arr.set(new Uint8Array(bytes), initialBytes.length);
             this.connection.send(arr.buffer);
         };
         Object.defineProperty(Room.prototype, "state", {
@@ -4425,7 +4559,7 @@
                 if (bytes.length > offset && this.serializer.handshake) {
                     this.serializer.handshake(bytes, { offset: offset });
                 }
-                this.reconnectionToken = this.roomId + ":" + reconnectionToken;
+                this.reconnectionToken = "".concat(this.roomId, ":").concat(reconnectionToken);
                 this.hasJoined = true;
                 this.onJoin.invoke();
                 // acknowledge successfull JOIN_ROOM
@@ -4466,6 +4600,13 @@
                     : undefined;
                 this.dispatchMessage(type, message);
             }
+            else if (code === exports.Protocol.ROOM_DATA_BYTES) {
+                var it_4 = { offset: 1 };
+                var type = (umd.decode.stringCheck(bytes, it_4))
+                    ? umd.decode.string(bytes, it_4)
+                    : umd.decode.number(bytes, it_4);
+                this.dispatchMessage(type, new Uint8Array(bytes.slice(it_4.offset)));
+            }
         };
         Room.prototype.setState = function (encodedState) {
             this.serializer.setState(encodedState);
@@ -4484,7 +4625,7 @@
                 this.onMessageHandlers.emit('*', type, message);
             }
             else {
-                console.warn("colyseus.js: onMessage() not registered for type '" + type + "'.");
+                console.warn("colyseus.js: onMessage() not registered for type '".concat(type, "'."));
             }
         };
         Room.prototype.destroy = function () {
@@ -4495,11 +4636,11 @@
         Room.prototype.getMessageHandlerKey = function (type) {
             switch (typeof (type)) {
                 // typeof Schema
-                case "function": return "$" + type._typeid;
+                case "function": return "$".concat(type._typeid);
                 // string
                 case "string": return type;
                 // number
-                case "number": return "i" + type;
+                case "number": return "i".concat(type);
                 default: throw new Error("invalid message type.");
             }
         };
@@ -4520,22 +4661,35 @@
     // - React Native does not provide `window.location`
     // - Cocos Creator (Native) does not provide `window.location.hostname`
     var DEFAULT_ENDPOINT = (typeof (window) !== "undefined" && typeof ((_a = window === null || window === void 0 ? void 0 : window.location) === null || _a === void 0 ? void 0 : _a.hostname) !== "undefined")
-        ? window.location.protocol.replace("http", "ws") + "//" + window.location.hostname + (window.location.port && ":" + window.location.port)
+        ? "".concat(window.location.protocol.replace("http", "ws"), "//").concat(window.location.hostname).concat((window.location.port && ":".concat(window.location.port)))
         : "ws://127.0.0.1:2567";
     var Client = /** @class */ (function () {
         function Client(settings) {
             if (settings === void 0) { settings = DEFAULT_ENDPOINT; }
             if (typeof (settings) === "string") {
+                //
+                // endpoint by url
+                //
                 var url = new URL(settings);
-                var useSSL = (url.protocol === "https:" || url.protocol === "wss:");
-                var port = Number(url.port || (useSSL ? 443 : 80));
+                var secure = (url.protocol === "https:" || url.protocol === "wss:");
+                var port = Number(url.port || (secure ? 443 : 80));
                 this.settings = {
                     hostname: url.hostname,
+                    pathname: url.pathname !== "/" ? url.pathname : "",
                     port: port,
-                    useSSL: useSSL
+                    secure: secure
                 };
             }
             else {
+                //
+                // endpoint by settings
+                //
+                if (settings.port === undefined) {
+                    settings.port = (settings.secure) ? 443 : 80;
+                }
+                if (settings.pathname === undefined) {
+                    settings.pathname = "";
+                }
                 this.settings = settings;
             }
         }
@@ -4611,7 +4765,7 @@
             return __awaiter(this, void 0, void 0, function () {
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, get_1(this.getHttpEndpoint("" + roomName), {
+                        case 0: return [4 /*yield*/, get_1(this.getHttpEndpoint("".concat(roomName)), {
                                 headers: {
                                     'Accept': 'application/json'
                                 }
@@ -4621,9 +4775,11 @@
                 });
             });
         };
-        Client.prototype.consumeSeatReservation = function (response, rootSchema) {
+        Client.prototype.consumeSeatReservation = function (response, rootSchema, reuseRoomInstance // used in devMode
+        ) {
             return __awaiter(this, void 0, void 0, function () {
-                var room, options;
+                var room, options, targetRoom;
+                var _this = this;
                 return __generator(this, function (_a) {
                     room = this.createRoom(response.room.name, rootSchema);
                     room.roomId = response.room.roomId;
@@ -4633,25 +4789,63 @@
                     if (response.reconnectionToken) {
                         options.reconnectionToken = response.reconnectionToken;
                     }
-                    room.connect(this.buildEndpoint(response.room, options));
+                    targetRoom = reuseRoomInstance || room;
+                    room.connect(this.buildEndpoint(response.room, options), response.devMode && (function () { return __awaiter(_this, void 0, void 0, function () {
+                        var retryCount, retryMaxRetries, retryReconnection;
+                        var _this = this;
+                        return __generator(this, function (_a) {
+                            console.info("[Colyseus devMode]: ".concat(String.fromCodePoint(0x1F504), " Re-establishing connection with room id '").concat(room.roomId, "'...")); // 🔄
+                            retryCount = 0;
+                            retryMaxRetries = 8;
+                            retryReconnection = function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            retryCount++;
+                                            _a.label = 1;
+                                        case 1:
+                                            _a.trys.push([1, 3, , 4]);
+                                            return [4 /*yield*/, this.consumeSeatReservation(response, rootSchema, targetRoom)];
+                                        case 2:
+                                            _a.sent();
+                                            console.info("[Colyseus devMode]: ".concat(String.fromCodePoint(0x2705), " Successfully re-established connection with room '").concat(room.roomId, "'")); // ✅
+                                            return [3 /*break*/, 4];
+                                        case 3:
+                                            _a.sent();
+                                            if (retryCount < retryMaxRetries) {
+                                                console.info("[Colyseus devMode]: ".concat(String.fromCodePoint(0x1F504), " retrying... (").concat(retryCount, " out of ").concat(retryMaxRetries, ")")); // 🔄
+                                                setTimeout(retryReconnection, 2000);
+                                            }
+                                            else {
+                                                console.info("[Colyseus devMode]: ".concat(String.fromCodePoint(0x274C), " Failed to reconnect. Is your server running? Please check server logs.")); // ❌
+                                            }
+                                            return [3 /*break*/, 4];
+                                        case 4: return [2 /*return*/];
+                                    }
+                                });
+                            }); };
+                            setTimeout(retryReconnection, 2000);
+                            return [2 /*return*/];
+                        });
+                    }); }), targetRoom);
                     return [2 /*return*/, new Promise(function (resolve, reject) {
                             var onError = function (code, message) { return reject(new ServerError(code, message)); };
-                            room.onError.once(onError);
-                            room['onJoin'].once(function () {
-                                room.onError.remove(onError);
-                                resolve(room);
+                            targetRoom.onError.once(onError);
+                            targetRoom['onJoin'].once(function () {
+                                targetRoom.onError.remove(onError);
+                                resolve(targetRoom);
                             });
                         })];
                 });
             });
         };
-        Client.prototype.createMatchMakeRequest = function (method, roomName, options, rootSchema) {
+        Client.prototype.createMatchMakeRequest = function (method, roomName, options, rootSchema, reuseRoomInstance) {
             if (options === void 0) { options = {}; }
             return __awaiter(this, void 0, void 0, function () {
                 var response;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
-                        case 0: return [4 /*yield*/, post_1(this.getHttpEndpoint(method + "/" + roomName), {
+                        case 0: return [4 /*yield*/, post_1(this.getHttpEndpoint("".concat(method, "/").concat(roomName)), {
                                 headers: {
                                     'Accept': 'application/json',
                                     'Content-Type': 'application/json'
@@ -4667,7 +4861,8 @@
                             if (method === "reconnect") {
                                 response.reconnectionToken = options.reconnectionToken;
                             }
-                            return [2 /*return*/, this.consumeSeatReservation(response, rootSchema)];
+                            return [4 /*yield*/, this.consumeSeatReservation(response, rootSchema, reuseRoomInstance)];
+                        case 2: return [2 /*return*/, _a.sent()];
                     }
                 });
             });
@@ -4682,25 +4877,26 @@
                 if (!options.hasOwnProperty(name_1)) {
                     continue;
                 }
-                params.push(name_1 + "=" + options[name_1]);
+                params.push("".concat(name_1, "=").concat(options[name_1]));
             }
-            var endpoint = (this.settings.useSSL)
+            var endpoint = (this.settings.secure)
                 ? "wss://"
                 : "ws://";
             if (room.publicAddress) {
-                endpoint += "" + room.publicAddress;
+                endpoint += "".concat(room.publicAddress);
             }
             else {
-                endpoint += "" + this.settings.hostname + this.getEndpointPort();
+                endpoint += "".concat(this.settings.hostname).concat(this.getEndpointPort()).concat(this.settings.pathname);
             }
-            return endpoint + "/" + room.processId + "/" + room.roomId + "?" + params.join('&');
+            return "".concat(endpoint, "/").concat(room.processId, "/").concat(room.roomId, "?").concat(params.join('&'));
         };
         Client.prototype.getHttpEndpoint = function (segments) {
-            return ((this.settings.useSSL) ? "https" : "http") + "://" + this.settings.hostname + this.getEndpointPort() + "/matchmake/" + segments;
+            if (segments === void 0) { segments = ''; }
+            return "".concat((this.settings.secure) ? "https" : "http", "://").concat(this.settings.hostname).concat(this.getEndpointPort()).concat(this.settings.pathname, "/matchmake/").concat(segments);
         };
         Client.prototype.getEndpointPort = function () {
             return (this.settings.port !== 80 && this.settings.port !== 443)
-                ? ":" + this.settings.port
+                ? ":".concat(this.settings.port)
                 : "";
         };
         return Client;
@@ -4929,16 +5125,16 @@
                             }
                             queryParams = [];
                             for (name_1 in query) {
-                                queryParams.push(name_1 + "=" + query[name_1]);
+                                queryParams.push("".concat(name_1, "=").concat(query[name_1]));
                             }
                             queryString = (queryParams.length > 0)
-                                ? "?" + queryParams.join("&")
+                                ? "?".concat(queryParams.join("&"))
                                 : '';
                             opts = { headers: headers };
                             if (body) {
                                 opts.body = body;
                             }
-                            return [4 /*yield*/, http[method]("" + this.endpoint + segments + queryString, opts)];
+                            return [4 /*yield*/, http[method]("".concat(this.endpoint).concat(segments).concat(queryString), opts)];
                         case 1: return [2 /*return*/, (_a.sent()).data];
                     }
                 });
@@ -4979,7 +5175,7 @@
         };
         SchemaSerializer.prototype.handshake = function (bytes, it) {
             if (this.state) {
-                // validate client/server definitinos
+                // TODO: validate client/server definitinos
                 var reflection = new umd.Reflection();
                 reflection.decode(bytes, it);
             }
@@ -5013,5 +5209,5 @@
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));
 //# sourceMappingURL=colyseus.js.map

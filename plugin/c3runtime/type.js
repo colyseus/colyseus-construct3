@@ -1,7 +1,7 @@
 "use strict";
 
 {
-  C3.Plugins.Colyseus.Type = class Colyseus extends C3.SDKTypeBase
+  C3.Plugins.Colyseus_SDK.Type = class Colyseus extends C3.SDKTypeBase
   {
     constructor(objectClass)
     {
@@ -15,7 +15,7 @@
 
     OnCreate()
     {
-      // 
+      //
     }
   };
 }

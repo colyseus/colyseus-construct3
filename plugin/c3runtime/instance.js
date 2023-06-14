@@ -3,7 +3,7 @@
 {
   var Colyseus = globalThis['Colyseus'];
 
-  C3.Plugins.Colyseus.Instance = class ColyseusInstance extends C3.SDKWorldInstanceBase
+  C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends C3.SDKWorldInstanceBase
   {
     constructor(inst, properties)
     {
@@ -47,16 +47,16 @@
           self.room = room;
 
           self.sessionId = self.room.sessionId;
-          self.Trigger(C3.Plugins.Colyseus.Cnds.OnJoinRoom);
+          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnJoinRoom);
 
           room.onError(function (code, message) {
             self.lastError = { code: code, message: message };
-            self.Trigger(C3.Plugins.Colyseus.Cnds.OnError);
+            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
           });
 
           room.onLeave(function (code) {
             self.lastError = code;
-            self.Trigger(C3.Plugins.Colyseus.Cnds.OnLeaveRoom);
+            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnLeaveRoom);
           });
 
           room.onStateChange.once(function() {
@@ -83,14 +83,14 @@
               self.lastPath = path.join(".");
               self.lastIndex = index;
               self.lastValue = instance;
-              self.Trigger(C3.Plugins.Colyseus.Cnds.OnSchemaAdd);
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaAdd);
             }
 
             function onItemChange (path, instance, index) {
               self.lastPath = path.join(".");
               self.lastIndex = index;
               self.lastValue = instance;
-              self.Trigger(C3.Plugins.Colyseus.Cnds.OnSchemaChange);
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaChange);
             }
 
             function onChange (path, changes) {
@@ -100,7 +100,7 @@
                 self.lastField = changes[i].field;
                 self.lastValue = changes[i].value;
                 self.lastPreviousValue = changes[i].previousValue;
-                self.Trigger(C3.Plugins.Colyseus.Cnds.OnSchemaFieldChange);
+                self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaFieldChange);
               }
             }
 
@@ -108,7 +108,7 @@
               self.lastPath = path.join(".");
               self.lastIndex = index;
               self.lastValue = instance;
-              self.Trigger(C3.Plugins.Colyseus.Cnds.OnSchemaRemove);
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaRemove);
             }
 
             registerCallbacksOnStructure(self.room.state, []);
@@ -118,7 +118,7 @@
             self.lastPath = ".";
             self.lastIndex = undefined;
             self.lastValue = state;
-            self.Trigger(C3.Plugins.Colyseus.Cnds.OnStateChange);
+            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnStateChange);
           });
 
           room.onMessage("*", function (type, message) {
@@ -126,16 +126,16 @@
             {
               console.info("Colyseus: onMessage", type, message);
             }
-            self.lastValue = message;
+            self.lastMessage = message;
             self.lastType = type;
-            self.Trigger(C3.Plugins.Colyseus.Cnds.OnMessage);
+            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnMessage);
           });
 
         }).catch(function(err) {
             console.error("Colyseus Error:", err.code);
             console.error(err.message);
             self.lastError = err;
-            self.Trigger(C3.Plugins.Colyseus.Cnds.OnError);
+            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
         });
     }
   };

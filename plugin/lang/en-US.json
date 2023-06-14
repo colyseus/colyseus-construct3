@@ -4,7 +4,7 @@
   "text": {
     "plugins": {
 
-      "colyseus": {
+      "colyseus_sdk": {
         "name": "Colyseus",
         "description": "Colyseus SDK for Construct 3",
         "help-url": "https://docs.colyseus.io/",
@@ -14,17 +14,20 @@
             "desc": "Default Endpoint to use on \"Connect\" action."
           }
         },
+
         "aceCategories": {
           "colyseus": "Client",
+          "matchmaking": "Match-making",
           "room": "Room",
-          "room-schema": "Schema"
+          "messages": "Room Messages",
+          "room-schema": "Room State"
         },
 
         "conditions": {
           "on-join-room": {
             "isStatic": true,
-            "list-name": "On Join",
-            "display-text": "On Join",
+            "list-name": "On Join Room",
+            "display-text": "On Join Room",
             "description": "Triggered when joined successfully into a room."
           },
           "on-leave-room": {
@@ -32,6 +35,12 @@
             "list-name": "On Leave",
             "display-text": "On Leave",
             "description": "Triggered when left from a room."
+          },
+          "on-join-error": {
+            "isStatic": true,
+            "list-name": "On Join Error",
+            "display-text": "On Join Error",
+            "description": "Triggered when failing to join a room."
           },
           "on-error": {
             "isStatic": true,
@@ -156,27 +165,27 @@
             "params": {
               "name": {
                 "name": "Room name",
-                "desc": "Room name"
+                "desc": "The room name is defined via `gameServer.define(\"my_room\", ...)` in your server."
               },
               "options": {
                 "name": "Options",
-                "desc": "The \"onJoin\" options, in JSON format."
+                "desc": "The provided options will be available in the server-side at both `onJoin()` and `onAuth()` methods."
               }
             }
           },
 
           "join-or-create-room": {
-            "list-name": "Join or create",
+            "list-name": "Join or Create",
             "display-text": "Join room {0} with options {1}.",
             "description": "Join a room by name",
             "params": {
               "name": {
                 "name": "Room name",
-                "desc": "Room name"
+                "desc": "The room name is defined via `gameServer.define(\"my_room\", ...)` in your server."
               },
               "options": {
                 "name": "Options",
-                "desc": "The \"onJoin\" options, in JSON format."
+                "desc": "The provided options will be available in the server-side at both `onJoin()` and `onAuth()` methods."
               }
             }
           },
@@ -188,11 +197,11 @@
             "params": {
               "name": {
                 "name": "Room name",
-                "desc": "Room name"
+                "desc": "The room name is defined via `gameServer.define(\"my_room\", ...)` in your server."
               },
               "options": {
                 "name": "Options",
-                "desc": "The \"onJoin\" options, in JSON format."
+                "desc": "The provided options will be available in the server-side at both `onJoin()` and `onAuth()` methods."
               }
             }
           },
@@ -208,7 +217,7 @@
               },
               "options": {
                 "name": "Options",
-                "desc": "The \"onJoin\" options, in JSON format."
+                "desc": "The provided options will be available in the server-side at both `onJoin()` and `onAuth()` methods."
               }
             }
           },
@@ -227,16 +236,12 @@
 
           "reconnect-room": {
             "list-name": "Reconnect",
-            "display-text": "Reconnect into room {0} with sessionId {1}.",
-            "description": "Reconnect using a previously connected room",
+            "display-text": "Reconnect into a room using its cached ReconnectionToken ({0}).",
+            "description": "Reconnect into a previously connected room.",
             "params": {
-              "roomId": {
-                "name": "Room ID",
-                "desc": "The roomId reference from previous connection."
-              },
-              "sessionId": {
-                "name": "SessionId",
-                "desc": "The sessionId from previous connection."
+              "reconnectionToken": {
+                "name": "Reconnection Token",
+                "desc": "The ReconnectionToken from previous connection."
               }
             }
           },
@@ -286,7 +291,7 @@
             "params": {
               "name": {
                 "name": "Room name",
-                "desc": "Room name"
+                "desc": "The room name is defined via `gameServer.define(\"my_room\", ...)` in your server."
               }
             }
           }
@@ -294,7 +299,7 @@
 
         "expressions": {
           "json": {
-            "description": "Declare a JSON value.",
+            "description": "Returns a JSON value.",
             "translated-name": "JSON",
             "params": {
               "data": {
@@ -315,8 +320,8 @@
             "description": "Get nested value from current item",
             "translated-name": "CurrentValueAt",
             "params": {
-              "variable": {
-                "name": "Variable",
+              "path": {
+                "name": "Variable Path",
                 "desc": "A dot separated path to the variable. e.g. \"messages.0\""
               }
             }
@@ -333,15 +338,45 @@
             "description": "Get a value from room's state",
             "translated-name": "State",
             "params": {
-              "variable": {
-                "name": "Variable",
+              "path": {
+                "name": "Variable Path",
                 "desc": "A dot separated path to the variable. e.g. \"messages.0\""
               }
             }
           },
+          "state-path": {
+            "description": "Get current path being evaluated from state",
+            "translated-name": "Current State Path"
+          },
+          "room-id": {
+            "description": "Get roomId of the room connected.",
+            "translated-name": "RoomId"
+          },
           "session-id": {
-            "description": "Unique sessionId of the current user",
+            "description": "Get unique sessionId for the client. (This property matches the client.sessionId from the server-side)",
             "translated-name": "SessionId"
+          },
+          "reconnection-token": {
+            "description": "Get reconnection token to be used in the Reconnect action. (Available during \"On Join\")",
+            "translated-name": "ReconnectionToken"
+          },
+          "current-message-type": {
+            "description": "Get current message type. (Available during \"On Message\")",
+            "translated-name": "Current Message Type"
+          },
+          "current-message": {
+            "description": "Get current message value. (Available during \"On Message\")",
+            "translated-name": "Message Value"
+          },
+          "current-message-at": {
+            "description": "Get a nested value on current message. (Available during \"On Message\")",
+            "translated-name": "Message Value At",
+            "params": {
+              "path": {
+                "name": "Variable Path",
+                "desc": "A dot separated path to the variable. e.g. \"skills.length\", \"skills.0.name\""
+              }
+            }
           },
           "error-code": {
             "description": "Get last error code",
@@ -351,6 +386,7 @@
             "description": "Get last error message",
             "translated-name": "ErrorMessage"
           }
+
         }
       }
     }

@@ -1,7 +1,7 @@
 "use strict";
 
 {
-  C3.Plugins.Colyseus = class Colyseus extends C3.SDKPluginBase
+  C3.Plugins.Colyseus_SDK = class Colyseus extends C3.SDKPluginBase
   {
     constructor(opts)
     {

@@ -13,13 +13,85 @@
     "expressions": []
   },
 
-  "room": {
+  "matchmaking": {
     "conditions": [
       {
         "id": "on-join-room",
         "scriptName": "OnJoinRoom",
+        "highlight": true,
         "isTrigger": true
       },
+      {
+        "id": "on-join-error",
+        "scriptName": "OnJoinError",
+        "isTrigger": true
+      },
+      {
+        "id": "on-get-available-rooms",
+        "scriptName": "OnGetAvailableRooms",
+        "isTrigger": true
+      }
+    ],
+    "actions": [
+      {
+        "id": "join-room",
+        "scriptName": "JoinRoom",
+        "params": [
+          { "id": "name", "type": "string", "initialValue": "\"my_room\""  },
+          { "id": "options", "type": "string", "initialValue": "Colyseus.JSON(\"{token: 'xyz'}\")"  }
+        ]
+      },
+      {
+        "id": "join-or-create-room",
+        "scriptName": "JoinOrCreateRoom",
+        "highlight": true,
+        "params": [
+          { "id": "name", "type": "string", "initialValue": "\"my_room\"" },
+          { "id": "options", "type": "string", "initialValue": "Colyseus.JSON(\"{token: 'xyz'}\")" }
+        ]
+      },
+      {
+        "id": "create-room",
+        "scriptName": "CreateRoom",
+        "params": [
+          { "id": "name", "type": "string", "initialValue": "\"my_room\""  },
+          { "id": "options", "type": "string", "initialValue": "Colyseus.JSON(\"{token: 'xyz'}\")"  }
+        ]
+      },
+      {
+        "id": "join-room-by-id",
+        "scriptName": "JoinRoomById",
+        "params": [
+          { "id": "roomId", "type": "string" },
+          { "id": "options", "type": "string", "initialValue": "Colyseus.JSON(\"{token: 'xyz'}\")"  }
+        ]
+      },
+      {
+        "id": "consume-seat-reservation",
+        "scriptName": "ConsumeSeatReservation",
+        "params": [
+          { "id": "reservation", "type": "string" }
+        ]
+      },
+      {
+        "id": "reconnect-room",
+        "scriptName": "ReconnectRoom",
+        "params": [
+          { "id": "reconnectionToken", "type": "string" }
+        ]
+      },
+      {
+        "id": "get-available-rooms",
+        "scriptName": "GetAvailableRooms",
+        "params": [
+          { "id": "name", "type": "string" }
+        ]
+      }
+    ]
+  },
+
+  "room": {
+    "conditions": [
       {
         "id": "on-leave-room",
         "scriptName": "OnLeaveRoom",
@@ -42,68 +114,52 @@
         "id": "on-room-statechange",
         "scriptName": "OnStateChange",
         "isTrigger": true
-      },
-      {
-        "id": "on-get-available-rooms",
-        "scriptName": "OnGetAvailableRooms",
-        "isTrigger": true
       }
     ],
 
     "actions": [
       {
-        "id": "join-room",
-        "scriptName": "JoinRoom",
-        "params": [
-          { "id": "name", "type": "string" },
-          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
-        ]
-      },
+        "id": "room-leave",
+        "scriptName": "RoomLeave"
+      }
+    ],
 
+    "expressions": [
       {
-        "id": "join-or-create-room",
-        "scriptName": "JoinOrCreateRoom",
-        "params": [
-          { "id": "name", "type": "string" },
-          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
-        ]
+        "id": "room-id",
+        "expressionName": "RoomId",
+        "scriptName": "RoomId",
+        "returnType": "string"
       },
-
       {
-        "id": "create-room",
-        "scriptName": "CreateRoom",
-        "params": [
-          { "id": "name", "type": "string" },
-          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
-        ]
+        "id": "session-id",
+        "expressionName": "SessionId",
+        "scriptName": "SessionId",
+        "returnType": "any"
       },
-
       {
-        "id": "join-room-by-id",
-        "scriptName": "JoinRoomById",
-        "params": [
-          { "id": "roomId", "type": "string" },
-          { "id": "options", "type": "string", "initialValue": "\"{\\\"parameterName\\\": \\\"value\\\"}\""  }
-        ]
+        "id": "reconnection-token",
+        "expressionName": "ReconnectionToken",
+        "scriptName": "ReconnectionToken",
+        "returnType": "string"
       },
-
       {
-        "id": "consume-seat-reservation",
-        "scriptName": "ConsumeSeatReservation",
-        "params": [
-          { "id": "reservation", "type": "string" }
-        ]
+        "id": "error-code",
+        "expressionName": "ErrorCode",
+        "scriptName": "ErrorCode",
+        "returnType": "number"
       },
-
       {
-        "id": "reconnect-room",
-        "scriptName": "ReconnectRoom",
-        "params": [
-          { "id": "roomId", "type": "string" },
-          { "id": "sessionId", "type": "string" }
-        ]
-      },
+        "id": "error-message",
+        "expressionName": "ErrorMessage",
+        "scriptName": "ErrorMessage",
+        "returnType": "string"
+      }
+    ]
+  },
 
+  "messages": {
+    "actions": [
       {
         "id": "room-send",
         "scriptName": "RoomSend",
@@ -119,48 +175,30 @@
           { "id": "type", "type": "string" },
           { "id": "message", "type": "string" }
         ]
-      },
-      {
-        "id": "room-leave",
-        "scriptName": "RoomLeave"
-      },
-
-      {
-        "id": "get-available-rooms",
-        "scriptName": "GetAvailableRooms",
-        "params": [
-          { "id": "name", "type": "string" }
-        ]
       }
     ],
 
     "expressions": [
       {
-        "id": "state-value",
-        "expressionName": "State",
-        "scriptName": "State",
-        "returnType": "any",
-        "params": [
-          { "id": "variable", "type": "string", "initialValue": "" }
-        ]
-      },
-      {
-        "id": "session-id",
-        "expressionName": "SessionId",
-        "scriptName": "SessionId",
+        "id": "current-message-type",
+        "expressionName": "CurrentMessageType",
+        "scriptName": "CurrentMessageType",
         "returnType": "any"
       },
       {
-        "id": "error-code",
-        "expressionName": "ErrorCode",
-        "scriptName": "ErrorCode",
-        "returnType": "number"
+        "id": "current-message",
+        "expressionName": "CurrentMessage",
+        "scriptName": "CurrentMessage",
+        "returnType": "any"
       },
       {
-        "id": "error-message",
-        "expressionName": "ErrorMessage",
-        "scriptName": "ErrorMessage",
-        "returnType": "string"
+        "id": "current-message-at",
+        "expressionName": "CurrentMessageAt",
+        "scriptName": "CurrentMessageAt",
+        "returnType": "any",
+        "params": [
+          { "id": "path", "type": "string", "initialValue": "" }
+        ]
       }
     ]
   },
@@ -217,6 +255,21 @@
 
     "expressions": [
       {
+        "id": "state-value",
+        "expressionName": "State",
+        "scriptName": "State",
+        "returnType": "any",
+        "params": [
+          { "id": "path", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "state-path",
+        "expressionName": "CurrentStatePath",
+        "scriptName": "CurrentStatePath",
+        "returnType": "any"
+      },
+      {
         "id": "json",
         "expressionName": "JSON",
         "scriptName": "JSON",
@@ -255,7 +308,7 @@
         "scriptName": "CurrentValueAt",
         "returnType": "any",
         "params": [
-          { "id": "variable", "type": "string", "initialValue": "" }
+          { "id": "path", "type": "string", "initialValue": "" }
         ]
       }
     ]

@@ -2,19 +2,18 @@
   "is-c3-addon": true,
   "type": "plugin",
   "name": "Colyseus SDK for Construct 3",
-  "id": "Colyseus",
+  "id": "Colyseus_SDK",
   "version": "0.15.0.0",
-  "author": "Lucid Sight, Inc.",
+  "author": "Endel Dreyer",
   "website": "https://colyseus.io/",
   "documentation": "https://docs.colyseus.io",
-  "description": "Colyseus SDK for Construct 3",
+  "description": "Colyseus Multiplayer SDK for Construct 3",
   "editor-scripts": [
     "plugin.js",
     "type.js",
     "instance.js"
   ],
   "file-list": [
-    "c2runtime/runtime.js",
     "c3runtime/plugin.js",
     "c3runtime/type.js",
     "c3runtime/instance.js",
