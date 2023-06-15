@@ -47,60 +47,24 @@
       );
     },
 
-    /* Schema Serializer */
-    OnSchemaAdd(path) { return checkPath(this.lastPath, path); },
-    OnSchemaChange(path) { return checkPath(this.lastPath, path); },
-    OnSchemaFieldChange(path) { return checkPath(this.lastPath, path); },
-    OnSchemaRemove(path) { return checkPath(this.lastPath, path); },
-
     // Messages
-    IsMessageType(type) { return this.lastType === type; },
-    IsMessageValue(value) { return this.lastValue === value; },
-    IsMessageValueAt(path, value) { return this.lastValue === value && checkPath(this.lastPath, path); },
-    IsMessageValueOfType(type) { return typeof(this.lastValue) === type; },
-    IsMessageValueOfAt(path, type) { return this.getDeepVariable(path, this.lastValue) === type; },
+    CompareMessageType(cmp, type) { return C3.compare(this.lastType, cmp, type); },
+    CompareMessageValue(cmp, value) { return C3.compare(this.lastMessage, cmp, value); },
+    CompareMessageValueAt(path, cmp, value) { return C3.compare(this.getDeepVariable(path, this.lastMessage), cmp, value);  },
+    CompareMessageValueOfType(cmp, type) { return C3.compare(typeof (this.lastMessage), cmp, type); },
+    CompareMessageValueAtOfType(path, cmp, type) { return this.getDeepVariable(path, this.lastMessage) === type; },
+
+    // State/Schema
+    OnChangeAtPath(path) { return checkPath(this.lastPath, path); },
+
+    // State/Schema/Collections
+    OnCollectionItemAdd(path) { return checkPath(this.lastPath, path); },
+    OnCollectionItemRemove(path) { return checkPath(this.lastPath, path); },
+    OnCollectionItemChange(path) { return checkPath(this.lastPath, path); },
 
     // State
     IsIndex(index) { return this.lastIndex === index; },
     IsField(field) { return this.lastField === field; }
-
-    /* Fossil Delta Serializer
-    OnRoomListen(path, operationIndex) {
-      var self = this;
-      var change = this.lastChange;
-      var operation = operations[operationIndex];
-
-      // the operation doesn't match with the operation user is interested in.
-      if (operation !== "any" && change.operation !== operation) {
-        return false;
-      }
-
-      var rules = path.split("/");
-
-      if (!this.listeners[path]) {
-        rules = rules.map(function(segment) {
-          // replace placeholder matchers
-          return (segment.indexOf(":") === 0)
-            ? self.room.matcherPlaceholders[segment] || self.room.matcherPlaceholders[":*"]
-            : new RegExp("^" + segment + "$");
-        });
-        this.listeners[path] = rules;
-      }
-
-      if (change.path.length !== this.listeners[path].length) {
-        return false;
-      }
-
-      for (var i = 0, len = this.listeners[path].length; i < len; i++) {
-        let matches = change.path[i].match(this.listeners[path][i]);
-        if (!matches || matches.length === 0 || matches.length > 2) {
-          return false;
-        }
-      }
-
-      // alright! let's execute the callback!
-      return true;
-    },*/
 
   };
 }

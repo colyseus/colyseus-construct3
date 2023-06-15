@@ -59,7 +59,7 @@
       return typeof (this.lastMessage);
     },
 
-    MessageValueTypeAt(path) {
+    MessageValueAtType(path) {
       return typeof (this.getDeepVariable(path, this.lastMessage));
     },
 

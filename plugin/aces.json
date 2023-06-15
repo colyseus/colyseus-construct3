@@ -203,15 +203,15 @@
     "conditions":[
       {
         "id": "is-message-type",
-        "scriptName": "IsMessageType",
+        "scriptName": "CompareMessageType",
         "params": [
           { "id": "cmp", "type": "cmp" },
-          { "id": "type", "type": "string" }
+          { "id": "type", "type": "any", "initialValue": "\"start\"" }
         ]
       },
       {
         "id": "is-message-value",
-        "scriptName": "IsMessageValue",
+        "scriptName": "CompareMessageValue",
         "params": [
           { "id": "cmp", "type": "cmp" },
           { "id": "value", "type": "any" }
@@ -219,7 +219,7 @@
       },
       {
         "id": "is-message-value-at",
-        "scriptName": "IsMessageValueAt",
+        "scriptName": "CompareMessageValueAt",
         "params": [
           { "id": "path", "type": "string" },
           { "id": "cmp", "type": "cmp" },
@@ -228,7 +228,7 @@
       },
       {
         "id": "is-message-value-of-type",
-        "scriptName": "IsMessageValueOfType",
+        "scriptName": "CompareMessageValueOfType",
         "params": [
           { "id": "cmp", "type": "cmp" },
           { "id": "type", "type": "combo", "items": ["string", "number", "boolean", "undefined", "object"] }
@@ -236,7 +236,7 @@
       },
       {
         "id": "is-message-value-of-type-at",
-        "scriptName": "IsMessageValueOfAt",
+        "scriptName": "CompareMessageValueAtOfType",
         "params": [
           { "id": "path", "type": "string" },
           { "id": "cmp", "type": "cmp" },
@@ -274,9 +274,9 @@
         "returnType": "string"
       },
       {
-        "id": "message-value-type-at",
-        "expressionName": "MessageValueTypeAt",
-        "scriptName": "MessageValueTypeAt",
+        "id": "message-value-at-type",
+        "expressionName": "MessageValueAtType",
+        "scriptName": "MessageValueAtType",
         "returnType": "string",
         "params": [
           { "id": "path", "type": "string", "initialValue": "" }
@@ -285,11 +285,11 @@
     ]
   },
 
-  "room-schema": {
+  "room-state": {
     "conditions": [
       {
-        "id": "schema-field-change",
-        "scriptName": "OnSchemaFieldChange",
+        "id": "schema-path-change",
+        "scriptName": "OnChangeAtPath",
         "isTrigger": true,
         "params": [
           { "id": "path", "type": "string" }
@@ -351,27 +351,27 @@
     ]
   },
 
-  "room-schema-collections": {
+  "room-state-collections": {
     "conditions": [
       {
-        "id": "schema-item-add",
-        "scriptName": "OnSchemaAdd",
+        "id": "state-collection-item-add",
+        "scriptName": "OnCollectionItemAdd",
         "isTrigger": true,
         "params": [
           { "id": "path", "type": "string" }
         ]
       },
       {
-        "id": "schema-item-change",
-        "scriptName": "OnSchemaChange",
+        "id": "state-collection-item-change",
+        "scriptName": "OnCollectionItemChange",
         "isTrigger": true,
         "params": [
           { "id": "path", "type": "string" }
         ]
       },
       {
-        "id": "schema-item-remove",
-        "scriptName": "OnSchemaRemove",
+        "id": "state-collection-item-remove",
+        "scriptName": "OnCollectionItemRemove",
         "isTrigger": true,
         "params": [
           { "id": "path", "type": "string" }

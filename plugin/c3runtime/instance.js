@@ -83,14 +83,14 @@
               self.lastPath = path.join(".");
               self.lastIndex = index;
               self.lastValue = instance;
-              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaAdd);
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemAdd);
             }
 
             function onItemChange (path, instance, index) {
               self.lastPath = path.join(".");
               self.lastIndex = index;
               self.lastValue = instance;
-              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaChange);
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemChange);
             }
 
             function onChange (path, changes) {
@@ -100,7 +100,7 @@
                 self.lastField = changes[i].field;
                 self.lastValue = changes[i].value;
                 self.lastPreviousValue = changes[i].previousValue;
-                self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaFieldChange);
+                self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
               }
             }
 
@@ -108,14 +108,14 @@
               self.lastPath = path.join(".");
               self.lastIndex = index;
               self.lastValue = instance;
-              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnSchemaRemove);
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemRemove);
             }
 
             registerCallbacksOnStructure(self.room.state, []);
           });
 
           room.onStateChange(function (state) {
-            self.lastPath = ".";
+            self.lastPath = "";
             self.lastIndex = undefined;
             self.lastValue = state;
             self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnStateChange);

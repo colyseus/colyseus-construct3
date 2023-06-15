@@ -21,8 +21,8 @@
           "matchmaking": "Match-making",
           "room": "Room",
           "messages": "Room Messages",
-          "room-schema": "Room State",
-          "room-schema-collections": "Room State: Maps and Arrays"
+          "room-state": "Room State",
+          "room-state-collections": "Room State: Maps and Arrays"
         },
 
         "conditions": {
@@ -53,7 +53,7 @@
           "on-room-message": {
             "isStatic": true,
             "list-name": "On Message",
-            "display-text": "On Message ({0})",
+            "display-text": "On [i]{0}[/i] Message",
             "description": "Triggered when the room broadcasts a message, or sends a message directly to this client.",
             "params": {
               "type": {
@@ -76,7 +76,7 @@
           },
 
           "is-message-type": {
-            "list-name": "Compare [b]Type[/b]",
+            "list-name": "Compare Message [b]Type[/b]",
             "display-text": "Type {0} [i]{1}[/i]",
             "description": "Returns true if current message type matches the provided value.",
             "params": {
@@ -91,7 +91,7 @@
             }
           },
           "is-message-value": {
-            "list-name": "Compare [b]Value[/b]",
+            "list-name": "Compare Message [b]Value[/b]",
             "display-text": "Message value {0} [i]{1}[/i]",
             "description": "Returns true if current message value matches the provided criteria.",
             "params": {
@@ -106,7 +106,7 @@
             }
           },
           "is-message-value-at": {
-            "list-name": "Compare [b]Value At[/b]",
+            "list-name": "Compare Message [b]Value At[/b]",
             "display-text": "Message value at {0} {1} {2}",
             "description": "Returns true if current message value at {0} matches the provided criteria.",
             "params": {
@@ -125,7 +125,7 @@
             }
           },
           "is-message-value-of-type": {
-            "list-name": "Compare [b]Value[/b] of Type",
+            "list-name": "Compare Message [b]Value[/b] of Type",
             "display-text": "Message value of type {0} [i]{1}[/i]",
             "description": "Returns true if current message value matches the provided criteria.",
             "params": {
@@ -147,7 +147,7 @@
             }
           },
           "is-message-value-of-type-at": {
-            "list-name": "Compare [b]Value At[/b] of Type",
+            "list-name": "Compare Message [b]Value At[/b] of Type",
             "display-text": "Message value at {0} of type {1} {2}",
             "description": "Returns true if current message value matches the provided criteria.",
             "params": {
@@ -173,10 +173,23 @@
             }
           },
 
-          "schema-item-add": {
+          "schema-path-change": {
             "isStatic": true,
-            "list-name": "On Add",
-            "display-text": "On add at {0}",
+            "list-name": "On Change At",
+            "display-text": "On change at [i]{0}[/i]",
+            "description": "Triggers when a variable changes at a specific path in the state.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
+              }
+            }
+          },
+
+          "state-collection-item-add": {
+            "isStatic": true,
+            "list-name": "On Add Item",
+            "display-text": "On item added to [i]{0}[/i]",
             "description": "Triggers when an item is added to ArraySchema or MapSchema.",
             "params": {
               "path": {
@@ -185,22 +198,10 @@
               }
             }
           },
-          "schema-field-change": {
+          "state-collection-item-change": {
             "isStatic": true,
-            "list-name": "On Field Change",
-            "display-text": "On field change at {0}",
-            "description": "Triggers when a field is changed inside a Schema instance. Need to use ",
-            "params": {
-              "path": {
-                "name": "Path",
-                "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
-              }
-            }
-          },
-          "schema-item-change": {
-            "isStatic": true,
-            "list-name": "On Change",
-            "display-text": "On change at {0}",
+            "list-name": "On Change Item",
+            "display-text": "On item changed at [i]{0}[/i]",
             "description": "Triggers when an item is changed inside ArraySchema or MapSchema.",
             "params": {
               "path": {
@@ -209,10 +210,10 @@
               }
             }
           },
-          "schema-item-remove": {
+          "state-collection-item-remove": {
             "isStatic": true,
-            "list-name": "On Remove",
-            "display-text": "On remove at {0}",
+            "list-name": "On Remove Item",
+            "display-text": "On item removed from [i]{0}[/i]",
             "description": "Triggers when an item is removed from ArraySchema or MapSchema.",
             "params": {
               "path": {
@@ -221,6 +222,7 @@
               }
             }
           },
+
           "schema-is-index": {
             "list-name": "Is index",
             "display-text": "Is index {0}",
@@ -243,6 +245,7 @@
               }
             }
           }
+
         },
 
         "actions": {
@@ -474,9 +477,9 @@
             "description": "Get the data type of MessageValue. Possible return values: \"undefined\", \"number\", \"string\", \"boolean\", \"object\".",
             "translated-name": "MessageValueType"
           },
-          "message-value-type-at": {
+          "message-value-at-type": {
             "description": "Get the data type of MessageValueAt. Possible return values: \"undefined\", \"number\", \"string\", \"boolean\", \"object\".",
-            "translated-name": "MessageValueTypeAt",
+            "translated-name": "MessageValueAtType",
             "params": {
               "path": {
                 "name": "Variable Path",

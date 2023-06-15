@@ -98,12 +98,12 @@ cr.plugins_.Colyseus = function(runtime)
 
 
    /* Schema Serializer */
-   Cnds.prototype.OnSchemaAdd = function (path) { return checkPath(this.lastPath, path); },
-   Cnds.prototype.OnSchemaChange = function (path) {
+   Cnds.prototype.OnCollectionItemAdd = function (path) { return checkPath(this.lastPath, path); },
+   Cnds.prototype.OnCollectionItemChange = function (path) {
      return checkPath(this.lastPath, path);
    },
-   Cnds.prototype.OnSchemaFieldChange = function (path) { return checkPath(this.lastPath, path); },
-   Cnds.prototype.OnSchemaRemove = function (path) { return checkPath(this.lastPath, path); },
+   Cnds.prototype.OnChangeAtPath = function (path) { return checkPath(this.lastPath, path); },
+   Cnds.prototype.OnCollectionItemRemove = function (path) { return checkPath(this.lastPath, path); },
 
    Cnds.prototype.IsIndex = function (index) { return this.lastIndex === index; },
    Cnds.prototype.IsField = function (field) { return this.lastField === field; }
@@ -231,14 +231,14 @@ cr.plugins_.Colyseus = function(runtime)
            self.lastPath = path.join(".");
            self.lastIndex = index;
            self.lastValue = instance;
-           self.runtime.trigger(pluginProto.cnds.OnSchemaAdd, self);
+           self.runtime.trigger(pluginProto.cnds.OnCollectionItemAdd, self);
          }
 
          function onItemChange(path, instance, index) {
            self.lastPath = path.join(".");
            self.lastIndex = index;
            self.lastValue = instance;
-           self.runtime.trigger(pluginProto.cnds.OnSchemaChange, self);
+           self.runtime.trigger(pluginProto.cnds.OnCollectionItemChange, self);
          }
 
          function onChange(path, changes) {
@@ -248,7 +248,7 @@ cr.plugins_.Colyseus = function(runtime)
              self.lastField = changes[i].field;
              self.lastValue = changes[i].value;
              self.lastPreviousValue = changes[i].previousValue;
-             self.runtime.trigger(pluginProto.cnds.OnSchemaFieldChange, self);
+             self.runtime.trigger(pluginProto.cnds.OnChangeAtPath, self);
            }
          }
 
@@ -256,7 +256,7 @@ cr.plugins_.Colyseus = function(runtime)
            self.lastPath = path.join(".");
            self.lastIndex = index;
            self.lastValue = instance;
-           self.runtime.trigger(pluginProto.cnds.OnSchemaRemove, self);
+           self.runtime.trigger(pluginProto.cnds.OnCollectionItemRemove, self);
          }
 
          registerCallbacksOnStructure(self.room.state, []);
