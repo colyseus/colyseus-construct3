@@ -55,7 +55,7 @@
           });
 
           room.onLeave(function (code) {
-            self.lastError = code;
+            self.lastCloseCode = code;
             self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnLeaveRoom);
           });
 
@@ -122,8 +122,7 @@
           });
 
           room.onMessage("*", function (type, message) {
-            if (self.debug)
-            {
+            if (self.debug) {
               console.info("Colyseus: onMessage", type, message);
             }
             self.lastMessage = message;
@@ -131,12 +130,33 @@
             self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnMessage);
           });
 
-        }).catch(function(err) {
+        }).catch(function (err) {
+          if (self.debug) {
             console.error("Colyseus Error:", err.code);
             console.error(err.message);
-            self.lastError = err;
-            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
+          }
+          self.lastError = err;
+          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
         });
+    }
+
+    getDeepVariable(path, container) {
+      var path = path.split(".");
+      var value = container;
+
+      // deeply get the requested variable from the room's state.
+      try {
+        do {
+          value = (typeof (value.get) !== "function") // MapSchema's .get() method
+            ? value[path.shift()]
+            : value.get(path.shift());
+        } while (path.length > 0);
+      } catch (e) {
+        console.warn(e);
+        return null;
+      }
+
+      return value;
     }
   };
 

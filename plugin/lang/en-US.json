@@ -17,10 +17,12 @@
 
         "aceCategories": {
           "colyseus": "Client",
+          "misc": "Misc",
           "matchmaking": "Match-making",
           "room": "Room",
           "messages": "Room Messages",
-          "room-schema": "Room State"
+          "room-schema": "Room State",
+          "room-schema-collections": "Room State: Maps and Arrays"
         },
 
         "conditions": {
@@ -32,8 +34,8 @@
           },
           "on-leave-room": {
             "isStatic": true,
-            "list-name": "On Leave",
-            "display-text": "On Leave",
+            "list-name": "On Leave Room",
+            "display-text": "On Leave Room",
             "description": "Triggered when left from a room."
           },
           "on-join-error": {
@@ -56,7 +58,7 @@
             "params": {
               "type": {
                 "name": "Type",
-                "desc": "The type of the message being sent/broadcasted."
+                "desc": "Message type. Wildcard is supported via \"*\"."
               }
             }
           },
@@ -64,13 +66,111 @@
             "isStatic": true,
             "list-name": "On State Change",
             "display-text": "On State Change",
-            "description": "Triggered when the state of the room changes."
+            "description": "Triggered after full state updates have been applied. To detect specific changes use conditions under \"room state\" section."
           },
           "on-get-available-rooms": {
             "isStatic": true,
             "list-name": "On Get Available Rooms",
             "display-text": "On Get Available Rooms",
-            "description": "Triggers when available rooms data is ready in the CurrentValue expresssion."
+            "description": "Triggers when available rooms response is ready in the \"Value\" expresssion."
+          },
+
+          "is-message-type": {
+            "list-name": "Compare [b]Type[/b]",
+            "display-text": "Type {0} [i]{1}[/i]",
+            "description": "Returns true if current message type matches the provided value.",
+            "params": {
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the type."
+              },
+              "type": {
+                "name": "Message type",
+                "desc": "The message type sent by the server."
+              }
+            }
+          },
+          "is-message-value": {
+            "list-name": "Compare [b]Value[/b]",
+            "display-text": "Message value {0} [i]{1}[/i]",
+            "description": "Returns true if current message value matches the provided criteria.",
+            "params": {
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "value": {
+                "name": "Value",
+                "desc": "The value for comparison"
+              }
+            }
+          },
+          "is-message-value-at": {
+            "list-name": "Compare [b]Value At[/b]",
+            "display-text": "Message value at {0} {1} {2}",
+            "description": "Returns true if current message value at {0} matches the provided criteria.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "A dot separated path to the variable. e.g. \"messages.0\""
+              },
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "value": {
+                "name": "Value",
+                "desc": "The value for comparison"
+              }
+            }
+          },
+          "is-message-value-of-type": {
+            "list-name": "Compare [b]Value[/b] of Type",
+            "display-text": "Message value of type {0} [i]{1}[/i]",
+            "description": "Returns true if current message value matches the provided criteria.",
+            "params": {
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "type": {
+                "name": "Type",
+                "desc": "The type expected for the message value.",
+                "items": {
+                  "undefined": "undefined",
+                  "number": "number",
+                  "string": "string",
+                  "boolean": "boolean",
+                  "object": "object"
+                }
+              }
+            }
+          },
+          "is-message-value-of-type-at": {
+            "list-name": "Compare [b]Value At[/b] of Type",
+            "display-text": "Message value at {0} of type {1} {2}",
+            "description": "Returns true if current message value matches the provided criteria.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "A dot separated path to the variable. e.g. \"messages.0\""
+              },
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "type": {
+                "name": "Type",
+                "desc": "The type expected for the message value.",
+                "items": {
+                  "undefined": "undefined",
+                  "number": "number",
+                  "string": "string",
+                  "boolean": "boolean",
+                  "object": "object"
+                }
+              }
+            }
           },
 
           "schema-item-add": {
@@ -286,8 +386,8 @@
 
           "get-available-rooms": {
             "list-name": "Get available rooms",
-            "display-text": "Get available {0} rooms.",
-            "description": "Get available rooms by name, OnGetAvailableRooms triggered when data is available. Data returned as JSON string in expression CurrentValue",
+            "display-text": "Get available rooms by name: {0}",
+            "description": "Get available rooms by name, \"On Get Available Rooms\" is triggered when data is available.",
             "params": {
               "name": {
                 "name": "Room name",
@@ -312,10 +412,6 @@
             "description": "Get value from current item",
             "translated-name": "CurrentValue"
           },
-          "previous-value": {
-            "description": "Get previous value from current field. Only available during \"On change\" on an instance variable. Not avaialble for arrays and maps.",
-            "translated-name": "PreviousValue"
-          },
           "current-value-at": {
             "description": "Get nested value from current item",
             "translated-name": "CurrentValueAt",
@@ -326,13 +422,9 @@
               }
             }
           },
-          "current-index": {
-            "description": "Get index of current item. Available during \"On Add\", \"On Change\" or \"On Remove\" ",
-            "translated-name": "CurrentIndex"
-          },
-          "current-field": {
-            "description": "Get current field being changed. Available during \"On field change\"",
-            "translated-name": "CurrentField"
+          "previous-value": {
+            "description": "Get previous value from current field. Only available during \"On change\" on an instance variable. Not avaialble for arrays and maps.",
+            "translated-name": "PreviousValue"
           },
           "state-value": {
             "description": "Get a value from room's state",
@@ -344,9 +436,9 @@
               }
             }
           },
-          "state-path": {
+          "current-state-path": {
             "description": "Get current path being evaluated from state",
-            "translated-name": "Current State Path"
+            "translated-name": "CurrentStatePath"
           },
           "room-id": {
             "description": "Get roomId of the room connected.",
@@ -360,23 +452,42 @@
             "description": "Get reconnection token to be used in the Reconnect action. (Available during \"On Join\")",
             "translated-name": "ReconnectionToken"
           },
-          "current-message-type": {
+          "message-type": {
             "description": "Get current message type. (Available during \"On Message\")",
-            "translated-name": "Current Message Type"
+            "translated-name": "MessageType"
           },
-          "current-message": {
+          "message-value": {
             "description": "Get current message value. (Available during \"On Message\")",
-            "translated-name": "Message Value"
+            "translated-name": "MessageValue"
           },
-          "current-message-at": {
+          "message-value-at": {
             "description": "Get a nested value on current message. (Available during \"On Message\")",
-            "translated-name": "Message Value At",
+            "translated-name": "MessageValueAt",
             "params": {
               "path": {
                 "name": "Variable Path",
                 "desc": "A dot separated path to the variable. e.g. \"skills.length\", \"skills.0.name\""
               }
             }
+          },
+          "message-value-type": {
+            "description": "Get the data type of MessageValue. Possible return values: \"undefined\", \"number\", \"string\", \"boolean\", \"object\".",
+            "translated-name": "MessageValueType"
+          },
+          "message-value-type-at": {
+            "description": "Get the data type of MessageValueAt. Possible return values: \"undefined\", \"number\", \"string\", \"boolean\", \"object\".",
+            "translated-name": "MessageValueTypeAt",
+            "params": {
+              "path": {
+                "name": "Variable Path",
+                "desc": "A dot separated path to the variable. e.g. \"skills.length\", \"skills.0.name\""
+              }
+            }
+          },
+
+          "close-code": {
+            "description": "Get close code from the last disconnection. (Available during \"On Leave Room\")",
+            "translated-name": "CloseCode"
           },
           "error-code": {
             "description": "Get last error code",

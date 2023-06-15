@@ -65,10 +65,9 @@
     {
       var self = this;
       this.client.getAvailableRooms(roomName).then(rooms => {
-        self.lastValue = JSON.stringify(rooms);
         if (self.debug)
         {
-          console.info("Colyseus Rooms: ");
+          console.info("⚔️ Colyseus ➡️ Get Available Rooms:");
           rooms.forEach((room) => {
             console.info(room.roomId);
             console.info(room.clients);
@@ -76,12 +75,14 @@
             console.info(room.metadata);
           });
         }
+        self.lastValue = JSON.stringify(rooms);
         self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnGetAvailableRooms);
       }).catch(function(err) {
         if (self.debug)
         {
-          console.error("Colyseus GetAvailableRooms error: "+err);
+          console.error("⚔️ Colyseus ➡️ Get Available Rooms error: " + err.message);
         }
+        self.lastError = err;
         self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
       });
     },

@@ -1,25 +1,6 @@
 "use strict";
 
 {
-  function getDeepVariable (path, container) {
-    var path = path.split(".");
-    var value = container;
-
-    // deeply get the requested variable from the room's state.
-    try {
-      do {
-        value = (typeof(value.get)!=="function") // MapSchema's .get() method
-          ? value[path.shift()]
-          : value.get(path.shift());
-      } while (path.length > 0);
-    } catch (e) {
-      console.warn(e);
-      return null;
-    }
-
-    return value;
-  }
-
   C3.Plugins.Colyseus_SDK.Exps =
   {
     RoomId()
@@ -39,7 +20,7 @@
 
     State(variablePath)
     {
-      return getDeepVariable(variablePath, (this.room && this.room.state) || {});
+      return this.getDeepVariable(variablePath, (this.room && this.room.state) || {});
     },
 
     // Path(variable) {
@@ -50,10 +31,6 @@
       return JSON.stringify(eval(`(${data})`));
     },
 
-    CurrentIndex() {
-      return this.lastIndex;
-    },
-
     CurrentField() {
       return this.lastField;
     },
@@ -62,24 +39,36 @@
       return this.lastValue;
     },
 
-    CurrentMessage() {
+    CurrentValueAt(path) {
+      return this.getDeepVariable(path, this.lastValue);
+    },
+
+    MessageValue() {
       return this.lastMessage;
     },
 
-    CurrentMessageAt(path) {
-      return getDeepVariable(path, this.lastMessage);
+    MessageValueAt(path) {
+      return this.getDeepVariable(path, this.lastMessage);
     },
 
-    CurrentMessageType() {
+    MessageType() {
       return this.lastType;
     },
 
-    CurrentVariablePath() {
+    MessageValueType() {
+      return typeof (this.lastMessage);
+    },
+
+    MessageValueTypeAt(path) {
+      return typeof (this.getDeepVariable(path, this.lastMessage));
+    },
+
+    CurrentStatePath() {
       return this.lastPath;
     },
 
-    CurrentValueAt(path) {
-      return getDeepVariable(path, this.lastValue);
+    CloseCode() {
+      return this.lastCloseCode;
     },
 
     ErrorMessage() {

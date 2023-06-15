@@ -10,7 +10,22 @@
         ]
       }
     ],
-    "expressions": []
+    "expressions": [
+    ]
+  },
+
+  "misc": {
+    "expressions": [
+      {
+        "id": "json",
+        "expressionName": "JSON",
+        "scriptName": "JSON",
+        "returnType": "string",
+        "params": [
+          { "id": "data", "type": "string", "initialValue": "{}" }
+        ]
+      }
+    ]
   },
 
   "matchmaking": {
@@ -105,6 +120,7 @@
       {
         "id": "on-room-message",
         "scriptName": "OnMessage",
+        "highlight": true,
         "isTrigger": true,
         "params": [
           { "id": "type", "type": "string" }
@@ -144,6 +160,12 @@
         "returnType": "string"
       },
       {
+        "id": "close-code",
+        "expressionName": "CloseCode",
+        "scriptName": "CloseCode",
+        "returnType": "number"
+      },
+      {
         "id": "error-code",
         "expressionName": "ErrorCode",
         "scriptName": "ErrorCode",
@@ -178,24 +200,84 @@
       }
     ],
 
+    "conditions":[
+      {
+        "id": "is-message-type",
+        "scriptName": "IsMessageType",
+        "params": [
+          { "id": "cmp", "type": "cmp" },
+          { "id": "type", "type": "string" }
+        ]
+      },
+      {
+        "id": "is-message-value",
+        "scriptName": "IsMessageValue",
+        "params": [
+          { "id": "cmp", "type": "cmp" },
+          { "id": "value", "type": "any" }
+        ]
+      },
+      {
+        "id": "is-message-value-at",
+        "scriptName": "IsMessageValueAt",
+        "params": [
+          { "id": "path", "type": "string" },
+          { "id": "cmp", "type": "cmp" },
+          { "id": "value", "type": "any" }
+        ]
+      },
+      {
+        "id": "is-message-value-of-type",
+        "scriptName": "IsMessageValueOfType",
+        "params": [
+          { "id": "cmp", "type": "cmp" },
+          { "id": "type", "type": "combo", "items": ["string", "number", "boolean", "undefined", "object"] }
+        ]
+      },
+      {
+        "id": "is-message-value-of-type-at",
+        "scriptName": "IsMessageValueOfAt",
+        "params": [
+          { "id": "path", "type": "string" },
+          { "id": "cmp", "type": "cmp" },
+          { "id": "type", "type": "combo", "items": ["string", "number", "boolean", "undefined", "object"] }
+        ]
+      }
+    ],
+
     "expressions": [
       {
-        "id": "current-message-type",
-        "expressionName": "CurrentMessageType",
-        "scriptName": "CurrentMessageType",
+        "id": "message-type",
+        "expressionName": "MessageType",
+        "scriptName": "MessageValueType",
+        "returnType": "string"
+      },
+      {
+        "id": "message-value",
+        "expressionName": "MessageValue",
+        "scriptName": "MessageValue",
         "returnType": "any"
       },
       {
-        "id": "current-message",
-        "expressionName": "CurrentMessage",
-        "scriptName": "CurrentMessage",
-        "returnType": "any"
-      },
-      {
-        "id": "current-message-at",
-        "expressionName": "CurrentMessageAt",
-        "scriptName": "CurrentMessageAt",
+        "id": "message-value-at",
+        "expressionName": "MessageValueAt",
+        "scriptName": "MessageValueAt",
         "returnType": "any",
+        "params": [
+          { "id": "path", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "message-value-type",
+        "expressionName": "MessageValueType",
+        "scriptName": "MessageValueType",
+        "returnType": "string"
+      },
+      {
+        "id": "message-value-type-at",
+        "expressionName": "MessageValueTypeAt",
+        "scriptName": "MessageValueTypeAt",
+        "returnType": "string",
         "params": [
           { "id": "path", "type": "string", "initialValue": "" }
         ]
@@ -206,32 +288,8 @@
   "room-schema": {
     "conditions": [
       {
-        "id": "schema-item-add",
-        "scriptName": "OnSchemaAdd",
-        "isTrigger": true,
-        "params": [
-          { "id": "path", "type": "string" }
-        ]
-      },
-      {
         "id": "schema-field-change",
         "scriptName": "OnSchemaFieldChange",
-        "isTrigger": true,
-        "params": [
-          { "id": "path", "type": "string" }
-        ]
-      },
-      {
-        "id": "schema-item-change",
-        "scriptName": "OnSchemaChange",
-        "isTrigger": true,
-        "params": [
-          { "id": "path", "type": "string" }
-        ]
-      },
-      {
-        "id": "schema-item-remove",
-        "scriptName": "OnSchemaRemove",
         "isTrigger": true,
         "params": [
           { "id": "path", "type": "string" }
@@ -264,42 +322,15 @@
         ]
       },
       {
-        "id": "state-path",
+        "id": "current-state-path",
         "expressionName": "CurrentStatePath",
         "scriptName": "CurrentStatePath",
-        "returnType": "any"
-      },
-      {
-        "id": "json",
-        "expressionName": "JSON",
-        "scriptName": "JSON",
-        "returnType": "string",
-        "params": [
-          { "id": "data", "type": "string", "initialValue": "{}" }
-        ]
-      },
-      {
-        "id": "current-index",
-        "expressionName": "CurrentIndex",
-        "scriptName": "CurrentIndex",
-        "returnType": "any"
-      },
-      {
-        "id": "current-field",
-        "expressionName": "CurrentField",
-        "scriptName": "CurrentField",
-        "returnType": "any"
+        "returnType": "string"
       },
       {
         "id": "current-value",
         "expressionName": "CurrentValue",
         "scriptName": "CurrentValue",
-        "returnType": "any"
-      },
-      {
-        "id": "previous-value",
-        "expressionName": "PreviousValue",
-        "scriptName": "PreviousValue",
         "returnType": "any"
       },
       {
@@ -309,6 +340,41 @@
         "returnType": "any",
         "params": [
           { "id": "path", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "previous-value",
+        "expressionName": "PreviousValue",
+        "scriptName": "PreviousValue",
+        "returnType": "any"
+      }
+    ]
+  },
+
+  "room-schema-collections": {
+    "conditions": [
+      {
+        "id": "schema-item-add",
+        "scriptName": "OnSchemaAdd",
+        "isTrigger": true,
+        "params": [
+          { "id": "path", "type": "string" }
+        ]
+      },
+      {
+        "id": "schema-item-change",
+        "scriptName": "OnSchemaChange",
+        "isTrigger": true,
+        "params": [
+          { "id": "path", "type": "string" }
+        ]
+      },
+      {
+        "id": "schema-item-remove",
+        "scriptName": "OnSchemaRemove",
+        "isTrigger": true,
+        "params": [
+          { "id": "path", "type": "string" }
         ]
       }
     ]

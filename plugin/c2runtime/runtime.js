@@ -326,10 +326,6 @@ cr.plugins_.Colyseus = function(runtime)
      ret.set_string(JSON.stringify(eval(`(${data})`)));
    };
 
-   Exps.prototype.CurrentIndex = function (ret) {
-     ret.set_any(this.lastIndex);
-   }
-
    Exps.prototype.CurrentField = function (ret) {
      ret.set_string(this.lastField || "");
    }

@@ -53,6 +53,14 @@
     OnSchemaFieldChange(path) { return checkPath(this.lastPath, path); },
     OnSchemaRemove(path) { return checkPath(this.lastPath, path); },
 
+    // Messages
+    IsMessageType(type) { return this.lastType === type; },
+    IsMessageValue(value) { return this.lastValue === value; },
+    IsMessageValueAt(path, value) { return this.lastValue === value && checkPath(this.lastPath, path); },
+    IsMessageValueOfType(type) { return typeof(this.lastValue) === type; },
+    IsMessageValueOfAt(path, type) { return this.getDeepVariable(path, this.lastValue) === type; },
+
+    // State
     IsIndex(index) { return this.lastIndex === index; },
     IsField(field) { return this.lastField === field; }
 
