@@ -28,6 +28,36 @@
     ]
   },
 
+  "error-handling": {
+    "conditions": [
+      {
+        "id": "has-error-code",
+        "expressionName": "HasErrorCode",
+        "scriptName": "HasErrorCode",
+        "returnType": "boolean",
+        "params": [
+          { "id": "cmp", "type": "combo", "items": ["=", "!="] },
+          { "id": "code", "type": "number", "initialValue": 0 }
+        ]
+      },
+      {
+        "id": "has-error-message",
+        "expressionName": "HasErrorMessage",
+        "scriptName": "HasErrorMessage",
+        "returnType": "boolean",
+        "params": [
+          { "id": "cmp", "type": "combo", "items": ["=", "!="] },
+          { "id": "message", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "on-error",
+        "scriptName": "OnAnyError",
+        "isTrigger": true
+      }
+    ]
+  },
+
   "matchmaking": {
     "conditions": [
       {
@@ -108,16 +138,6 @@
   "room": {
     "conditions": [
       {
-        "id": "on-leave-room",
-        "scriptName": "OnLeaveRoom",
-        "isTrigger": true
-      },
-      {
-        "id": "on-error",
-        "scriptName": "OnError",
-        "isTrigger": true
-      },
-      {
         "id": "on-room-message",
         "scriptName": "OnMessage",
         "highlight": true,
@@ -127,8 +147,18 @@
         ]
       },
       {
+        "id": "on-leave-room",
+        "scriptName": "OnLeaveRoom",
+        "isTrigger": true
+      },
+      {
         "id": "on-room-statechange",
         "scriptName": "OnStateChange",
+        "isTrigger": true
+      },
+      {
+        "id": "on-room-error",
+        "scriptName": "OnRoomError",
         "isTrigger": true
       }
     ],
@@ -230,7 +260,7 @@
         "id": "is-message-value-of-type",
         "scriptName": "CompareMessageValueOfType",
         "params": [
-          { "id": "cmp", "type": "cmp" },
+          { "id": "cmp", "type": "combo", "items": ["=", "!="] },
           { "id": "type", "type": "combo", "items": ["string", "number", "boolean", "undefined", "object"] }
         ]
       },
@@ -239,7 +269,7 @@
         "scriptName": "CompareMessageValueAtOfType",
         "params": [
           { "id": "path", "type": "string" },
-          { "id": "cmp", "type": "cmp" },
+          { "id": "cmp", "type": "combo", "items": ["=", "!="]},
           { "id": "type", "type": "combo", "items": ["string", "number", "boolean", "undefined", "object"] }
         ]
       }
@@ -293,6 +323,15 @@
         "isTrigger": true,
         "params": [
           { "id": "path", "type": "string" }
+        ]
+      },
+      {
+        "id": "is-state-value-at",
+        "scriptName": "CompareStateValueAt",
+        "params": [
+          { "id": "path", "type": "string" },
+          { "id": "cmp", "type": "cmp" },
+          { "id": "value", "type": "any" }
         ]
       },
       {
@@ -376,6 +415,20 @@
         "params": [
           { "id": "path", "type": "string" }
         ]
+      }
+    ],
+    "expressions": [
+      {
+        "id": "current-collection-count",
+        "expressionName": "CurrentCollectionCount",
+        "scriptName": "CurrentCollectionCount",
+        "returnType": "number"
+      },
+      {
+        "id": "count-items-at",
+        "expressionName": "CountItemsAt",
+        "scriptName": "CountItemsAt",
+        "returnType": "number"
       }
     ]
   }

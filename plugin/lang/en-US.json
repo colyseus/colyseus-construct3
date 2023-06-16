@@ -18,6 +18,7 @@
         "aceCategories": {
           "colyseus": "Client",
           "misc": "Misc",
+          "error-handling": "Error Handling",
           "matchmaking": "Match-making",
           "room": "Room",
           "messages": "Room Messages",
@@ -46,8 +47,14 @@
           },
           "on-error": {
             "isStatic": true,
-            "list-name": "On Error",
-            "display-text": "On Error",
+            "list-name": "On Error (any)",
+            "display-text": "On Error (any)",
+            "description": "Triggered when any error come from the Colyseus SDK. (Prefer using specific error handlers such as \"On Join Error\" rather than this one.)"
+          },
+          "on-room-error": {
+            "isStatic": true,
+            "list-name": "On Room Error",
+            "display-text": "On Room Error",
             "description": "Triggered when an error happened on the server."
           },
           "on-room-message": {
@@ -77,7 +84,7 @@
 
           "is-message-type": {
             "list-name": "Compare Message [b]Type[/b]",
-            "display-text": "Type {0} [i]{1}[/i]",
+            "display-text": "Message type {0} [i]{1}[/i]",
             "description": "Returns true if current message type matches the provided value.",
             "params": {
               "cmp": {
@@ -131,7 +138,12 @@
             "params": {
               "cmp": {
                 "name": "Comparison",
-                "desc": "How to compare the value."
+                "desc": "How to compare the value.",
+                "items": {
+                  "=": "= Equal to",
+                  "!=": "≠ Not equal to"
+                }
+
               },
               "type": {
                 "name": "Type",
@@ -157,7 +169,11 @@
               },
               "cmp": {
                 "name": "Comparison",
-                "desc": "How to compare the value."
+                "desc": "How to compare the value.",
+                "items": {
+                  "=": "= Equal to",
+                  "!=": "≠ Not equal to"
+                }
               },
               "type": {
                 "name": "Type",
@@ -242,6 +258,45 @@
               "field": {
                 "name": "Field",
                 "desc": "Field name"
+              }
+            }
+          },
+
+          "has-error-code": {
+            "list-name": "Is Error Code",
+            "display-text": "Error Code [i]{0}[/i] {1}",
+            "description": "Compares the error code of the last error received.",
+            "params": {
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value.",
+                "items": {
+                  "=": "= Equal to",
+                  "!=": "≠ Not equal to"
+                }
+              },
+              "code": {
+                "name": "Error Code",
+                "desc": "The error code to compare against."
+              }
+            }
+          },
+          "has-error-message": {
+            "list-name": "Is Error Message",
+            "display-text": "Error Message [i]{0}[/i] {1}",
+            "description": "Compares the error message of the last error received.",
+            "params": {
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the message.",
+                "items": {
+                  "=": "= Equal to",
+                  "!=": "≠ Not equal to"
+                }
+              },
+              "message": {
+                "name": "Error Message",
+                "desc": "The error message to compare against."
               }
             }
           }
@@ -402,7 +457,7 @@
 
         "expressions": {
           "json": {
-            "description": "Returns a JSON value.",
+            "description": "Evaluates provided string and return stringified JSON object",
             "translated-name": "JSON",
             "params": {
               "data": {
@@ -486,6 +541,16 @@
                 "desc": "A dot separated path to the variable. e.g. \"skills.length\", \"skills.0.name\""
               }
             }
+          },
+
+          "current-collection-count": {
+            "description": "Get total number of items on current collection. (Available during add/remove item events)",
+            "translated-name": "CurrentCollectionCount"
+          },
+
+          "count-items-at": {
+            "description": "Get total number of items at a path. (Path must be a MapSchema or ArraySchema)",
+            "translated-name": "CountItemsAt"
           },
 
           "close-code": {

@@ -83,7 +83,7 @@
           console.error("⚔️ Colyseus ➡️ Get Available Rooms error: " + err.message);
         }
         self.lastError = err;
-        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
+        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomError);
       });
     },
 

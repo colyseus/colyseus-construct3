@@ -51,7 +51,8 @@
 
           room.onError(function (code, message) {
             self.lastError = { code: code, message: message };
-            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
+            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomError);
+            self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
           });
 
           room.onLeave(function (code) {
@@ -61,54 +62,69 @@
 
           room.onStateChange.once(function() {
             function registerCallbacksOnStructure (instance, path) {
-              instance.onChange(function(_) { onChange([...path], []) });
+              instance.onChange(function(_) { onChange([...path], instance) });
 
               var schema = instance['_definition'].schema;
               for (var field in schema) {
                 var schemaType = typeof(schema[field]);
                 if (schemaType === "object" || schemaType === "function") {
-                  instance[field].onAdd(function (instance, index) { onAdd([...path, field], instance, index); })
-                  instance[field].onChange(function (instance, index) { onItemChange([...path, field], instance, index); });
-                  instance[field].onRemove(function (instance, index) { onRemove([...path, field], instance, index); })
+                  var collection = instance[field];
+
+                  // on item added to collection
+                  collection.onAdd(function (instance, index) {
+                    self.lastCollection = collection;
+                    onItemAdd([...path, field], instance, index);
+                  });
+
+                  // on item removed from collection
+                  collection.onRemove(function (instance, index) {
+                    self.lastCollection = collection;
+                    onItemRemove([...path, field], instance, index);
+                  });
+
+                  // on item changed in collection
+                  collection.onChange(function (instance, index) {
+                    self.lastCollection = collection;
+                    onItemChange([...path, field], instance, index);
+                  });
                 }
               }
             }
 
-            function onAdd (path, instance, index) {
+            function onItemAdd (path, instance, index) {
               // only register callbacks on child Schema structures.
               if (instance['_definition']) {
                 registerCallbacksOnStructure(instance, [...path, index]);
               }
 
-              self.lastPath = path.join(".");
+              self.lastCollectionPath = path.join(".");
+              self.lastPath = self.lastCollectionPath + "." + index;
               self.lastIndex = index;
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemAdd);
             }
 
             function onItemChange (path, instance, index) {
-              self.lastPath = path.join(".");
+              self.lastCollectionPath = path.join(".");
+              self.lastPath = self.lastCollectionPath + "." + index;
               self.lastIndex = index;
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemChange);
             }
 
-            function onChange (path, changes) {
-              self.lastIndex = undefined;
-              self.lastPath = path.join(".");
-              for (var i = 0, l = changes.length; i < l; i++) {
-                self.lastField = changes[i].field;
-                self.lastValue = changes[i].value;
-                self.lastPreviousValue = changes[i].previousValue;
-                self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
-              }
-            }
-
-            function onRemove (path, instance, index) {
-              self.lastPath = path.join(".");
+            function onItemRemove (path, instance, index) {
+              self.lastCollectionPath = path.join(".");
+              self.lastPath = self.lastCollectionPath + "." + index;
               self.lastIndex = index;
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemRemove);
+            }
+
+            function onChange (path, instance) {
+              self.lastIndex = undefined;
+              self.lastPath = path.join(".");
+              self.lastValue = instance;
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
             }
 
             registerCallbacksOnStructure(self.room.state, []);
@@ -130,13 +146,18 @@
             self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnMessage);
           });
 
-        }).catch(function (err) {
+        }).catch(function (e) {
           if (self.debug) {
-            console.error("Colyseus Error:", err.code);
-            console.error(err.message);
+            console.error("Colyseus Error:", e.code);
+            console.error(e.message);
           }
-          self.lastError = err;
-          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnError);
+          if (e instanceof ProgressEvent) {
+            self.lastError = { code: e.target.status, message: e.target.statusText };
+          } else {
+            self.lastError = e;
+          }
+          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnJoinError);
+          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
         });
     }
 

@@ -3,81 +3,58 @@
 {
   C3.Plugins.Colyseus_SDK.Exps =
   {
-    RoomId()
-    {
-      return this.room && this.room.roomId;
+    RoomId() { return this.room && this.room.roomId; },
+    SessionId() { return this.room && this.room.sessionId; },
+    ReconnectionToken() { return this.room && this.room.reconnectionToken; },
+    CloseCode() { return this.lastCloseCode; },
+
+    JSON(data) { return JSON.stringify(eval(`(${data})`)); },
+
+    // Messages
+    MessageValue() { return this.lastMessage; },
+    MessageValueAt(path) { return this.getDeepVariable(path, this.lastMessage); },
+    MessageType() { return this.lastType; },
+    MessageValueType() { return typeof (this.lastMessage); },
+    MessageValueAtType(path) { return typeof (this.getDeepVariable(path, this.lastMessage)); },
+
+    // State
+    State(variablePath) { return this.getDeepVariable(variablePath, (this.room && this.room.state) || {}); },
+    CurrentStatePath() { return this.lastPath; },
+
+    CurrentField() { return this.lastField; },
+    CurrentValue() { return this.lastValue; },
+    CurrentValueAt(path) { return this.getDeepVariable(path, this.lastValue); },
+
+    // Collections
+    CurrentCollectionCount() {
+      try {
+        return (Array.isArray(this.lastCollection)
+          ? this.lastCollection.length
+          : this.lastCollection.size);
+
+      } catch (e) {
+        this.lastError = e;
+        this.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+        return 0;
+      }
+    },
+    CountItemsAt(path) {
+      try {
+        var collection = this.getDeepVariable(path, (this.room && this.room.state));
+        return (Array.isArray(collection)
+          ? collection.length
+          : collection.size);
+
+      } catch (e) {
+        this.lastError = e;
+        this.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+        return 0;
+      }
     },
 
-    SessionId()
-    {
-      return this.room && this.room.sessionId;
-    },
-
-    ReconnectionToken()
-    {
-      return this.room && this.room.reconnectionToken;
-    },
-
-    State(variablePath)
-    {
-      return this.getDeepVariable(variablePath, (this.room && this.room.state) || {});
-    },
-
-    // Path(variable) {
-    //   return this.lastChange.path[variable];
-    // },
-
-    JSON(data) {
-      return JSON.stringify(eval(`(${data})`));
-    },
-
-    CurrentField() {
-      return this.lastField;
-    },
-
-    CurrentValue() {
-      return this.lastValue;
-    },
-
-    CurrentValueAt(path) {
-      return this.getDeepVariable(path, this.lastValue);
-    },
-
-    MessageValue() {
-      return this.lastMessage;
-    },
-
-    MessageValueAt(path) {
-      return this.getDeepVariable(path, this.lastMessage);
-    },
-
-    MessageType() {
-      return this.lastType;
-    },
-
-    MessageValueType() {
-      return typeof (this.lastMessage);
-    },
-
-    MessageValueAtType(path) {
-      return typeof (this.getDeepVariable(path, this.lastMessage));
-    },
-
-    CurrentStatePath() {
-      return this.lastPath;
-    },
-
-    CloseCode() {
-      return this.lastCloseCode;
-    },
-
-    ErrorMessage() {
-      return this.lastError && this.lastError.message;
-    },
-
-    ErrorCode() {
-      return this.lastError && this.lastError.code;
-    },
+    // Errors
+    ErrorMessage() { return this.lastError && this.lastError.message; },
+    ErrorCode() { return this.lastError && this.lastError.code; },
 
   };
 }

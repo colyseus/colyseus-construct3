@@ -92,7 +92,7 @@ cr.plugins_.Colyseus = function(runtime)
    Cnds.prototype.OnJoinRoom = function () { return true; };
    Cnds.prototype.OnLeaveRoom = function () { return true; };
    Cnds.prototype.OnJoinError = function () { return true; };
-   Cnds.prototype.OnError = function () { return true; };
+   Cnds.prototype.OnRoomError = function () { return true; };
    Cnds.prototype.OnStateChange = function () { return true; };
    Cnds.prototype.OnMessage = function (type) { return this.lastType === type; };
 
@@ -199,7 +199,7 @@ cr.plugins_.Colyseus = function(runtime)
 
        room.onError(function (code, message) {
          self.lastError = { code: code, message: message };
-         self.runtime.trigger(pluginProto.cnds.OnError, self);
+         self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
        });
 
        room.onLeave(function (code) {
@@ -280,7 +280,7 @@ cr.plugins_.Colyseus = function(runtime)
 
      }).catch(function(e) {
        self.lastError = e;
-       self.runtime.trigger(pluginProto.cnds.OnError, self);
+       self.runtime.trigger(pluginProto.cnds.OnRoomError, self);
      });
    }
 
