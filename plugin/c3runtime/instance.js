@@ -71,57 +71,57 @@
                   var collection = instance[field];
 
                   // on item added to collection
-                  collection.onAdd(function (instance, index) {
+                  collection.onAdd(function (instance, key) {
                     self.lastCollection = collection;
-                    onItemAdd([...path, field], instance, index);
+                    onItemAdd([...path, field], instance, key);
                   });
 
                   // on item removed from collection
-                  collection.onRemove(function (instance, index) {
+                  collection.onRemove(function (instance, key) {
                     self.lastCollection = collection;
-                    onItemRemove([...path, field], instance, index);
+                    onItemRemove([...path, field], instance, key);
                   });
 
                   // on item changed in collection
-                  collection.onChange(function (instance, index) {
+                  collection.onChange(function (instance, key) {
                     self.lastCollection = collection;
-                    onItemChange([...path, field], instance, index);
+                    onItemChange([...path, field], instance, key);
                   });
                 }
               }
             }
 
-            function onItemAdd (path, instance, index) {
+            function onItemAdd (path, instance, key) {
               // only register callbacks on child Schema structures.
               if (instance['_definition']) {
-                registerCallbacksOnStructure(instance, [...path, index]);
+                registerCallbacksOnStructure(instance, [...path, key]);
               }
 
               self.lastCollectionPath = path.join(".");
-              self.lastPath = self.lastCollectionPath + "." + index;
-              self.lastIndex = index;
+              self.lastPath = self.lastCollectionPath + "." + key;
+              self.lastKey = key;
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemAdd);
             }
 
-            function onItemChange (path, instance, index) {
+            function onItemChange (path, instance, key) {
               self.lastCollectionPath = path.join(".");
-              self.lastPath = self.lastCollectionPath + "." + index;
-              self.lastIndex = index;
+              self.lastPath = self.lastCollectionPath + "." + key;
+              self.lastKey = key;
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemChange);
             }
 
-            function onItemRemove (path, instance, index) {
+            function onItemRemove (path, instance, key) {
               self.lastCollectionPath = path.join(".");
-              self.lastPath = self.lastCollectionPath + "." + index;
-              self.lastIndex = index;
+              self.lastPath = self.lastCollectionPath + "." + key;
+              self.lastKey = key;
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemRemove);
             }
 
             function onChange (path, instance) {
-              self.lastIndex = undefined;
+              self.lastKey = undefined;
               self.lastPath = path.join(".");
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
@@ -132,7 +132,7 @@
 
           room.onStateChange(function (state) {
             self.lastPath = "";
-            self.lastIndex = undefined;
+            self.lastKey = undefined;
             self.lastValue = state;
             self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnStateChange);
           });

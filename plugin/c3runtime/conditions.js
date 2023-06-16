@@ -66,8 +66,26 @@
     OnCollectionItemChange(path) { return this.lastCollectionPath === path; },
 
     // State
-    IsIndex(index) { return this.lastIndex === index; },
-    IsField(field) { return this.lastField === field; },
+    CompareCurrentKey(cmp, key) { return C3.compare(this.lastKey, cmp, key); },
+    CompareCurrentValue(cmp, value) { return C3.compare(this.lastValue, cmp, value); },
+    CompareCurrentValueAt(path, cmp, value) { return C3.compare(this.getDeepVariable(path, this.lastValue), cmp, value); },
+    ForEachItemAt(path) {
+      var self = this;
+      var collection = this.getDeepVariable(path, this.room && this.room.state);
+      var validCollection = (collection && typeof(collection.forEach) === "function");
+      if (validCollection) {
+        self.lastCollectionPath = path;
+        self.lastCollection = collection;
+        collection.forEach(function (item, index) {
+          self.lastKey = index;
+          self.lastPath = path + '.' + index;
+          self.lastValue = item;
+          console.log("Let's trigger....");
+          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.ForEachItemAt);
+        });
+      }
+      return validCollection;
+    },
 
     // Error handling
     HasErrorCode(cmp, code) { return this.lastError && C3.compare(this.lastError.code, cmp, code); },

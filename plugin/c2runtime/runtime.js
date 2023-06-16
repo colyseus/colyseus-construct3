@@ -105,7 +105,7 @@ cr.plugins_.Colyseus = function(runtime)
    Cnds.prototype.OnChangeAtPath = function (path) { return checkPath(this.lastPath, path); },
    Cnds.prototype.OnCollectionItemRemove = function (path) { return checkPath(this.lastPath, path); },
 
-   Cnds.prototype.IsIndex = function (index) { return this.lastIndex === index; },
+   Cnds.prototype.CompareCurrentKey = function (index) { return this.lastIndex === index; },
    Cnds.prototype.IsField = function (field) { return this.lastField === field; }
 
   //  var operations = ['any', 'add', 'replace', 'remove'];
@@ -326,7 +326,7 @@ cr.plugins_.Colyseus = function(runtime)
      ret.set_string(JSON.stringify(eval(`(${data})`)));
    };
 
-   Exps.prototype.CurrentField = function (ret) {
+   Exps.prototype.CurrentKey = function (ret) {
      ret.set_string(this.lastField || "");
    }
 

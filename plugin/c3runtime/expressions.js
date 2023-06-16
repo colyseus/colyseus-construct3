@@ -21,12 +21,12 @@
     State(variablePath) { return this.getDeepVariable(variablePath, (this.room && this.room.state) || {}); },
     CurrentStatePath() { return this.lastPath; },
 
-    CurrentField() { return this.lastField; },
+    CurrentKey() { return this.lastKey; },
     CurrentValue() { return this.lastValue; },
     CurrentValueAt(path) { return this.getDeepVariable(path, this.lastValue); },
 
     // Collections
-    CurrentCollectionCount() {
+    CurrentItemsCount() {
       try {
         return (Array.isArray(this.lastCollection)
           ? this.lastCollection.length

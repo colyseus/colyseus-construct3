@@ -335,17 +335,28 @@
         ]
       },
       {
-        "id": "schema-is-index",
-        "scriptName": "IsIndex",
+        "id": "schema-compare-current-value",
+        "scriptName": "CompareCurrentValue",
         "params": [
-          { "id": "index", "type": "string" }
+          { "id": "cmp", "type": "cmp" },
+          { "id": "value", "type": "any" }
         ]
       },
       {
-        "id": "schema-is-field",
-        "scriptName": "IsField",
+        "id": "schema-compare-current-value-at",
+        "scriptName": "CompareCurrentValueAt",
         "params": [
-          { "id": "field", "type": "string" }
+          { "id": "path", "type": "string" },
+          { "id": "cmp", "type": "cmp" },
+          { "id": "value", "type": "any" }
+        ]
+      },
+      {
+        "id": "schema-compare-current-key",
+        "scriptName": "CompareCurrentKey",
+        "params": [
+          { "id": "cmp", "type": "cmp" },
+          { "id": "key", "type": "string" }
         ]
       }
     ],
@@ -365,6 +376,12 @@
         "expressionName": "CurrentStatePath",
         "scriptName": "CurrentStatePath",
         "returnType": "string"
+      },
+      {
+        "id": "current-key",
+        "expressionName": "CurrentKey",
+        "scriptName": "CurrentKey",
+        "returnType": "any"
       },
       {
         "id": "current-value",
@@ -393,6 +410,14 @@
   "room-state-collections": {
     "conditions": [
       {
+        "id": "state-items-foreach",
+        "scriptName": "ForEachItemAt",
+        "isLooping": true,
+        "params": [
+          { "id": "path", "type": "string" }
+        ]
+      },
+      {
         "id": "state-collection-item-add",
         "scriptName": "OnCollectionItemAdd",
         "isTrigger": true,
@@ -419,9 +444,9 @@
     ],
     "expressions": [
       {
-        "id": "current-collection-count",
-        "expressionName": "CurrentCollectionCount",
-        "scriptName": "CurrentCollectionCount",
+        "id": "current-items-count",
+        "expressionName": "CurrentItemsCount",
+        "scriptName": "CurrentItemsCount",
         "returnType": "number"
       },
       {

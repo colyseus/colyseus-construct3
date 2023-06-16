@@ -202,6 +202,19 @@
             }
           },
 
+          "state-items-foreach": {
+            "isStatic": true,
+            "list-name": "For Each Item At",
+            "display-text": "For Each Item At [i]{0}[/i]",
+            "description": "Iterates over the items of an ArraySchema or MapSchema.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "Path of the variable holding the items"
+              }
+            }
+          },
+
           "state-collection-item-add": {
             "isStatic": true,
             "list-name": "On Add Item",
@@ -216,7 +229,7 @@
           },
           "state-collection-item-change": {
             "isStatic": true,
-            "list-name": "On Change Item",
+            "list-name": "On Item Change",
             "display-text": "On item changed at [i]{0}[/i]",
             "description": "Triggers when an item is changed inside ArraySchema or MapSchema.",
             "params": {
@@ -239,31 +252,78 @@
             }
           },
 
-          "schema-is-index": {
-            "list-name": "Is index",
-            "display-text": "Is index {0}",
-            "description": "Only available for Arrays and Maps. Check if index of current item is equals to provided value.",
+          "is-state-value-at": {
+            "list-name": "Compare State At",
+            "display-text": "State At [i]{0}[/i] {1} [b]{2}[/b]",
+            "description": "Returns true if current state value at {0} matches the provided criteria.",
             "params": {
-              "index": {
-                "name": "Index",
-                "desc": "Index value (e.g. Colyseus.SessionId)"
+              "path": {
+                "name": "Path",
+                "desc": "A dot separated path to the variable. e.g. \"entities.item_0.is_alive\""
+              },
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "value": {
+                "name": "Value",
+                "desc": "The value for comparison"
               }
             }
           },
-          "schema-is-field": {
-            "list-name": "Is field",
-            "display-text": "Is field {0}",
-            "description": "Only available during \"On change\" of a direct object. Checks if a field name has changed.",
+
+          "schema-compare-current-value": {
+            "list-name": "Compare Current [b]Value[/b]",
+            "display-text": "Current Value {0} [b]{1}[/b]",
+            "description": "Returns true if current value matches the provided criteria.",
             "params": {
-              "field": {
-                "name": "Field",
-                "desc": "Field name"
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "value": {
+                "name": "Value",
+                "desc": "The value for comparison"
+              }
+            }
+          },
+          "schema-compare-current-value-at": {
+            "list-name": "Compare Current [b]Value At[/b]",
+            "display-text": "Current Value at [i]{0}[/i] {1} [b]{2}[/b]",
+            "description": "Returns true if current value matches the provided criteria.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "A dot separated path to the variable. e.g. \"messages.0\""
+              },
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "value": {
+                "name": "Value",
+                "desc": "The value for comparison"
+              }
+            }
+          },
+          "schema-compare-current-key": {
+            "list-name": "Compare Current Key",
+            "display-text": "Current Key {0} [i]{1}[/i]",
+            "description": "Only available during add/remove of collection items (MapSchema, ArraySchema)",
+            "params": {
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "key": {
+                "name": "Key",
+                "desc": "Key value (e.g. Colyseus.SessionId)"
               }
             }
           },
 
           "has-error-code": {
-            "list-name": "Is Error Code",
+            "list-name": "Compare Error Code",
             "display-text": "Error Code [i]{0}[/i] {1}",
             "description": "Compares the error code of the last error received.",
             "params": {
@@ -282,7 +342,7 @@
             }
           },
           "has-error-message": {
-            "list-name": "Is Error Message",
+            "list-name": "Compare Error Message",
             "display-text": "Error Message [i]{0}[/i] {1}",
             "description": "Compares the error message of the last error received.",
             "params": {
@@ -466,6 +526,10 @@
               }
             }
           },
+          "current-key": {
+            "description": "Get current item key",
+            "translated-name": "CurrentKey"
+          },
           "current-value": {
             "description": "Get value from current item",
             "translated-name": "CurrentValue"
@@ -543,9 +607,9 @@
             }
           },
 
-          "current-collection-count": {
+          "current-items-count": {
             "description": "Get total number of items on current collection. (Available during add/remove item events)",
-            "translated-name": "CurrentCollectionCount"
+            "translated-name": "CurrentItemsCount"
           },
 
           "count-items-at": {
