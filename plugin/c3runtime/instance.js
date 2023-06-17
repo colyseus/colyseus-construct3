@@ -171,9 +171,9 @@
         });
     }
 
-    getDeepVariable(path, container) {
-      const path = path.split(".");
-      const value = container;
+    getDeepVariable(rawPath, container) {
+      const path = rawPath.split(".");
+      let value = container;
 
       // deeply get the requested variable from the room's state.
       try {
