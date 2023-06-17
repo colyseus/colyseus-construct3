@@ -72,19 +72,43 @@
     ForEachItemAt(path) {
       var self = this;
       var collection = this.getDeepVariable(path, this.room && this.room.state);
-      var validCollection = (collection && typeof(collection.forEach) === "function");
+      var validCollection = (collection && typeof (collection.forEach) === "function");
       if (validCollection) {
-        self.lastCollectionPath = path;
-        self.lastCollection = collection;
-        collection.forEach(function (item, index) {
-          self.lastKey = index;
-          self.lastPath = path + '.' + index;
+        // Get necessary references
+        // https://www.construct.net/en/make-games/manuals/addon-sdk/runtime-reference/event-sheet-classes/eventblock#internalH1Link0
+        var runtime = this._runtime;
+        var eventSheetManager = runtime.GetEventSheetManager();
+        var currentEvent = runtime.GetCurrentEvent();
+        var solModifiers = currentEvent.GetSolModifiers();
+        var eventStack = runtime.GetEventStack();
+
+        this.lastCollectionPath = path;
+        this.lastCollection = collection;
+
+        // Get current stack frame and push new one
+        var oldFrame = eventStack.GetCurrentStackFrame();
+        var newFrame = eventStack.Push(currentEvent);
+
+        collection.forEach(function (item, key) {
+          self.lastKey = key;
+          self.lastPath = path + "." + key;
           self.lastValue = item;
-          console.log("Let's trigger....");
-          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.ForEachItemAt);
+
+          // Push a copy of the current SOL
+          eventSheetManager.PushCopySol(solModifiers);
+
+          // Retrigger the current event, running a single loop iteration
+          currentEvent.Retrigger(oldFrame, newFrame);
+
+          // Pop the current SOL
+          eventSheetManager.PopSol(solModifiers);
         });
+
+        // Pop the event stack frame
+        eventStack.Pop();
       }
-      return validCollection;
+      // Return false since event already executed
+      return false;
     },
 
     // Error handling
