@@ -61,6 +61,15 @@
           });
 
           room.onStateChange.once(function() {
+            // attach static error handler on schema
+            if (room.state) {
+              room.state.constructor.onError = function(e) {
+                console.error("@colyseus/schema:", e);
+                self.lastError = { code: -1, message: e.message };
+                self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+              };
+            }
+
             function registerCallbacksOnStructure (instance, path) {
               instance.onChange(function(_) { onChange([...path], instance) });
 
@@ -174,6 +183,8 @@
         } while (path.length > 0);
       } catch (e) {
         console.warn(e);
+        this.lastError = { code: -1, message: e.message };
+        this.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
         return null;
       }
 

@@ -55,6 +55,62 @@
         "scriptName": "OnAnyError",
         "isTrigger": true
       }
+    ],
+    "expressions": [
+      {
+        "id": "error-code-sdk-exception",
+        "expressionName": "ErrorCode_SDK_EXCEPTION",
+        "scriptName": "ErrorCode_SDK_EXCEPTION",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-server-offline",
+        "expressionName": "ErrorCode_SERVER_OFFLINE",
+        "scriptName": "ErrorCode_SERVER_OFFLINE",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-no-handler",
+        "expressionName": "ErrorCode_NO_HANDLER",
+        "scriptName": "ErrorCode_NO_HANDLER",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-invalid-criteria",
+        "expressionName": "ErrorCode_INVALID_CRITERIA",
+        "scriptName": "ErrorCode_INVALID_CRITERIA",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-invalid-room-id",
+        "expressionName": "ErrorCode_INVALID_ROOM_ID",
+        "scriptName": "ErrorCode_INVALID_ROOM_ID",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-unhandled",
+        "expressionName": "ErrorCode_UNHANDLED",
+        "scriptName": "ErrorCode_UNHANDLED",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-expired",
+        "expressionName": "ErrorCode_EXPIRED",
+        "scriptName": "ErrorCode_EXPIRED",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-auth-failed",
+        "expressionName": "ErrorCode_AUTH_FAILED",
+        "scriptName": "ErrorCode_AUTH_FAILED",
+        "returnType": "number"
+      },
+      {
+        "id": "error-code-applicataion-error",
+        "expressionName": "ErrorCode_APPLICATION_ERROR",
+        "scriptName": "ErrorCode_APPLICATION_ERROR",
+        "returnType": "number"
+      }
     ]
   },
 

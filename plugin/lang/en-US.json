@@ -253,8 +253,8 @@
           },
 
           "is-state-value-at": {
-            "list-name": "Compare State At",
-            "display-text": "State At [i]{0}[/i] {1} [b]{2}[/b]",
+            "list-name": "Compare Value At",
+            "display-text": "Value At [i]{0}[/i] {1} [b]{2}[/b]",
             "description": "Returns true if current state value at {0} matches the provided criteria.",
             "params": {
               "path": {
@@ -628,8 +628,44 @@
           "error-message": {
             "description": "Get last error message",
             "translated-name": "ErrorMessage"
-          }
+          },
 
+          "error-code-sdk-exception": {
+            "description": "Internal SDK error/exception",
+            "translated-name": "ErrorCode_SDK_EXCEPTION"
+          },
+          "error-code-server-offline": {
+            "description": "0 → Server is offline",
+            "translated-name": "ErrorCode_SERVER_OFFLINE"
+          },
+          "error-code-no-handler": {
+            "description": "4210 → No room handler for provided room name type",
+            "translated-name": "ErrorCode_NO_HANDLER"
+          },
+          "error-code-invalid-criteria": {
+            "description": "4211 → Invalid criteria for room selection",
+            "translated-name": "ErrorCode_INVALID_CRITERIA"
+          },
+          "error-code-invalid-room-id": {
+            "description": "4212 → Room not found for provided room id",
+            "translated-name": "ErrorCode_INVALID_ROOM_ID"
+          },
+          "error-code-unhandled": {
+            "description": "4213 → Unhandled server error",
+            "translated-name": "ErrorCode_UNHANDLED"
+          },
+          "error-code-expired": {
+            "description": "4214 → Seat reservation expired.",
+            "translated-name": "ErrorCode_EXPIRED"
+          },
+          "error-code-auth-failed": {
+            "description": "4215 → Authentication failed (`onAuth` failed on the server)",
+            "translated-name": "ErrorCode_AUTH_FAILED"
+          },
+          "error-code-applicataion-error": {
+            "description": "4216 → Application level error",
+            "translated-name": "ErrorCode_APPLICATION_ERROR"
+          }
         }
       }
     }

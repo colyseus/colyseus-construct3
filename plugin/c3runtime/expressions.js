@@ -1,6 +1,8 @@
 "use strict";
 
 {
+  var Colyseus = globalThis['Colyseus'];
+
   C3.Plugins.Colyseus_SDK.Exps =
   {
     RoomId() { return this.room && this.room.roomId; },
@@ -55,6 +57,16 @@
     // Errors
     ErrorMessage() { return this.lastError && this.lastError.message; },
     ErrorCode() { return this.lastError && this.lastError.code; },
+
+    ErrorCode_SDK_EXCEPTION() { return -1; },
+    ErrorCode_SERVER_OFFLINE() { return 0; },
+    ErrorCode_NO_HANDLER() { return Colyseus.ErrorCode.MATCHMAKE_NO_HANDLER; },
+    ErrorCode_INVALID_CRITERIA() { return Colyseus.ErrorCode.MATCHMAKE_INVALID_CRITERIA; },
+    ErrorCode_INVALID_ROOM_ID() { return Colyseus.ErrorCode.MATCHMAKE_INVALID_ROOM_ID; },
+    ErrorCode_UNHANDLED() { return Colyseus.ErrorCode.MATCHMAKE_UNHANDLED; },
+    ErrorCode_EXPIRED() { return Colyseus.ErrorCode.MATCHMAKE_EXPIRED; },
+    ErrorCode_AUTH_FAILED() { return Colyseus.ErrorCode.AUTH_FAILED; },
+    ErrorCode_APPLICATION_ERROR() { return Colyseus.ErrorCode.APPLICATION_ERROR; },
 
   };
 }
