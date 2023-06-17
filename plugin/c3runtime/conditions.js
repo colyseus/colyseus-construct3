@@ -37,6 +37,39 @@
     OnJoinRoom() { return true; },
     OnJoinError() { return true; },
     OnAnyError() { return true; },
+    ForEachRoomAvailable() {
+      var self = this;
+      if (self.lastValue && self.lastValue.length > 0) {
+        var runtime = this._runtime;
+        var eventSheetManager = runtime.GetEventSheetManager();
+        var currentEvent = runtime.GetCurrentEvent();
+        var solModifiers = currentEvent.GetSolModifiers();
+        var eventStack = runtime.GetEventStack();
+
+        // Get current stack frame and push new one
+        var oldFrame = eventStack.GetCurrentStackFrame();
+        var newFrame = eventStack.Push(currentEvent);
+
+        self.lastValue.forEach(function (item, key) {
+          self.lastKey = key;
+          self.lastValue = item;
+
+          // Push a copy of the current SOL
+          eventSheetManager.PushCopySol(solModifiers);
+
+          // Retrigger the current event, running a single loop iteration
+          currentEvent.Retrigger(oldFrame, newFrame);
+
+          // Pop the current SOL
+          eventSheetManager.PopSol(solModifiers);
+        });
+
+        // Pop the event stack frame
+        eventStack.Pop();
+      }
+      // Return false since event already executed
+      return false;
+    },
 
     // Room
     OnLeaveRoom() { return true; },

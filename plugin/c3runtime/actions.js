@@ -75,7 +75,7 @@
             console.info(room.metadata);
           });
         }
-        self.lastValue = JSON.stringify(rooms);
+        self.lastValue = rooms;
         self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnGetAvailableRooms);
       }).catch(function(err) {
         if (self.debug)

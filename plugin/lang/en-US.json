@@ -81,6 +81,12 @@
             "display-text": "On Get Available Rooms",
             "description": "Triggers when available rooms response is ready in the \"Value\" expresssion."
           },
+          "foreach-room-available": {
+            "isStatic": true,
+            "list-name": "For Each Room Available",
+            "display-text": "For Each Room Available",
+            "description": "Iterates over rooms available (Available during \"On Get Available Rooms\" condition)."
+          },
 
           "is-message-type": {
             "list-name": "Compare Message [b]Type[/b]",

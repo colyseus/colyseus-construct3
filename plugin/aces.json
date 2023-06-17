@@ -131,6 +131,11 @@
         "id": "on-get-available-rooms",
         "scriptName": "OnGetAvailableRooms",
         "isTrigger": true
+      },
+      {
+        "id": "foreach-room-available",
+        "scriptName": "ForEachRoomAvailable",
+        "isLooping": true
       }
     ],
     "actions": [
