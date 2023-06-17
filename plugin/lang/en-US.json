@@ -115,7 +115,7 @@
           "is-message-value-at": {
             "list-name": "Compare Message [b]Value At[/b]",
             "display-text": "Message value at {0} {1} {2}",
-            "description": "Returns true if current message value at {0} matches the provided criteria.",
+            "description": "Returns true if current message value at matches the provided criteria.",
             "params": {
               "path": {
                 "name": "Path",
@@ -134,7 +134,7 @@
           "is-message-value-of-type": {
             "list-name": "Compare Message [b]Value[/b] of Type",
             "display-text": "Message value of type {0} [i]{1}[/i]",
-            "description": "Returns true if current message value matches the provided criteria.",
+            "description": "Returns true if current message value type matches the provided criteria.",
             "params": {
               "cmp": {
                 "name": "Comparison",
@@ -161,7 +161,7 @@
           "is-message-value-of-type-at": {
             "list-name": "Compare Message [b]Value At[/b] of Type",
             "display-text": "Message value at {0} of type {1} {2}",
-            "description": "Returns true if current message value matches the provided criteria.",
+            "description": "Returns true if current message value type at matches the provided criteria.",
             "params": {
               "path": {
                 "name": "Path",
@@ -253,7 +253,7 @@
           },
 
           "is-state-value-at": {
-            "list-name": "Compare Value At",
+            "list-name": "Compare [b]Value At[/b]",
             "display-text": "Value At [i]{0}[/i] {1} [b]{2}[/b]",
             "description": "Returns true if current state value at {0} matches the provided criteria.",
             "params": {
@@ -273,7 +273,7 @@
           },
 
           "schema-compare-current-value": {
-            "list-name": "Compare Current [b]Value[/b]",
+            "list-name": "Compare [b]Current Value[/b]",
             "display-text": "Current Value {0} [b]{1}[/b]",
             "description": "Returns true if current value matches the provided criteria.",
             "params": {
@@ -288,7 +288,7 @@
             }
           },
           "schema-compare-current-value-at": {
-            "list-name": "Compare Current [b]Value At[/b]",
+            "list-name": "Compare [b]Current Value At[/b]",
             "display-text": "Current Value at [i]{0}[/i] {1} [b]{2}[/b]",
             "description": "Returns true if current value matches the provided criteria.",
             "params": {
@@ -307,7 +307,7 @@
             }
           },
           "schema-compare-current-key": {
-            "list-name": "Compare Current Key",
+            "list-name": "Compare [b]Current Key[/b]",
             "display-text": "Current Key {0} [i]{1}[/i]",
             "description": "Only available during add/remove of collection items (MapSchema, ArraySchema)",
             "params": {
@@ -318,6 +318,70 @@
               "key": {
                 "name": "Key",
                 "desc": "Key value (e.g. Colyseus.SessionId)"
+              }
+            }
+          },
+          "schema-compare-items-at-count": {
+            "list-name": "Compare [b]Items Count At[/b]",
+            "display-text": "Items Count At [i]{0}[/i] {1} [i]{2}[/i]",
+            "description": "Compare the number of items at a specific path in the state.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "A dot separated path to the variable. e.g. \"players.one.inventory\""
+              },
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "count": {
+                "name": "Count",
+                "desc": "Number of items"
+              }
+            }
+          },
+          "schema-compare-current-items-count": {
+            "list-name": "Compare [b]Current Items Count[/b]",
+            "display-text": "Current Items Count {0} [i]{1}[/i]",
+            "description": "Only available during add/remove of collection items (MapSchema, ArraySchema)",
+            "params": {
+              "cmp": {
+                "name": "Comparison",
+                "desc": "How to compare the value."
+              },
+              "count": {
+                "name": "Count",
+                "desc": "Number of items"
+              }
+            }
+          },
+          "schema-array-has-value": {
+            "list-name": "Array At Contains Value",
+            "display-text": "Array At {0} contains [i]{1}[/i]",
+            "description": "Returns true if Array at path in the state has the provided value.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "A dot separated path to the variable. e.g. \"players.one.inventory\""
+              },
+              "value": {
+                "name": "Value",
+                "desc": "The value to check for"
+              }
+            }
+          },
+          "schema-map-has-key": {
+            "list-name": "Map At Key Exists",
+            "display-text": "Map At {0} has [i]{1}[/i]",
+            "description": "Returns true if Array at path in the state has the provided value.",
+            "params": {
+              "path": {
+                "name": "Path",
+                "desc": "A dot separated path to the variable. e.g. \"players.one.inventory\""
+              },
+              "key": {
+                "name": "Key",
+                "desc": "The key to check for"
               }
             }
           },

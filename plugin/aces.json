@@ -496,6 +496,39 @@
         "params": [
           { "id": "path", "type": "string" }
         ]
+      },
+      {
+        "id": "schema-compare-items-at-count",
+        "scriptName": "CompareItemsAtCount",
+        "params": [
+          { "id": "path", "type": "string" },
+          { "id": "cmp", "type": "cmp" },
+          { "id": "count", "type": "number" }
+        ]
+      },
+      {
+        "id": "schema-compare-current-items-count",
+        "scriptName": "CompareCurrentItemsCount",
+        "params": [
+          { "id": "cmp", "type": "cmp" },
+          { "id": "count", "type": "number" }
+        ]
+      },
+      {
+        "id": "schema-array-has-value",
+        "scriptName": "ArrayHasValue",
+        "params": [
+          { "id": "path", "type": "string" },
+          { "id": "value", "type": "any" }
+        ]
+      },
+      {
+        "id": "schema-map-has-key",
+        "scriptName": "MapHasKey",
+        "params": [
+          { "id": "path", "type": "string" },
+          { "id": "key", "type": "string" }
+        ]
       }
     ],
     "expressions": [

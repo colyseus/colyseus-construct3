@@ -64,6 +64,27 @@
     OnCollectionItemAdd(path) { return this.lastCollectionPath === path; },
     OnCollectionItemRemove(path) { return this.lastCollectionPath === path; },
     OnCollectionItemChange(path) { return this.lastCollectionPath === path; },
+    CompareItemsAtCount(path, cmp, count) {
+      var collection = this.getDeepVariable(path, (this.room && this.room.state));
+      var itemsCount = (Array.isArray(collection)
+        ? collection.length
+        : collection.size);
+      return C3.compare(itemsCount, cmp, count);
+    },
+    CompareCurrentItemsCount(cmp, count) {
+      var itemsCount = (Array.isArray(this.lastCollection)
+        ? this.lastCollection.length
+        : this.lastCollection.size);
+      return C3.compare(itemsCount, cmp, count);
+    },
+    ArrayHasValue(path, value) {
+      var arr = this.getDeepVariable(path, this.room && this.room.state);
+      return arr && typeof (arr.includes) === "function" && arr.includes(value)
+    },
+    MapHasKey(path, key) {
+      var map = this.getDeepVariable(path, this.room && this.room.state);
+      return map && typeof (map.has) === "function" && map.has(key);
+    },
 
     // State
     CompareCurrentKey(cmp, key) { return C3.compare(this.lastKey, cmp, key); },
