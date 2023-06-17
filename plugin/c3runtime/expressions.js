@@ -26,6 +26,7 @@
     CurrentKey() { return this.lastKey; },
     CurrentValue() { return this.lastValue; },
     CurrentValueAt(path) { return this.getDeepVariable(path, this.lastValue); },
+    PreviousValue() { return this.lastPreviousValue; },
 
     // Collections
     CurrentItemsCount() {

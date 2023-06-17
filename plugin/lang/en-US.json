@@ -199,11 +199,11 @@
             "isStatic": true,
             "list-name": "On Change At",
             "display-text": "On change at [i]{0}[/i]",
-            "description": "Triggers when a variable changes at a specific path in the state.",
+            "description": "Triggers when a variable changes at a specific path in the state. (e.g. \"player.x\")",
             "params": {
               "path": {
                 "name": "Path",
-                "desc": "Path of the variable you'd like to listen for. e.g. \"entities\""
+                "desc": "Path of the variable you'd like to listen for. e.g. \"item.property\""
               }
             }
           },

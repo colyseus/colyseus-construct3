@@ -482,6 +482,7 @@
         "id": "state-collection-item-add",
         "scriptName": "OnCollectionItemAdd",
         "isTrigger": true,
+        "highlight": true,
         "params": [
           { "id": "path", "type": "string" }
         ]
@@ -498,6 +499,7 @@
         "id": "state-collection-item-remove",
         "scriptName": "OnCollectionItemRemove",
         "isTrigger": true,
+        "highlight": true,
         "params": [
           { "id": "path", "type": "string" }
         ]

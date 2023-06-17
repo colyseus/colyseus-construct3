@@ -1,7 +1,7 @@
 "use strict";
 
 {
-  var Colyseus = globalThis['Colyseus'];
+  const Colyseus = globalThis['Colyseus'];
 
   C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends C3.SDKWorldInstanceBase
   {
@@ -38,10 +38,10 @@
       // load state for savegames
     }
 
-    _MatchMake (methodName, roomName, options)
+    _MatchMake (methodName, roomName, rawOptions)
     {
-        var self = this;
-        var options = JSON.parse(options || "{}");
+        const self = this;
+        const options = JSON.parse(rawOptions || "{}");
 
         this.client[methodName](roomName, options).then(function(room) {
           self.room = room;
@@ -71,13 +71,11 @@
             }
 
             function registerCallbacksOnStructure (instance, path) {
-              instance.onChange(function(_) { onChange([...path], instance) });
-
-              var schema = instance['_definition'].schema;
-              for (var field in schema) {
-                var schemaType = typeof(schema[field]);
+              const schema = instance['_definition'].schema;
+              for (let field in schema) {
+                const schemaType = typeof(schema[field]);
                 if (schemaType === "object" || schemaType === "function") {
-                  var collection = instance[field];
+                  const collection = instance[field];
 
                   // on item added to collection
                   collection.onAdd(function (instance, key) {
@@ -95,6 +93,16 @@
                   collection.onChange(function (instance, key) {
                     self.lastCollection = collection;
                     onItemChange([...path, field], instance, key);
+                  });
+
+                } else {
+                  instance.listen(field, function (value, previousValue) {
+                    self.lastKey = field;
+                    self.lastPath = [...path, field].join(".");
+                    self.lastValue = value;
+                    self.lastPreviousValue = previousValue;
+                    console.log("onChange", self.lastPath, self.lastKey, self.lastValue);
+                    self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
                   });
                 }
               }
@@ -127,13 +135,6 @@
               self.lastKey = key;
               self.lastValue = instance;
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemRemove);
-            }
-
-            function onChange (path, instance) {
-              self.lastKey = undefined;
-              self.lastPath = path.join(".");
-              self.lastValue = instance;
-              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
             }
 
             registerCallbacksOnStructure(self.room.state, []);
@@ -171,8 +172,8 @@
     }
 
     getDeepVariable(path, container) {
-      var path = path.split(".");
-      var value = container;
+      const path = path.split(".");
+      const value = container;
 
       // deeply get the requested variable from the room's state.
       try {

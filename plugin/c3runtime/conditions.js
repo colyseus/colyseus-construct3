@@ -2,19 +2,18 @@
 
 {
   const operations = ['any', 'add', 'replace', 'remove'];
-
-  var ANY = ":any:";
+  const ANY = ":any:";
 
   function checkPath (lastPath, path) {
     if (lastPath === path) {
       return true;
 
     } else if (path.indexOf(ANY) >= 0) {
-      var lastSegments = lastPath.split(".");
-      var segments = path.split(".");
+      const lastSegments = lastPath.split(".");
+      const segments = path.split(".");
 
       if (lastSegments.length === segments.length) {
-        for (var i = 0; i < segments.length; i++) {
+        for (const i = 0; i < segments.length; i++) {
           if (segments[i] !== ANY && segments[i] !== lastSegments[i]) {
             return false;
           }
@@ -38,17 +37,17 @@
     OnJoinError() { return true; },
     OnAnyError() { return true; },
     ForEachRoomAvailable() {
-      var self = this;
+      const self = this;
       if (self.lastValue && self.lastValue.length > 0) {
-        var runtime = this._runtime;
-        var eventSheetManager = runtime.GetEventSheetManager();
-        var currentEvent = runtime.GetCurrentEvent();
-        var solModifiers = currentEvent.GetSolModifiers();
-        var eventStack = runtime.GetEventStack();
+        const runtime = this._runtime;
+        const eventSheetManager = runtime.GetEventSheetManager();
+        const currentEvent = runtime.GetCurrentEvent();
+        const solModifiers = currentEvent.GetSolModifiers();
+        const eventStack = runtime.GetEventStack();
 
         // Get current stack frame and push new one
-        var oldFrame = eventStack.GetCurrentStackFrame();
-        var newFrame = eventStack.Push(currentEvent);
+        const oldFrame = eventStack.GetCurrentStackFrame();
+        const newFrame = eventStack.Push(currentEvent);
 
         self.lastValue.forEach(function (item, key) {
           self.lastKey = key;
@@ -98,24 +97,24 @@
     OnCollectionItemRemove(path) { return this.lastCollectionPath === path; },
     OnCollectionItemChange(path) { return this.lastCollectionPath === path; },
     CompareItemsAtCount(path, cmp, count) {
-      var collection = this.getDeepVariable(path, (this.room && this.room.state));
-      var itemsCount = (Array.isArray(collection)
+      const collection = this.getDeepVariable(path, (this.room && this.room.state));
+      const itemsCount = (Array.isArray(collection)
         ? collection.length
         : collection.size);
       return C3.compare(itemsCount, cmp, count);
     },
     CompareCurrentItemsCount(cmp, count) {
-      var itemsCount = (Array.isArray(this.lastCollection)
+      const itemsCount = (Array.isArray(this.lastCollection)
         ? this.lastCollection.length
         : this.lastCollection.size);
       return C3.compare(itemsCount, cmp, count);
     },
     ArrayHasValue(path, value) {
-      var arr = this.getDeepVariable(path, this.room && this.room.state);
+      const arr = this.getDeepVariable(path, this.room && this.room.state);
       return arr && typeof (arr.includes) === "function" && arr.includes(value)
     },
     MapHasKey(path, key) {
-      var map = this.getDeepVariable(path, this.room && this.room.state);
+      const map = this.getDeepVariable(path, this.room && this.room.state);
       return map && typeof (map.has) === "function" && map.has(key);
     },
 
@@ -124,24 +123,24 @@
     CompareCurrentValue(cmp, value) { return C3.compare(this.lastValue, cmp, value); },
     CompareCurrentValueAt(path, cmp, value) { return C3.compare(this.getDeepVariable(path, this.lastValue), cmp, value); },
     ForEachItemAt(path) {
-      var self = this;
-      var collection = this.getDeepVariable(path, this.room && this.room.state);
-      var validCollection = (collection && typeof (collection.forEach) === "function");
+      const self = this;
+      const collection = this.getDeepVariable(path, this.room && this.room.state);
+      const validCollection = (collection && typeof (collection.forEach) === "function");
       if (validCollection) {
         // Get necessary references
         // https://www.construct.net/en/make-games/manuals/addon-sdk/runtime-reference/event-sheet-classes/eventblock#internalH1Link0
-        var runtime = this._runtime;
-        var eventSheetManager = runtime.GetEventSheetManager();
-        var currentEvent = runtime.GetCurrentEvent();
-        var solModifiers = currentEvent.GetSolModifiers();
-        var eventStack = runtime.GetEventStack();
+        const runtime = this._runtime;
+        const eventSheetManager = runtime.GetEventSheetManager();
+        const currentEvent = runtime.GetCurrentEvent();
+        const solModifiers = currentEvent.GetSolModifiers();
+        const eventStack = runtime.GetEventStack();
 
         this.lastCollectionPath = path;
         this.lastCollection = collection;
 
         // Get current stack frame and push new one
-        var oldFrame = eventStack.GetCurrentStackFrame();
-        var newFrame = eventStack.Push(currentEvent);
+        const oldFrame = eventStack.GetCurrentStackFrame();
+        const newFrame = eventStack.Push(currentEvent);
 
         collection.forEach(function (item, key) {
           self.lastKey = key;
