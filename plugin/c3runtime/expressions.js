@@ -30,29 +30,16 @@
 
     // Collections
     CurrentItemsCount() {
-      try {
-        return (Array.isArray(this.lastCollection)
-          ? this.lastCollection.length
-          : this.lastCollection.size);
-
-      } catch (e) {
-        this.lastError = e;
-        this.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
-        return 0;
-      }
+      const collection = this.lastCollection || ""
+      return (Array.isArray(collection)
+        ? (collection.length || 0)
+        : (collection.size || 0));
     },
     CountItemsAt(path) {
-      try {
-        var collection = this.getDeepVariable(path, (this.room && this.room.state));
-        return (Array.isArray(collection)
-          ? collection.length
-          : collection.size);
-
-      } catch (e) {
-        this.lastError = e;
-        this.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
-        return 0;
-      }
+      const collection = this.getDeepVariable(path, (this.room && this.room.state));
+      return (Array.isArray(collection)
+        ? (collection.length || 0)
+        : (collection.size || 0));
     },
 
     // Errors

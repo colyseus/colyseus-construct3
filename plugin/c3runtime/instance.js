@@ -186,13 +186,14 @@
         } while (path.length > 0);
 
       } catch (e) {
-        return undefined;
+        if (this.debug) {
+          console.warn("Colyseus: no value at path '" + rawPath + "'. Using empty string: \"\"", { path: rawPath, value: JSON.stringify(container) });
+        }
+        value = "";
       }
 
-      return value;
+      return value ?? "";
     }
-
-
   };
 
 }

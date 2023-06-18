@@ -100,14 +100,15 @@
     CompareItemsAtCount(path, cmp, count) {
       const collection = this.getDeepVariable(path, (this.room && this.room.state));
       const itemsCount = (Array.isArray(collection)
-        ? collection.length
-        : collection.size);
+        ? (collection.length || 0)
+        : (collection.size || 0));
       return C3.compare(itemsCount, cmp, count);
     },
     CompareCurrentItemsCount(cmp, count) {
-      const itemsCount = (Array.isArray(this.lastCollection)
-        ? this.lastCollection.length
-        : this.lastCollection.size);
+      const collection = this.lastCollection || "";
+      const itemsCount = (Array.isArray(collection)
+        ? (collection.length || 0)
+        : (collection.size || 0));
       return C3.compare(itemsCount, cmp, count);
     },
     ArrayHasValue(path, value) {
