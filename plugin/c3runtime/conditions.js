@@ -49,7 +49,8 @@
         const oldFrame = eventStack.GetCurrentStackFrame();
         const newFrame = eventStack.Push(currentEvent);
 
-        self.lastValue.forEach(function (item, key) {
+        const rooms = self.lastValue;
+        rooms.forEach(function (item, key) {
           self.lastKey = key;
           self.lastValue = item;
 
