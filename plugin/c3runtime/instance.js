@@ -184,11 +184,9 @@
             ? value[path.shift()]
             : value.get(path.shift());
         } while (path.length > 0);
+
       } catch (e) {
-        console.warn(e);
-        this.lastError = { code: -1, message: e.message };
-        this.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
-        return null;
+        return undefined;
       }
 
       return value;
