@@ -101,7 +101,9 @@
                     self.lastPath = [...path, field].join(".");
                     self.lastValue = value;
                     self.lastPreviousValue = previousValue;
-                    console.log("onChange", self.lastPath, self.lastKey, self.lastValue);
+                    if (self.debug) {
+                      console.log("onChange", self.lastPath, self.lastKey, self.lastValue);
+                    }
                     self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
                   });
                 }

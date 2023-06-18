@@ -684,7 +684,13 @@
 
           "count-items-at": {
             "description": "Get total number of items at a path. (Path must be a MapSchema or ArraySchema)",
-            "translated-name": "CountItemsAt"
+            "translated-name": "CountItemsAt",
+            "params": {
+              "path": {
+                "name": "Variable Path",
+                "desc": "A dot separated path to the variable. e.g. \"skills.length\", \"skills.0.name\""
+              }
+            }
           },
 
           "close-code": {

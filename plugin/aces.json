@@ -549,7 +549,10 @@
         "id": "count-items-at",
         "expressionName": "CountItemsAt",
         "scriptName": "CountItemsAt",
-        "returnType": "number"
+        "returnType": "number",
+        "params": [
+          { "id": "path", "type": "string" }
+        ]
       }
     ]
   }
