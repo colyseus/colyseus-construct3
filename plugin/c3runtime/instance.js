@@ -11,7 +11,7 @@
 
       if (properties)
       {
-        this.endpoint = properties[0];
+        this.endpoint = properties[0] || this.endpoint;
         this.client = new Colyseus.Client(this.endpoint);
       }
     }
@@ -42,8 +42,11 @@
     {
         const self = this;
         const options = JSON.parse(rawOptions || "{}");
+        const args = (methodName === "consumeSeatReservation")
+          ? [options]
+          : [roomName, options];
 
-        this.client[methodName](roomName, options).then(function(room) {
+        this.client[methodName](...args).then(function(room) {
           self.room = room;
 
           self.sessionId = self.room.sessionId;

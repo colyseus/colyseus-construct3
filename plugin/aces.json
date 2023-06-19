@@ -11,6 +11,12 @@
       }
     ],
     "expressions": [
+      {
+        "id": "get-endpoint",
+        "expressionName": "Endpoint",
+        "scriptName": "Endpoint",
+        "returnType": "string"
+      }
     ]
   },
 

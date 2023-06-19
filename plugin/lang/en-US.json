@@ -586,6 +586,10 @@
         },
 
         "expressions": {
+          "get-endpoint": {
+            "description": "Get server endpoint",
+            "translated-name": "Endpoint"
+          },
           "json": {
             "description": "Evaluates provided string and return stringified JSON object",
             "translated-name": "JSON",

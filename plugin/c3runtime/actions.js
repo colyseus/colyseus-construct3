@@ -7,7 +7,8 @@
   {
     SetEndpoint(endpoint)
     {
-      this.client = new Colyseus.Client(endpoint || this.endpoint);
+      this.endpoint = endpoint || this.endpoint;
+      this.client = new Colyseus.Client(this.endpoint);
     },
 
     JoinRoom (roomName, options)
@@ -31,7 +32,7 @@
     },
 
     ConsumeSeatReservation (reservation) {
-      this._MatchMake("consumeSeatReservation", JSON.parse(reservation));
+      this._MatchMake("consumeSeatReservation", undefined, reservation);
     },
 
     ReconnectRoom (roomId, sessionId)

@@ -12,7 +12,7 @@
   const PLUGIN_ID = "Colyseus_SDK";
   ////////////////////////////////////////////
 
-  const PLUGIN_VERSION = "0.15.0.4";
+  const PLUGIN_VERSION = "0.15.0.5";
   const PLUGIN_CATEGORY = "web";
   const PLUGIN_AUTHOR = "Endel Dreyer";
 
@@ -47,7 +47,7 @@
 
       SDK.Lang.PushContext(".properties");
       this._info.SetProperties([
-          new SDK.PluginProperty("text", "endpoint", "ws://localhost:2567")
+          new SDK.PluginProperty("text", "endpoint", "http://localhost:2567")
       ]);
       SDK.Lang.PopContext(); // .properties
 

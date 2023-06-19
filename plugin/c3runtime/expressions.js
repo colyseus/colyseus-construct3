@@ -8,7 +8,8 @@
     RoomId() { return this.room && this.room.roomId; },
     SessionId() { return this.room && this.room.sessionId; },
     ReconnectionToken() { return this.room && this.room.reconnectionToken; },
-    CloseCode() { return this.lastCloseCode; },
+    CloseCode() { return this.lastCloseCode || -1; },
+    Endpoint() { return this.endpoint; },
 
     JSON(data) { return JSON.stringify(eval(`(${data})`)); },
 
@@ -30,7 +31,6 @@
 
     // Collections
     CurrentItemsCount() {
-      debugger;
       const collection = this.lastCollection || "";
       return (typeof(collection.indexOf) === "function"
         ? (collection.length || 0)
@@ -44,8 +44,8 @@
     },
 
     // Errors
-    ErrorMessage() { return this.lastError && this.lastError.message; },
-    ErrorCode() { return this.lastError && this.lastError.code; },
+    ErrorMessage() { return (this.lastError && this.lastError.message) || ""; },
+    ErrorCode() { return (this.lastError && this.lastError.code) || -1; },
 
     ErrorCode_SDK_EXCEPTION() { return -1; },
     ErrorCode_SERVER_OFFLINE() { return 0; },
