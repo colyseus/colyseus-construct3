@@ -99,14 +99,14 @@
     OnCollectionItemChange(path) { return this.lastCollectionPath === path; },
     CompareItemsAtCount(path, cmp, count) {
       const collection = this.getDeepVariable(path, (this.room && this.room.state));
-      const itemsCount = (Array.isArray(collection)
+      const itemsCount = (typeof(collection.indexOf) === "function"
         ? (collection.length || 0)
         : (collection.size || 0));
       return C3.compare(itemsCount, cmp, count);
     },
     CompareCurrentItemsCount(cmp, count) {
       const collection = this.lastCollection || "";
-      const itemsCount = (Array.isArray(collection)
+      const itemsCount = (typeof(collection.indexOf) === "function"
         ? (collection.length || 0)
         : (collection.size || 0));
       return C3.compare(itemsCount, cmp, count);

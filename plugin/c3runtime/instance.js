@@ -70,33 +70,32 @@
               };
             }
 
-            function registerCallbacksOnStructure (instance, path) {
-              const schema = instance['_definition'].schema;
+            function registerCallbacksOnStructure (schemaInstance, path) {
+              const schema = schemaInstance['_definition'].schema;
               for (let field in schema) {
                 const schemaType = typeof(schema[field]);
                 if (schemaType === "object" || schemaType === "function") {
-                  const collection = instance[field];
 
                   // on item added to collection
-                  collection.onAdd(function (instance, key) {
-                    self.lastCollection = collection;
-                    onItemAdd([...path, field], instance, key);
+                  schemaInstance[field].onAdd(function (item, key) {
+                    self.lastCollection = schemaInstance[field];
+                    onItemAdd([...path, field], item, key);
                   });
 
                   // on item removed from collection
-                  collection.onRemove(function (instance, key) {
-                    self.lastCollection = collection;
-                    onItemRemove([...path, field], instance, key);
+                  schemaInstance[field].onRemove(function (item, key) {
+                    self.lastCollection = schemaInstance[field];
+                    onItemRemove([...path, field], item, key);
                   });
 
                   // on item changed in collection
-                  collection.onChange(function (instance, key) {
-                    self.lastCollection = collection;
-                    onItemChange([...path, field], instance, key);
+                  schemaInstance[field].onChange(function (item, key) {
+                    self.lastCollection = schemaInstance[field];
+                    onItemChange([...path, field], item, key);
                   });
 
                 } else {
-                  instance.listen(field, function (value, previousValue) {
+                  schemaInstance.listen(field, function (value, previousValue) {
                     self.lastKey = field;
                     self.lastPath = [...path, field].join(".");
                     self.lastValue = value;

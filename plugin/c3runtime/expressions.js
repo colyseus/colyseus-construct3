@@ -30,14 +30,15 @@
 
     // Collections
     CurrentItemsCount() {
-      const collection = this.lastCollection || ""
-      return (Array.isArray(collection)
+      debugger;
+      const collection = this.lastCollection || "";
+      return (typeof(collection.indexOf) === "function"
         ? (collection.length || 0)
         : (collection.size || 0));
     },
     CountItemsAt(path) {
       const collection = this.getDeepVariable(path, (this.room && this.room.state));
-      return (Array.isArray(collection)
+      return (typeof(collection.indexOf) === "function"
         ? (collection.length || 0)
         : (collection.size || 0));
     },
