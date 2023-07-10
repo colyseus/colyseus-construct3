@@ -1,4 +1,4 @@
-// colyseus.js@0.15.9 (@colyseus/schema 2.0.9)
+// colyseus.js@0.15.10 (@colyseus/schema 2.0.9)
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('colyseus.js', ['exports'], factory) :
@@ -109,62 +109,59 @@
     }
 
     function apply(src, tar) {
-    	tar.headers = src.headers || {};
     	tar.statusMessage = src.statusText;
     	tar.statusCode = src.status;
-    	tar.data = src.response;
+    	tar.data = src.body;
     }
 
     function send(method, uri, opts) {
-    	return new Promise(function (res, rej) {
-    		opts = opts || {};
-    		var req = new XMLHttpRequest;
-    		var k, tmp, arr, str=opts.body;
-    		var headers = opts.headers || {};
+    	opts = opts || {};
+    	var timer, ctrl, tmp=opts.body;
 
-    		// IE compatible
-    		if (opts.timeout) req.timeout = opts.timeout;
-    		req.ontimeout = req.onerror = function (err) {
-    			err.timeout = err.type == 'timeout';
+    	opts.method = method;
+    	opts.headers = opts.headers || {};
+
+    	if (tmp instanceof FormData) ; else if (tmp && typeof tmp == 'object') {
+    		opts.headers['content-type'] = 'application/json';
+    		opts.body = JSON.stringify(tmp);
+    	}
+
+    	if (opts.withCredentials) {
+    		opts.credentials = 'include';
+    	}
+
+    	if (opts.timeout) {
+    		ctrl = new AbortController;
+    		opts.signal = ctrl.signal;
+    		timer = setTimeout(ctrl.abort, opts.timeout);
+    	}
+
+    	return new Promise((res, rej) => {
+    		fetch(uri, opts).then((rr, reply) => {
+    			clearTimeout(timer);
+
+    			apply(rr, rr); //=> rr.headers
+    			reply = rr.status >= 400 ? rej : res;
+
+    			tmp = rr.headers.get('content-type');
+    			if (!tmp || !~tmp.indexOf('application/json')) {
+    				reply(rr);
+    			} else {
+    				rr.text().then(str => {
+    					try {
+    						rr.data = JSON.parse(str, opts.reviver);
+    						reply(rr);
+    					} catch (err) {
+    						err.headers = rr.headers;
+    						apply(rr, err);
+    						rej(err);
+    					}
+    				});
+    			}
+    		}).catch(err => {
+    			err.timeout = ctrl && ctrl.signal.aborted;
     			rej(err);
-    		};
-
-    		req.open(method, uri.href || uri);
-
-    		req.onload = function () {
-    			arr = req.getAllResponseHeaders().trim().split(/[\r\n]+/);
-    			apply(req, req); //=> req.headers
-
-    			while (tmp = arr.shift()) {
-    				tmp = tmp.split(': ');
-    				req.headers[tmp.shift().toLowerCase()] = tmp.join(': ');
-    			}
-
-    			tmp = req.headers['content-type'];
-    			if (tmp && !!~tmp.indexOf('application/json')) {
-    				try {
-    					req.data = JSON.parse(req.data, opts.reviver);
-    				} catch (err) {
-    					apply(req, err);
-    					return rej(err);
-    				}
-    			}
-
-    			(req.status >= 400 ? rej : res)(req);
-    		};
-
-    		if (typeof FormData < 'u' && str instanceof FormData) ; else if (str && typeof str == 'object') {
-    			headers['content-type'] = 'application/json';
-    			str = JSON.stringify(str);
-    		}
-
-    		req.withCredentials = !!opts.withCredentials;
-
-    		for (k in headers) {
-    			req.setRequestHeader(k, headers[k]);
-    		}
-
-    		req.send(str);
+    		});
     	});
     }
 
@@ -181,7 +178,7 @@
     var put_1 = put;
     var send_1 = send;
 
-    var xhr = {
+    var fetch_1 = {
     	del: del_1,
     	get: get_1,
     	patch: patch_1,
@@ -192,14 +189,14 @@
 
     var http = /*#__PURE__*/_mergeNamespaces({
         __proto__: null,
-        'default': xhr,
+        'default': fetch_1,
         del: del_1,
         get: get_1,
         patch: patch_1,
         post: post_1,
         put: put_1,
         send: send_1
-    }, [xhr]);
+    }, [fetch_1]);
 
     var CloseCode;
     (function (CloseCode) {

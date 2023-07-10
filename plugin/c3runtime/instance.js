@@ -77,8 +77,8 @@
               const schema = schemaInstance['_definition'].schema;
               for (let field in schema) {
                 const schemaType = typeof(schema[field]);
-                if (schemaType === "object" || schemaType === "function") {
 
+                if (schemaType === "object") {
                   // on item added to collection
                   schemaInstance[field].onAdd(function (item, key) {
                     self.lastCollection = schemaInstance[field];
@@ -97,19 +97,33 @@
                     onItemChange([...path, field], item, key);
                   });
 
+                } else if (schemaType === "function") {
+                  // direct schema instance
+                  schemaInstance[field].onChange(function () {
+                    onChangeAtPath(field, path, schemaInstance[field], undefined);
+                  });
+
+                  // created the schema instance
+                  onChangeAtPath(field, path, schemaInstance[field], undefined);
+
                 } else {
+                  // field on schema instance
                   schemaInstance.listen(field, function (value, previousValue) {
-                    self.lastKey = field;
-                    self.lastPath = [...path, field].join(".");
-                    self.lastValue = value;
-                    self.lastPreviousValue = previousValue;
-                    if (self.debug) {
-                      console.log("onChange", self.lastPath, self.lastKey, self.lastValue);
-                    }
-                    self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
+                    onChangeAtPath(field, path, value, previousValue);
                   });
                 }
               }
+            }
+
+            function onChangeAtPath (key, path, value, previousValue) {
+              self.lastKey = key;
+              self.lastPath = [...path, key].join(".");
+              self.lastValue = value;
+              self.lastPreviousValue = previousValue;
+              if (self.debug) {
+                console.log("onChange", self.lastPath, self.lastKey, self.lastValue);
+              }
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
             }
 
             function onItemAdd (path, instance, key) {
