@@ -79,10 +79,23 @@
                 const schemaType = typeof(schema[field]);
 
                 if (schemaType === "object") {
+                  const isSchemaChild = Object.values(schema[field]).some((value) => value['_definition']);
+
                   // on item added to collection
                   schemaInstance[field].onAdd(function (item, key) {
                     self.lastCollection = schemaInstance[field];
                     onItemAdd([...path, field], item, key);
+
+                    //
+                    // if it's a Schema child, detect changes on it and trigger
+                    // "On item change" in the collection itself
+                    //
+                    if (isSchemaChild) {
+                      // trigger "On item change"
+                      item.onChange(function () {
+                        onItemChange([...path, field], item, key);
+                      });
+                    }
                   });
 
                   // on item removed from collection
@@ -91,11 +104,17 @@
                     onItemRemove([...path, field], item, key);
                   });
 
-                  // on item changed in collection
-                  schemaInstance[field].onChange(function (item, key) {
-                    self.lastCollection = schemaInstance[field];
-                    onItemChange([...path, field], item, key);
-                  });
+                  //
+                  // only register onChange in the collection itself if it's not
+                  // a Schema child.
+                  //
+                  if (!isSchemaChild) {
+                    // on item changed in collection
+                    schemaInstance[field].onChange(function (item, key) {
+                      self.lastCollection = schemaInstance[field];
+                      onItemChange([...path, field], item, key);
+                    });
+                  }
 
                 } else if (schemaType === "function") {
                   // direct schema instance
@@ -208,7 +227,9 @@
         value = "";
       }
 
-      return value ?? "";
+      return (typeof(value) === "boolean")
+        ? Number(value) // convert boolean to number
+        : (value ?? ""); // everything else (in case of undefined, convert it to empty string)
     }
   };
 
