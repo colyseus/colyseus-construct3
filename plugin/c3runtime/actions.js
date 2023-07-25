@@ -52,7 +52,7 @@
 
     RoomSendJSON (type, message)
     {
-      this.RoomSend(type, JSON.parse(message));
+      C3.Plugins.Colyseus_SDK.Acts.RoomSend.call(this, type, JSON.parse(message));
     },
 
     RoomLeave()
