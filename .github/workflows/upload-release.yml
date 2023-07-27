@@ -1,47 +1,57 @@
+name: Publish & Release
+
+permissions:
+  contents: write
+
 on:
   push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-
-name: Upload Release Asset
+    branches:
+      - main
 
 jobs:
-  build:
-    name: Upload Release Asset
+  publish-addon:
+    name: Release & Publish
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [12.x]
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm run build
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: true
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./Colyseus.c3addon
-          asset_name: Colyseus-${{ github.ref }}.c3addon
-          asset_content_type: application/zip
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: |
+        npm install
+
+    - id: check
+      uses: EndBug/version-check@v1
+      with:
+        file-name: plugin/addon.json
+        diff-search: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate .c3addon file for upload
+      if: steps.check.outputs.changed == 'true'
+      run: npx c3addon pack --root plugin
+
+    - name: Release
+      if: steps.check.outputs.changed == 'true'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.check.outputs.version }}
+        prerelease: false
+        files: Colyseus_SDK.c3addon
+
+    # - name: Release
+    #   if: steps.check.outputs.changed == 'true'
+    #   run: |
+    #     c3addon publish \
+    #       --addonUrl 'https://www.construct.net/en/make-games/addons/1057/testing-auto-release' \
+    #       --authUser ${{ secrets.C3_AUTH_USER }} \
+    #       --authPassword ${{ secrets.C3_AUTH_PASSWORD }} \
+    #       --uploadFile Colyseus_SDK.c3addon \
+    #       --version ${{ steps.check.outputs.version }} \
+    #       --releaseNotes 'Released via GitHub Actions'
