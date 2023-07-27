@@ -15,25 +15,34 @@
     JSON(data) { return JSON.stringify(eval(`(${data})`)); },
 
     // Messages
-    MessageValue() { return this.lastMessage; },
-    MessageValueAt(path) { return this.getDeepVariable(path, this.lastMessage); },
+    MessageValue() { return typeof this.lastMessage === 'object' ? JSON.stringify(this.lastMessage) : this.lastMessage; },
+    MessageValueAt(path) {
+      const value = this.getDeepVariable(path, this.lastMessage);
+      return typeof value === 'object' ? JSON.stringify(value) : value;
+    },
     MessageType() { return this.lastType; },
     MessageValueType() { return typeof (this.lastMessage); },
     MessageValueAtType(path) { return typeof (this.getDeepVariable(path, this.lastMessage)); },
 
     // State
-    State(variablePath) { return this.getDeepVariable(variablePath, (this.room && this.room.state) || {}); },
+    State(variablePath) {
+      const state = this.getDeepVariable(variablePath, (this.room && this.room.state) || {});
+      return typeof state === 'object' ? JSON.stringify(state) : state;
+    },
     CurrentStatePath() { return this.lastPath; },
 
     CurrentKey() { return this.lastKey; },
-    CurrentValue() { return this.lastValue; },
-    CurrentValueAt(path) { return this.getDeepVariable(path, this.lastValue); },
-    PreviousValue() { return this.lastPreviousValue; },
+    CurrentValue() { return typeof this.lastValue === 'object' ? JSON.stringify(this.lastValue) : this.lastValue; },
+    CurrentValueAt(path) { 
+      const value = this.getDeepVariable(path, this.lastValue);
+      return typeof value === 'object' ? JSON.stringify(value) : value;
+    },
+    PreviousValue() { return typeof this.lastPreviousValue === 'object' ? JSON.stringify(this.lastPreviousValue) : this.lastPreviousValue; },
 
     // Collections
     CurrentItemsCount() {
       const collection = this.lastCollection || "";
-      return (typeof(collection.indexOf) === "function"
+      return (typeof (collection.indexOf) === "function"
         ? (collection.length || 0)
         : (collection.size || 0));
     },
