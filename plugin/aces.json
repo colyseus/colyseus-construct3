@@ -245,6 +245,12 @@
         "returnType": "string"
       },
       {
+        "id": "room-name",
+        "expressionName": "RoomName",
+        "scriptName": "RoomName",
+        "returnType": "string"
+      },
+      {
         "id": "session-id",
         "expressionName": "SessionId",
         "scriptName": "SessionId",

@@ -640,6 +640,10 @@
             "description": "Get roomId of the room connected.",
             "translated-name": "RoomId"
           },
+          "room-name": {
+            "description": "Get the name of the room connected.",
+            "translated-name": "RoomName"
+          },
           "session-id": {
             "description": "Get unique sessionId for the client. (This property matches the client.sessionId from the server-side)",
             "translated-name": "SessionId"
