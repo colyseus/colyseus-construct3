@@ -568,8 +568,14 @@
 
           "room-leave": {
             "list-name": "Leave room",
-            "display-text": "Leave from the room",
-            "description": "Disconnect client from the room."
+            "display-text": "Leave from the room with consented = {0}",
+            "description": "Disconnect client from the room.",
+            "params": {
+              "consented": {
+                "name": "consented",
+                "desc": "Whether the act of leaving has been \"consented\" or not"
+              }
+            }
           },
 
           "get-available-rooms": {
