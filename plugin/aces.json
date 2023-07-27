@@ -233,7 +233,10 @@
     "actions": [
       {
         "id": "room-leave",
-        "scriptName": "RoomLeave"
+        "scriptName": "RoomLeave",
+        "params": [
+          { "id": "consented", "type": "boolean", "initialValue": "true" }
+        ]
       }
     ],
 
@@ -242,6 +245,12 @@
         "id": "room-id",
         "expressionName": "RoomId",
         "scriptName": "RoomId",
+        "returnType": "string"
+      },
+      {
+        "id": "room-name",
+        "expressionName": "RoomName",
+        "scriptName": "RoomName",
         "returnType": "string"
       },
       {

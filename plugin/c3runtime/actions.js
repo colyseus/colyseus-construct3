@@ -55,10 +55,10 @@
       C3.Plugins.Colyseus_SDK.Acts.RoomSend.call(this, type, JSON.parse(message));
     },
 
-    RoomLeave()
+    RoomLeave (consented)
     {
       if (this.room) {
-        this.room.leave()
+        this.room.leave(consented);
       }
     },
 

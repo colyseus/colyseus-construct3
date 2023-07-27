@@ -6,6 +6,7 @@
   C3.Plugins.Colyseus_SDK.Exps =
   {
     RoomId() { return this.room && this.room.roomId; },
+    RoomName() { return this.room && this.room.name; },
     SessionId() { return this.room && this.room.sessionId; },
     ReconnectionToken() { return this.room && this.room.reconnectionToken; },
     CloseCode() { return this.lastCloseCode || -1; },
