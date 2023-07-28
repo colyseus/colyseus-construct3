@@ -242,6 +242,9 @@
         case "object":
           return JSON.stringify(value);
 
+        case "number":
+          return value;
+
         default:
           // Everything else
           // (in case of undefined, convert it to empty string)
