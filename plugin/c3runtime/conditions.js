@@ -1,8 +1,8 @@
 "use strict";
 
 {
-  const operations = ['any', 'add', 'replace', 'remove'];
   const ANY = ":any:";
+  const typesByIndex = ["string", "number", "boolean", "undefined", "object"];
 
   function checkPath (lastPath, path) {
     if (lastPath === path) {
@@ -86,8 +86,8 @@
     CompareMessageType(cmp, type) { return C3.compare(this.lastType, cmp, type); },
     CompareMessageValue(cmp, value) { return C3.compare(this.lastMessage, cmp, value); },
     CompareMessageValueAt(path, cmp, value) { return C3.compare(this.getDeepVariable(path, this.lastMessage), cmp, value);  },
-    CompareMessageValueOfType(cmp, type) { return C3.compare(typeof (this.lastMessage), cmp, type); },
-    CompareMessageValueAtOfType(path, cmp, type) { return C3.compare(typeof (this.getDeepVariable(path, this.lastMessage)), cmp, type); },
+    CompareMessageValueOfType(cmp, type) { return C3.compare(typeof (this.lastMessage), cmp, typesByIndex[type]); },
+    CompareMessageValueAtOfType(path, cmp, type) { return C3.compare(typeof (this.getDeepVariable(path, this.lastMessage)), cmp, typesByIndex[type]); },
 
     // State/Schema
     OnChangeAtPath(path) { return checkPath(this.lastPath, path); },

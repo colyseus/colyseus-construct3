@@ -227,9 +227,26 @@
         value = "";
       }
 
-      return (typeof(value) === "boolean")
-        ? Number(value) // convert boolean to number
-        : (value ?? ""); // everything else (in case of undefined, convert it to empty string)
+      return value;
+    }
+
+    castType (value) {
+      //
+      // Some types are not easily usable by C3, so we need to cast them.
+      //
+      switch (typeof(value)) {
+        case "boolean":
+          // convert boolean to number
+          return Number(value);
+
+        case "object":
+          return JSON.stringify(value);
+
+        default:
+          // Everything else
+          // (in case of undefined, convert it to empty string)
+          return value || "";
+      }
     }
   };
 

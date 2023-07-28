@@ -15,20 +15,20 @@
     JSON(data) { return JSON.stringify(eval(`(${data})`)); },
 
     // Messages
-    MessageValue() { return this.lastMessage; },
-    MessageValueAt(path) { return this.getDeepVariable(path, this.lastMessage); },
+    MessageValue() { return this.castType(this.lastMessage); },
+    MessageValueAt(path) { return this.castType(this.getDeepVariable(path, this.lastMessage)); },
     MessageType() { return this.lastType; },
     MessageValueType() { return typeof (this.lastMessage); },
     MessageValueAtType(path) { return typeof (this.getDeepVariable(path, this.lastMessage)); },
 
     // State
-    State(variablePath) { return this.getDeepVariable(variablePath, (this.room && this.room.state) || {}); },
+    State(variablePath) { return this.castType(this.getDeepVariable(variablePath, (this.room && this.room.state) || {})); },
     CurrentStatePath() { return this.lastPath; },
 
     CurrentKey() { return this.lastKey; },
-    CurrentValue() { return this.lastValue; },
-    CurrentValueAt(path) { return this.getDeepVariable(path, this.lastValue); },
-    PreviousValue() { return this.lastPreviousValue; },
+    CurrentValue() { return this.castType(this.lastValue); },
+    CurrentValueAt(path) { return this.castType(this.getDeepVariable(path, this.lastValue)); },
+    PreviousValue() { return this.castType(this.lastPreviousValue); },
 
     // Collections
     CurrentItemsCount() {
