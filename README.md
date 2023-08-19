@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/discord/525739117951320081.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white">
   </a>
   <h3>
-     Colyseus Multiplayer SDK for <a href="https://construct.net/">Construct 3</a>. <br/><a href="https://docs.colyseus.io/getting-started/construct3-client">View documentation</a>
+     Colyseus Multiplayer SDK for <a href="https://www.construct.net/a/429195?t=construct3tour">Construct 3</a>. <br/><a href="https://docs.colyseus.io/getting-started/construct3-sdk">View documentation</a>
   </h3>
 </div>
 
