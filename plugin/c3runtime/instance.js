@@ -41,8 +41,12 @@
     _MatchMake (methodName, roomName, rawOptions)
     {
         const self = this;
-        const options = JSON.parse(rawOptions || "{}");
-        const args = (methodName === "consumeSeatReservation")
+
+        const options = (methodName !== "reconnect")
+          ? JSON.parse(rawOptions || "{}")
+          : rawOptions;
+
+        const args = (methodName === "consumeSeatReservation" || methodName === "reconnect")
           ? [options]
           : [roomName, options];
 

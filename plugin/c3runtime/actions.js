@@ -35,9 +35,9 @@
       this._MatchMake("consumeSeatReservation", undefined, reservation);
     },
 
-    ReconnectRoom (roomId, sessionId)
+    ReconnectRoom (reconnectionToken)
     {
-      this.client.reconnect(roomId, sessionId);
+      this._MatchMake("reconnect", undefined, reconnectionToken);
     },
 
     RoomSend (type, message)
