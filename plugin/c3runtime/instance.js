@@ -121,6 +121,9 @@
                   }
 
                 } else if (schemaType === "function") {
+                  // "listen" on all instance fields
+                  registerCallbacksOnStructure(schemaInstance[field], [...path, field]);
+
                   // direct schema instance
                   schemaInstance[field].onChange(function () {
                     onChangeAtPath(field, path, schemaInstance[field], undefined);
@@ -128,6 +131,7 @@
 
                   // created the schema instance
                   onChangeAtPath(field, path, schemaInstance[field], undefined);
+
 
                 } else {
                   // field on schema instance
@@ -159,6 +163,7 @@
               self.lastPath = self.lastCollectionPath + "." + key;
               self.lastKey = key;
               self.lastValue = instance;
+              self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
               self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemAdd);
             }
 
