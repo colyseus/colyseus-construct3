@@ -3,7 +3,7 @@
   "type": "plugin",
   "name": "Colyseus SDK for Construct 3",
   "id": "Colyseus_SDK",
-  "version": "0.15.0.13",
+  "version": "0.15.0.14",
   "author": "Endel Dreyer",
   "website": "https://colyseus.io/",
   "documentation": "https://docs.colyseus.io",

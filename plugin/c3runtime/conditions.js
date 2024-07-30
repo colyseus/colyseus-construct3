@@ -13,7 +13,7 @@
       const segments = path.split(".");
 
       if (lastSegments.length === segments.length) {
-        for (const i = 0; i < segments.length; i++) {
+        for (let i = 0; i < segments.length; i++) {
           if (segments[i] !== ANY && segments[i] !== lastSegments[i]) {
             return false;
           }
