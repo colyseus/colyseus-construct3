@@ -1,0 +1,735 @@
+{
+  "languageTag": "zh-CN",
+  "fileDescription": "Strings for Colyseus.",
+  "text": {
+    "plugins": {
+      "colyseus_sdk": {
+        "name": "Colyseus",
+        "description": "Construct 3用Colyseus SDK",
+        "help-url": "https://docs.colyseus.io/",
+        "properties": {
+          "endpoint": {
+            "name": "默认后端地址",
+            "desc": "\"Connect\"动作中使用的后端地址. "
+          }
+        },
+        "aceCategories": {
+          "colyseus": "客户端",
+          "misc": "其他",
+          "error-handling": "错误处理",
+          "matchmaking": "匹配",
+          "room": "房间",
+          "messages": "房间消息",
+          "room-state": "房间状态",
+          "room-state-collections": "房间状态: 地图和数组"
+        },
+        "conditions": {
+          "on-join-room": {
+            "isStatic": true,
+            "list-name": "加入房间时",
+            "display-text": "加入房间时",
+            "description": "成功加入房间时触发. "
+          },
+          "on-leave-room": {
+            "isStatic": true,
+            "list-name": "离开房间时",
+            "display-text": "离开房间时",
+            "description": "从房间离开时触发. "
+          },
+          "on-join-error": {
+            "isStatic": true,
+            "list-name": "加入房间错误时",
+            "display-text": "加入房间错误时",
+            "description": "加入房间失败时触发. "
+          },
+          "on-error": {
+            "isStatic": true,
+            "list-name": "发生错误时 (任意)",
+            "display-text": "发生错误时 (任意)",
+            "description": "当Colyseus SDK发生任何错误时触发. (建议使用特定的错误处理程序, 例如\"加入房间错误时\", 而不是这个通用的. )"
+          },
+          "on-room-error": {
+            "isStatic": true,
+            "list-name": "房间错误时",
+            "display-text": "房间错误时",
+            "description": "服务器上发生错误时触发. "
+          },
+          "on-room-message": {
+            "isStatic": true,
+            "list-name": "接收到消息时",
+            "display-text": "接收到[i]{0}[/i]消息时",
+            "description": "当房间广播消息或直接向此客户端发送消息时触发. ",
+            "params": {
+              "type": {
+                "name": "类型",
+                "desc": "消息类型. 支持通配符\"*\". "
+              }
+            }
+          },
+          "on-room-statechange": {
+            "isStatic": true,
+            "list-name": "状态改变时",
+            "display-text": "状态改变时",
+            "description": "在完整状态更新应用后触发. 要检测具体的变化, 请使用\"房间状态\"部分下的条件. "
+          },
+          "on-get-available-rooms": {
+            "isStatic": true,
+            "list-name": "获取可用房间时",
+            "display-text": "获取可用房间时",
+            "description": "当\"值\"表达式中准备好可用房间响应时触发. "
+          },
+          "foreach-room-available": {
+            "isStatic": true,
+            "list-name": "遍历每个可用房间",
+            "display-text": "遍历每个可用房间",
+            "description": "迭代可用的房间(在\"获取可用房间时\"条件下可用). "
+          },
+          "is-message-type": {
+            "list-name": "比较消息[b]类型[/b]",
+            "display-text": "消息类型 {0} [i]{1}[/i]",
+            "description": "如果当前消息类型与提供的值匹配, 则返回true. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较类型. "
+              },
+              "type": {
+                "name": "消息类型",
+                "desc": "服务器发送的消息类型. "
+              }
+            }
+          },
+          "is-message-value": {
+            "list-name": "比较消息[b]值[/b]",
+            "display-text": "消息值 {0} [i]{1}[/i]",
+            "description": "如果当前消息值符合提供的条件, 则返回true. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较该值. "
+              },
+              "value": {
+                "name": "值",
+                "desc": "用于比较的值"
+              }
+            }
+          },
+          "is-message-value-at": {
+            "list-name": "比较消息[b]指定位置的值[/b]",
+            "display-text": "消息值位于 {0} {1} {2}",
+            "description": "如果当前消息指定位置的值符合提供的条件, 则返回true. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "到变量的点分隔路径. 例如 \"messages.0\""
+              },
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较该值. "
+              },
+              "value": {
+                "name": "值",
+                "desc": "用于比较的值"
+              }
+            }
+          },
+          "is-message-value-of-type": {
+            "list-name": "比较消息[b]类型的值[/b]",
+            "display-text": "消息值类型为 {0} [i]{1}[/i]",
+            "description": "如果当前消息值类型符合提供的条件, 则返回true. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较该值. ",
+                "items": {
+                  "=": "= 等于",
+                  "!=": "≠ 不等于"
+                }
+              },
+              "type": {
+                "name": "类型",
+                "desc": "期望的消息值类型. ",
+                "items": {
+                  "undefined": "未定义",
+                  "number": "数字",
+                  "string": "字符串",
+                  "boolean": "布尔",
+                  "object": "对象"
+                }
+              }
+            }
+          },
+          "is-message-value-of-type-at": {
+            "list-name": "比较消息[b]指定位置的类型值[/b]",
+            "display-text": "消息值位于 {0} 类型为 {1} {2}",
+            "description": "如果当前消息指定位置的类型值符合提供的条件, 则返回true. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "到变量的点分隔路径. 例如 \"messages.0\""
+              },
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较该值. ",
+                "items": {
+                  "=": "= 等于",
+                  "!=": "≠ 不等于"
+                }
+              },
+              "type": {
+                "name": "类型",
+                "desc": "期望的消息值类型. ",
+                "items": {
+                  "undefined": "未定义",
+                  "number": "数字",
+                  "string": "字符串",
+                  "boolean": "布尔",
+                  "object": "对象"
+                }
+              }
+            }
+          },
+          "schema-path-change": {
+            "isStatic": true,
+            "list-name": "在路径变化时",
+            "display-text": "在 [i]{0}[/i] 处变化时",
+            "description": "当状态中特定路径的变量发生变化时触发. (例如 \"player.x\")",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "您希望监听的变量路径. 例如 \"item.property\""
+              }
+            }
+          },
+          "state-items-foreach": {
+            "isStatic": true,
+            "list-name": "遍历路径中的每个元素",
+            "display-text": "遍历 [i]{0}[/i] 中的每个元素",
+            "description": "遍历 ArraySchema 或 MapSchema 中的元素. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "包含元素的变量路径"
+              }
+            }
+          },
+          "state-collection-item-add": {
+            "isStatic": true,
+            "list-name": "当元素添加时",
+            "display-text": "当元素添加到 [i]{0}[/i] 时",
+            "description": "当元素被添加到 ArraySchema 或 MapSchema 时触发. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "您希望监听的变量路径. 例如 \"entities\""
+              }
+            }
+          },
+          "state-collection-item-change": {
+            "isStatic": true,
+            "list-name": "当元素变化时",
+            "display-text": "当 [i]{0}[/i] 处的元素变化时",
+            "description": "当 ArraySchema 或 MapSchema 中的元素发生变化时触发. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "您希望监听的变量路径. 例如 \"entities\""
+              }
+            }
+          },
+          "state-collection-item-remove": {
+            "isStatic": true,
+            "list-name": "当元素移除时",
+            "display-text": "当元素从 [i]{0}[/i] 移除时",
+            "description": "当元素从 ArraySchema 或 MapSchema 中移除时触发. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "您希望监听的变量路径. 例如 \"entities\""
+              }
+            }
+          },
+          "is-state-value-at": {
+            "list-name": "比较 [b]路径值[/b]",
+            "display-text": "路径 [i]{0}[/i] 的值 {1} [b]{2}[/b]",
+            "description": "如果路径 {0} 的当前状态值符合提供的条件, 则返回 true. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "变量的点分隔路径. 例如 \"entities.item_0.is_alive\""
+              },
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较值. "
+              },
+              "value": {
+                "name": "值",
+                "desc": "用于比较的值"
+              }
+            }
+          },
+          "schema-compare-current-value": {
+            "list-name": "比较 [b]当前值[/b]",
+            "display-text": "当前值 {0} [b]{1}[/b]",
+            "description": "如果当前值符合提供的条件, 则返回 true. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较值. "
+              },
+              "value": {
+                "name": "值",
+                "desc": "用于比较的值"
+              }
+            }
+          },
+          "schema-compare-current-value-at": {
+            "list-name": "比较 [b]当前路径值[/b]",
+            "display-text": "路径 [i]{0}[/i] 的当前值 {1} [b]{2}[/b]",
+            "description": "如果当前值符合提供的条件, 则返回 true. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "变量的点分隔路径. 例如 \"messages.0\""
+              },
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较值. "
+              },
+              "value": {
+                "name": "值",
+                "desc": "用于比较的值"
+              }
+            }
+          },
+          "schema-compare-current-key": {
+            "list-name": "比较 [b]当前键[/b]",
+            "display-text": "当前键 {0} [i]{1}[/i]",
+            "description": "仅在集合元素(MapSchema、ArraySchema)添加/移除时可用. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较值. "
+              },
+              "key": {
+                "name": "键",
+                "desc": "键值(例如 Colyseus.SessionId)"
+              }
+            }
+          },
+          "schema-compare-items-at-count": {
+            "list-name": "比较 [b]路径元素数量[/b]",
+            "display-text": "路径 [i]{0}[/i] 的元素数量 {1} [i]{2}[/i]",
+            "description": "比较状态中特定路径的元素数量. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "变量的点分隔路径. 例如 \"players.one.inventory\""
+              },
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较值. "
+              },
+              "count": {
+                "name": "数量",
+                "desc": "元素数量"
+              }
+            }
+          },
+          "schema-compare-current-items-count": {
+            "list-name": "比较 [b]当前元素数量[/b]",
+            "display-text": "当前元素数量 {0} [i]{1}[/i]",
+            "description": "仅在集合元素(MapSchema、ArraySchema)添加/移除时可用. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较值. "
+              },
+              "count": {
+                "name": "数量",
+                "desc": "元素数量"
+              }
+            }
+          },
+          "schema-array-has-value": {
+            "list-name": "路径数组包含值",
+            "display-text": "路径 {0} 的数组包含 [i]{1}[/i]",
+            "description": "如果状态中路径的数组包含提供的值, 则返回 true. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "变量的点分隔路径. 例如 \"players.one.inventory\""
+              },
+              "value": {
+                "name": "值",
+                "desc": "要检查的值"
+              }
+            }
+          },
+          "schema-map-has-key": {
+            "list-name": "路径映射包含键",
+            "display-text": "路径 {0} 的映射包含 [i]{1}[/i]",
+            "description": "如果状态中路径的映射包含提供的键, 则返回 true. ",
+            "params": {
+              "path": {
+                "name": "路径",
+                "desc": "变量的点分隔路径. 例如 \"players.one.inventory\""
+              },
+              "key": {
+                "name": "键",
+                "desc": "要检查的键"
+              }
+            }
+          },
+          "has-error-code": {
+            "list-name": "比较错误代码",
+            "display-text": "错误代码 [i]{0}[/i] {1}",
+            "description": "比较最后收到的错误代码. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较值. ",
+                "items": {
+                  "=": "= 等于",
+                  "!=": "≠ 不等于"
+                }
+              },
+              "code": {
+                "name": "错误代码",
+                "desc": "用于比较的错误代码. "
+              }
+            }
+          },
+          "has-error-message": {
+            "list-name": "比较错误消息",
+            "display-text": "错误消息 [i]{0}[/i] {1}",
+            "description": "比较最后收到的错误消息. ",
+            "params": {
+              "cmp": {
+                "name": "比较方式",
+                "desc": "如何比较消息. ",
+                "items": {
+                  "=": "= 等于",
+                  "!=": "≠ 不等于"
+                }
+              },
+              "message": {
+                "name": "错误消息",
+                "desc": "用于比较的错误消息. "
+              }
+            }
+          }
+        },
+        "actions": {
+          "set-endpoint": {
+            "list-name": "设置端点",
+            "display-text": "设置端点为 {0}",
+            "description": "格式: wss://example.com",
+            "params": {
+              "endpoint": {
+                "name": "端点",
+                "desc": "设置端点为 {0}. 如果为空, 则使用全局 Colyseus 对象类型中的默认端点属性. "
+              }
+            }
+          },
+          "join-room": {
+            "list-name": "加入现有房间",
+            "display-text": "加入房间 {0}, 选项为 {1}. ",
+            "description": "通过名称加入房间",
+            "params": {
+              "name": {
+                "name": "房间名称",
+                "desc": "房间名称通过服务器中的 `gameServer.define(\"my_room\", ...)` 定义. "
+              },
+              "options": {
+                "name": "选项",
+                "desc": "提供的选项将在服务器端的 `onJoin()` 和 `onAuth()` 方法中可用. "
+              }
+            }
+          },
+          "join-or-create-room": {
+            "list-name": "加入或创建",
+            "display-text": "加入房间 {0}, 选项为 {1}. ",
+            "description": "通过名称加入房间",
+            "params": {
+              "name": {
+                "name": "房间名称",
+                "desc": "房间名称通过服务器中的 `gameServer.define(\"my_room\", ...)` 定义. "
+              },
+              "options": {
+                "name": "选项",
+                "desc": "提供的选项将在服务器端的 `onJoin()` 和 `onAuth()` 方法中可用. "
+              }
+            }
+          },
+          "create-room": {
+            "list-name": "创建房间",
+            "display-text": "创建房间 {0}, 选项为 {1}. ",
+            "description": "通过名称创建房间",
+            "params": {
+              "name": {
+                "name": "房间名称",
+                "desc": "房间名称通过服务器中的 `gameServer.define(\"my_room\", ...)` 定义. "
+              },
+              "options": {
+                "name": "选项",
+                "desc": "提供的选项将在服务器端的 `onJoin()` 和 `onAuth()` 方法中可用. "
+              }
+            }
+          },
+          "join-room-by-id": {
+            "list-name": "通过 ID 加入",
+            "display-text": "加入房间 {0}, 选项为 {1}. ",
+            "description": "通过 ID 加入现有房间",
+            "params": {
+              "roomId": {
+                "name": "房间 ID",
+                "desc": "房间 ID"
+              },
+              "options": {
+                "name": "选项",
+                "desc": "提供的选项将在服务器端的 `onJoin()` 和 `onAuth()` 方法中可用. "
+              }
+            }
+          },
+          "consume-seat-reservation": {
+            "list-name": "使用座位预留",
+            "display-text": "使用 {0} 进行座位预留",
+            "description": "使用从服务器端进行的座位预留",
+            "params": {
+              "reservation": {
+                "name": "座位预留数据",
+                "desc": "包含从服务器端进行的预留的 JSON 数据"
+              }
+            }
+          },
+          "reconnect-room": {
+            "list-name": "重新连接",
+            "display-text": "使用缓存的重新连接令牌 ({0}) 重新连接到房间. ",
+            "description": "重新连接到之前连接过的房间. ",
+            "params": {
+              "reconnectionToken": {
+                "name": "重新连接令牌",
+                "desc": "来自之前连接的重新连接令牌. "
+              }
+            }
+          },
+          "room-send": {
+            "list-name": "发送消息",
+            "display-text": "发送 {0}, 内容为 {1}",
+            "description": "向房间发送消息",
+            "params": {
+              "type": {
+                "name": "类型",
+                "desc": "消息的类型. "
+              },
+              "message": {
+                "name": "消息",
+                "desc": "消息的数据. 消息将在服务器端的 \"onMessage(type, ...)\" 中到达. "
+              }
+            }
+          },
+          "room-send-json": {
+            "list-name": "发送 JSON 消息",
+            "display-text": "发送 {0}, 内容为 {1}",
+            "description": "向房间发送 JSON 消息",
+            "params": {
+              "type": {
+                "name": "类型",
+                "desc": "消息的类型. "
+              },
+              "message": {
+                "name": "JSON 消息",
+                "desc": "消息的 JSON 表示. 消息将在服务器端的 \"onMessage(type, ...)\" 中到达. "
+              }
+            }
+          },
+          "room-leave": {
+            "list-name": "离开房间",
+            "display-text": "离开房间, consented = {0}",
+            "description": "将客户端从房间断开连接. ",
+            "params": {
+              "consented": {
+                "name": "consented",
+                "desc": "离开行为是否已被\"同意\""
+              }
+            }
+          },
+          "get-available-rooms": {
+            "list-name": "获取可用房间",
+            "display-text": "按名称获取可用房间: {0}",
+            "description": "按名称获取可用房间, 当数据可用时会触发\"On Get Available Rooms\". ",
+            "params": {
+              "name": {
+                "name": "房间名称",
+                "desc": "房间名称通过服务器中的 `gameServer.define(\"my_room\", ...)` 定义. "
+              }
+            }
+          }
+        },
+        "expressions": {
+          "get-endpoint": {
+            "description": "获取服务器端点",
+            "translated-name": "端点"
+          },
+          "json": {
+            "description": "评估提供的字符串并返回字符串化的 JSON 对象",
+            "translated-name": "JSON",
+            "params": {
+              "data": {
+                "name": "数据",
+                "desc": "字符串中的普通 JavaScript 对象"
+              }
+            }
+          },
+          "current-key": {
+            "description": "获取当前元素的键",
+            "translated-name": "当前键"
+          },
+          "current-value": {
+            "description": "从当前元素中获取值",
+            "translated-name": "当前值"
+          },
+          "current-value-at": {
+            "description": "从当前元素中获取嵌套值",
+            "translated-name": "当前路径值",
+            "params": {
+              "path": {
+                "name": "变量路径",
+                "desc": "变量的点分隔路径. 例如 \"messages.0\""
+              }
+            }
+          },
+          "previous-value": {
+            "description": "从当前字段获取之前的值. 仅在实例变量的\"On change\"期间可用. 不适用于数组和映射. ",
+            "translated-name": "之前的值"
+          },
+          "state-value": {
+            "description": "从房间状态中获取值",
+            "translated-name": "状态",
+            "params": {
+              "path": {
+                "name": "变量路径",
+                "desc": "变量的点分隔路径. 例如 \"messages.0\""
+              }
+            }
+          },
+          "current-state-path": {
+            "description": "获取正在评估的状态路径",
+            "translated-name": "当前状态路径"
+          },
+          "room-id": {
+            "description": "获取连接房间的 roomId. ",
+            "translated-name": "房间 ID"
+          },
+          "room-name": {
+            "description": "获取连接房间的名称. ",
+            "translated-name": "房间名称"
+          },
+          "session-id": {
+            "description": "获取客户端的唯一 sessionId. (此属性与服务器端的 client.sessionId 匹配)",
+            "translated-name": "会话 ID"
+          },
+          "reconnection-token": {
+            "description": "获取用于重新连接操作的重新连接令牌. (在\"On Join\"期间可用)",
+            "translated-name": "重新连接令牌"
+          },
+          "message-type": {
+            "description": "获取当前消息类型. (在\"On Message\"期间可用)",
+            "translated-name": "消息类型"
+          },
+          "message-value": {
+            "description": "获取当前消息值. (在\"On Message\"期间可用)",
+            "translated-name": "消息值"
+          },
+          "message-value-at": {
+            "description": "获取当前消息中的嵌套值. (在\"On Message\"期间可用)",
+            "translated-name": "消息路径值",
+            "params": {
+              "path": {
+                "name": "变量路径",
+                "desc": "变量的点分隔路径. 例如 \"skills.length\", \"skills.0.name\""
+              }
+            }
+          },
+          "message-value-type": {
+            "description": "获取 MessageValue 的数据类型. 可能的返回值: \"undefined\", \"number\", \"string\", \"boolean\", \"object\". ",
+            "translated-name": "消息值类型"
+          },
+          "message-value-at-type": {
+            "description": "获取 MessageValueAt 的数据类型. 可能的返回值: \"undefined\", \"number\", \"string\", \"boolean\", \"object\". ",
+            "translated-name": "消息路径值类型",
+            "params": {
+              "path": {
+                "name": "变量路径",
+                "desc": "变量的点分隔路径. 例如 \"skills.length\", \"skills.0.name\""
+              }
+            }
+          },
+          "current-items-count": {
+            "description": "获取当前集合中的元素总数. (在添加/移除元素事件期间可用)",
+            "translated-name": "当前元素数量"
+          },
+          "count-items-at": {
+            "description": "获取路径中的元素总数. (路径必须是 MapSchema 或 ArraySchema)",
+            "translated-name": "路径元素数量",
+            "params": {
+              "path": {
+                "name": "变量路径",
+                "desc": "变量的点分隔路径. 例如 \"skills.length\", \"skills.0.name\""
+              }
+            }
+          },
+          "close-code": {
+            "description": "获取上次断开连接的关闭代码. (在\"On Leave Room\"期间可用)",
+            "translated-name": "关闭代码"
+          },
+          "error-code": {
+            "description": "获取最后一个错误代码",
+            "translated-name": "错误代码"
+          },
+          "error-message": {
+            "description": "获取最后一个错误消息",
+            "translated-name": "错误消息"
+          },
+          "error-code-sdk-exception": {
+            "description": "内部 SDK 错误/异常",
+            "translated-name": "错误代码_SDK_EXCEPTION"
+          },
+          "error-code-server-offline": {
+            "description": "0 → 服务器离线",
+            "translated-name": "错误代码_SERVER_OFFLINE"
+          },
+          "error-code-no-handler": {
+            "description": "4210 → 提供的房间名称类型没有房间处理程序",
+            "translated-name": "错误代码_NO_HANDLER"
+          },
+          "error-code-invalid-criteria": {
+            "description": "4211 → 房间选择的标准无效",
+            "translated-name": "错误代码_INVALID_CRITERIA"
+          },
+          "error-code-invalid-room-id": {
+            "description": "4212 → 提供的房间 ID 未找到房间",
+            "translated-name": "错误代码_INVALID_ROOM_ID"
+          },
+          "error-code-unhandled": {
+            "description": "4213 → 未处理的服务器错误",
+            "translated-name": "错误代码_UNHANDLED"
+          },
+          "error-code-expired": {
+            "description": "4214 → 座位预留已过期. ",
+            "translated-name": "错误代码_EXPIRED"
+          },
+          "error-code-auth-failed": {
+            "description": "4215 → 身份验证失败(服务器端 `onAuth` 失败)",
+            "translated-name": "错误代码_AUTH_FAILED"
+          },
+          "error-code-applicataion-error": {
+            "description": "4216 → 应用程序级别错误",
+            "translated-name": "错误代码_APPLICATION_ERROR"
+          }
+        }
+      }
+    }
+  }
+}
