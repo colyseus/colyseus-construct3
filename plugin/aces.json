@@ -1,4 +1,6 @@
 {
+  "$schema": "../aces.schema.json",
+
   "colyseus": {
     "conditions": [],
     "actions": [
@@ -132,16 +134,6 @@
         "id": "on-join-error",
         "scriptName": "OnJoinError",
         "isTrigger": true
-      },
-      {
-        "id": "on-get-available-rooms",
-        "scriptName": "OnGetAvailableRooms",
-        "isTrigger": true
-      },
-      {
-        "id": "foreach-room-available",
-        "scriptName": "ForEachRoomAvailable",
-        "isLooping": true
       }
     ],
     "actions": [
@@ -190,13 +182,6 @@
         "scriptName": "ReconnectRoom",
         "params": [
           { "id": "reconnectionToken", "type": "string" }
-        ]
-      },
-      {
-        "id": "get-available-rooms",
-        "scriptName": "GetAvailableRooms",
-        "params": [
-          { "id": "name", "type": "string" }
         ]
       }
     ]

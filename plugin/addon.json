@@ -1,9 +1,13 @@
 {
+  "$schema": "../plugin.addon.schema.json",
+
   "is-c3-addon": true,
+  "sdk-version": 2,
+  "min-construct-version": "r401",
   "type": "plugin",
   "name": "Colyseus SDK for Construct 3",
   "id": "Colyseus_SDK",
-  "version": "0.15.0.14",
+  "version": "0.16.0.0",
   "author": "Endel Dreyer",
   "website": "https://colyseus.io/",
   "documentation": "https://docs.colyseus.io",
@@ -14,6 +18,7 @@
     "instance.js"
   ],
   "file-list": [
+    "c3runtime/main.js",
     "c3runtime/plugin.js",
     "c3runtime/type.js",
     "c3runtime/instance.js",

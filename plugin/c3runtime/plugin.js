@@ -1,16 +1,10 @@
-"use strict";
 
-{
-  C3.Plugins.Colyseus_SDK = class Colyseus extends C3.SDKPluginBase
-  {
-    constructor(opts)
-    {
-      super(opts);
-    }
+const C3 = globalThis.C3;
 
-    Release()
-    {
-      super.Release();
-    }
-  };
-}
+C3.Plugins.Colyseus_SDK = class Colyseus extends globalThis.ISDKPluginBase {
+
+  constructor() {
+    super();
+  }
+
+};
