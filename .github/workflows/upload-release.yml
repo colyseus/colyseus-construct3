@@ -35,7 +35,7 @@ jobs:
 
     - name: Generate .c3addon file for upload
       if: steps.check.outputs.changed == 'true'
-      run: npx c3addon pack --root plugin
+      run: npx c3addon pack plugin
 
     - name: Release
       if: steps.check.outputs.changed == 'true'
@@ -54,4 +54,4 @@ jobs:
     #       --authPassword ${{ secrets.C3_AUTH_PASSWORD }} \
     #       --uploadFile Colyseus_SDK.c3addon \
     #       --version ${{ steps.check.outputs.version }} \
-    #       --releaseNotes 'Released via GitHub Actions'
+           --releaseNotes 'Released via GitHub Actions'
