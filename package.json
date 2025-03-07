@@ -5,14 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "c3addon serve --root plugin",
+    "start": "caddy run",
     "build": "c3addon pack --root plugin",
-    "copy-dist": "cp ../colyseus.js/dist/colyseus.js ./plugin",
+    "copy-dist": "cp ../colyseus-js/dist/colyseus.js ./plugin",
     "chrome": "open -a Google\\ Chrome --args https://editor.construct.net '--disable-web-security' '--disable-extensions' '--disable-plugins'"
   },
   "author": "Endel Dreyer",
   "license": "MIT",
   "devDependencies": {
-    "c3addon": "^0.1.7"
+    "c3addon": "^1.0.9"
   }
 }

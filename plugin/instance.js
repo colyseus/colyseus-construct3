@@ -1,31 +1,24 @@
-"use strict";
 
-{
-  const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK;
+const SDK = globalThis.SDK;
 
-  PLUGIN_CLASS.Instance = class ColyseusInstance extends SDK.IInstanceBase
-  {
-    constructor(sdkType, inst)
-    {
-      super(sdkType, inst);
-    }
+const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK;
 
-    Release()
-    {
-    }
+PLUGIN_CLASS.Instance = class ColyseusInstance extends SDK.IInstanceBase {
+  constructor(sdkType, inst) {
+    super(sdkType, inst);
+  }
 
-    OnCreate()
-    {
-      // this._client = new Colyseus.Client();
-    }
+  Release() {
+  }
 
-    OnPropertyChanged(id, value)
-    {
-    }
+  OnCreate() {
+    // this._client = new Colyseus.Client();
+  }
 
-    LoadC2Property(name, valueString)
-    {
-      return false; // not handled
-    }
-  };
-}
+  OnPropertyChanged(id, value) {
+  }
+
+  LoadC2Property(name, valueString) {
+    return false; // not handled
+  }
+};

@@ -23,7 +23,9 @@
           "room": "Room",
           "messages": "Room Messages",
           "room-state": "Room State",
-          "room-state-collections": "Room State: Maps and Arrays"
+          "room-state-collections": "Room State: Maps and Arrays",
+          "auth": "Authentication",
+          "http": "HTTP Requests"
         },
 
         "conditions": {
@@ -74,18 +76,6 @@
             "list-name": "On State Change",
             "display-text": "On State Change",
             "description": "Triggered after full state updates have been applied. To detect specific changes use conditions under \"room state\" section."
-          },
-          "on-get-available-rooms": {
-            "isStatic": true,
-            "list-name": "On Get Available Rooms",
-            "display-text": "On Get Available Rooms",
-            "description": "Triggers when available rooms response is ready in the \"Value\" expresssion."
-          },
-          "foreach-room-available": {
-            "isStatic": true,
-            "list-name": "For Each Room Available",
-            "display-text": "For Each Room Available",
-            "description": "Iterates over rooms available (Available during \"On Get Available Rooms\" condition)."
           },
 
           "is-message-type": {
@@ -429,6 +419,44 @@
                 "desc": "The error message to compare against."
               }
             }
+          },
+
+          "on-auth-change": {
+            "isStatic": true,
+            "list-name": "On Auth Change",
+            "display-text": "On Auth Change",
+            "description": "Triggers when a sucessful response has been received from one of the authentication methods."
+          },
+          "on-auth-error": {
+            "isStatic": true,
+            "list-name": "On Auth Error",
+            "display-text": "On Auth Error",
+            "description": "Triggers when one of the authentication method call fails."
+          },
+
+          "on-request-complete": {
+            "isStatic": true,
+            "list-name": "On Request Complete",
+            "display-text": "On Request Complete (with Tag [i]{0}[/i])",
+            "description": "Triggers when a request has been completed.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "The tag name you used to identify the request."
+              }
+            }
+          },
+          "on-request-error": {
+            "isStatic": true,
+            "list-name": "On Request Error",
+            "display-text": "On Request Error (with Tag [i]{0}[/i])",
+            "description": "Triggers when a request has failed.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "The tag name you used to identify the request."
+              }
+            }
           }
 
         },
@@ -578,17 +606,173 @@
             }
           },
 
-          "get-available-rooms": {
-            "list-name": "Get available rooms",
-            "display-text": "Get available rooms by name: {0}",
-            "description": "Get available rooms by name, \"On Get Available Rooms\" is triggered when data is available.",
+          "auth-get-userdata": {
+            "list-name": "Get User Data",
+            "display-text": "Get user data",
+            "description": "Get the user data from the server-side"
+          },
+          "register-with-email-and-password": {
+            "list-name": "Register with Email and Password",
+            "display-text": "Register with email [i]{0}[/i] and password [i]{1}[/i] [i](Options: {2})[/i]",
+            "description": "Register a new user with email and password",
             "params": {
-              "name": {
-                "name": "Room name",
-                "desc": "The room name is defined via `gameServer.define(\"my_room\", ...)` in your server."
+              "email": {
+                "name": "Email",
+                "desc": "Email address"
+              },
+              "password": {
+                "name": "Password",
+                "desc": "Password"
+              },
+              "options": {
+                "name": "Options",
+                "desc": "Optional: Additional data to be stored with the user"
+              }
+            }
+          },
+          "sign-in-with-email-and-password": {
+            "list-name": "Sign In with Email and Password",
+            "display-text": "Sign in with email [i]{0}[/i] and password [i]{1}[/i]",
+            "description": "Sign in with email and password",
+            "params": {
+              "email": {
+                "name": "Email",
+                "desc": "Email address"
+              },
+              "password": {
+                "name": "Password",
+                "desc": "Password"
+              }
+            }
+          },
+          "sign-in-anonymously": {
+            "list-name": "Sign In Anonymously",
+            "display-text": "Sign in anonymously [i](Options: {0})[/i]",
+            "description": "Sign in anonymously",
+            "params": {
+              "options": {
+                "name": "Options",
+                "desc": "Optional: Additional data to be stored with the anonymous user"
+              }
+            }
+          },
+          "send-password-reset-email": {
+            "list-name": "Send Password Reset Email",
+            "display-text": "Send password reset email to {0}",
+            "description": "Send password reset email to the provided email address",
+            "params": {
+              "email": {
+                "name": "Email",
+                "desc": "Email address"
+              }
+            }
+          },
+          "sign-in-with-provider": {
+            "list-name": "Sign In with Provider",
+            "display-text": "Sign in with Provider: [i]{0}[/i]",
+            "description": "Sign in with a provider",
+            "params": {
+              "provider": {
+                "name": "Provider",
+                "desc": "Provider name (e.g. \"discord\")"
+              }
+            }
+          },
+          "sign-out": {
+            "list-name": "Sign Out",
+            "display-text": "Sign out",
+            "description": "Sign out the current user"
+          },
+
+          "http-get": {
+            "list-name": "HTTP GET",
+            "display-text": "HTTP GET {1} (Tag: [b]{0}[/b], Headers: {2})",
+            "description": "Make a GET request to the server.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "A tag to identify the request. Can be anything you'd like."
+              },
+              "path": {
+                "name": "Path",
+                "desc": "Path to the resource. e.g. \"/api/v1/users\""
+              },
+              "headers": {
+                "name": "Headers",
+                "desc": "Optional: Headers to be sent with the request."
+              }
+            }
+          },
+          "http-post": {
+            "list-name": "HTTP POST",
+            "display-text": "HTTP POST {1} (Tag: [b]{0}[/b], Body: {2}, Headers: {3})",
+            "description": "Make a POST request to the server.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "A tag to identify the request. Can be anything you'd like."
+              },
+              "path": {
+                "name": "Path",
+                "desc": "Path to the resource. e.g. \"/api/v1/users\""
+              },
+              "body": {
+                "name": "Body",
+                "desc": "Data to be sent with the request."
+              },
+              "headers": {
+                "name": "Headers",
+                "desc": "Optional: Headers to be sent with the request."
+              }
+            }
+          },
+          "http-del": {
+            "list-name": "HTTP DELETE",
+            "display-text": "HTTP DELETE {1} (Tag: [b]{0}[/b], Body: {2}, Headers: {3})",
+            "description": "Make a DELETE request to the server.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "A tag to identify the request. Can be anything you'd like."
+              },
+              "path": {
+                "name": "Path",
+                "desc": "Path to the resource. e.g. \"/api/v1/users/123\""
+              },
+              "body": {
+                "name": "Body",
+                "desc": "Data to be sent with the request."
+              },
+              "headers": {
+                "name": "Headers",
+                "desc": "Optional: Headers to be sent with the request."
+              }
+            }
+          },
+          "http-put": {
+            "list-name": "HTTP PUT",
+            "display-text": "HTTP PUT {1} (Tag: [b]{0}[/b], Body: {2}, Headers: {3})",
+            "description": "Make a PUT request to the server.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "A tag to identify the request. Can be anything you'd like."
+              },
+              "path": {
+                "name": "Path",
+                "desc": "Path to the resource. e.g. \"/api/v1/users/123\""
+              },
+              "body": {
+                "name": "Body",
+                "desc": "Data to be sent with the request."
+              },
+              "headers": {
+                "name": "Headers",
+                "desc": "Optional: Headers to be sent with the request."
               }
             }
           }
+
         },
 
         "expressions": {
@@ -755,7 +939,32 @@
           "error-code-applicataion-error": {
             "description": "4216 → Application level error",
             "translated-name": "ErrorCode_APPLICATION_ERROR"
+          },
+
+          "auth-token": {
+            "description": "Get the authentication token",
+            "translated-name": "AuthToken"
+          },
+          "auth-user-data-at": {
+            "description": "Get the user data at a path",
+            "translated-name": "AuthUserDataAt",
+            "params": {
+              "path": {
+                "name": "Variable Path",
+                "desc": "A dot separated path to the variable. e.g. \"skills.length\", \"skills.0.name\""
+              }
+            }
+          },
+
+          "http-status-code": {
+            "description": "Get the last HTTP status code",
+            "translated-name": "HttpStatusCode"
+          },
+          "http-tag": {
+            "description": "Get the tag of the last HTTP respose",
+            "translated-name": "HttpTag"
           }
+
         }
       }
     }

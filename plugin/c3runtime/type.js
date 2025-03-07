@@ -1,21 +1,12 @@
-"use strict";
 
-{
-  C3.Plugins.Colyseus_SDK.Type = class Colyseus extends C3.SDKTypeBase
-  {
-    constructor(objectClass)
-    {
-      super(objectClass);
-    }
+const C3 = globalThis.C3;
 
-    Release()
-    {
-      super.Release();
-    }
+C3.Plugins.Colyseus_SDK.Type = class Colyseus extends globalThis.ISDKObjectTypeBase {
+  constructor() {
+    super();
+  }
 
-    OnCreate()
-    {
-      //
-    }
-  };
-}
+  _onCreate() {
+    //
+  }
+};

@@ -14,20 +14,30 @@
     <img src="https://img.shields.io/discord/525739117951320081.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white">
   </a>
   <h3>
-     Colyseus Multiplayer SDK for <a href="https://www.construct.net/a/429195?t=construct3tour">Construct 3</a>. <br/><a href="https://docs.colyseus.io/getting-started/construct3-sdk">View documentation</a>
+     Colyseus Multiplayer SDK for <a href="https://www.construct.net/a/429195?t=construct3tour">Construct 3</a>. <br/><a href="https://docs.colyseus.io/getting-started/construct3">View documentation</a>
   </h3>
 </div>
 
 
 # Addon Development / Contribute
 
-This addon uses [c3addon](https://github.com/endel/c3addon) to help on Construct 3 Addon development.
+Requirements: download and install [Caddy Server](https://caddyserver.com/) in order to host https from
+localhost.
 
 - Install the dependencies. (`npm install`)
 - Run Chrome without "same origin policy" (`npm run chrome`)
 - Start the development server (`npm start`)
 
-Run `c3addon help` if you need help.
+For testing on `editor.construct.net`:
+
+- Enable Developer Mode
+  - Go to Settings
+  - Click on Settings window label 10 times
+  - Scroll down and click select to enable "Developer Mode"
+- Go do "Developer Mode" -> Install Dev Addon and provide the following URL: `https://localhost/addon.json`
+
+This addon uses [c3addon](https://github.com/ConstructFund/c3addon) for
+packing and publishing the addon to Construct Addons page.
 
 ## License
 
