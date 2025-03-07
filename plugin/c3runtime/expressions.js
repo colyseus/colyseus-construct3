@@ -42,6 +42,14 @@ C3.Plugins.Colyseus_SDK.Exps =
       : (collection.size || 0));
   },
 
+  // Auth
+  AuthToken() { return this.client.auth.token ?? ""; },
+  AuthUserDataAt(path) { return this.getDeepVariable(path, this.lastAuthUserData); },
+
+  // HTTP
+  HttpStatusCode() { return this.lastHttpStatusCode; },
+  HttpTag() { return this.lastRequestTag; },
+
   // Errors
   ErrorMessage() { return (this.lastError && this.lastError.message) || ""; },
   ErrorCode() { return (this.lastError && this.lastError.code) || -1; },

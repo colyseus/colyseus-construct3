@@ -21,13 +21,23 @@
 
 # Addon Development / Contribute
 
-This addon uses [c3addon](https://github.com/endel/c3addon) to help on Construct 3 Addon development.
+Requirements: download and install [Caddy Server](https://caddyserver.com/) in order to host https from
+localhost.
 
 - Install the dependencies. (`npm install`)
 - Run Chrome without "same origin policy" (`npm run chrome`)
 - Start the development server (`npm start`)
 
-Run `c3addon help` if you need help.
+For testing on `editor.construct.net`:
+
+- Enable Developer Mode
+  - Go to Settings
+  - Click on Settings window label 10 times
+  - Scroll down and click select to enable "Developer Mode"
+- Go do "Developer Mode" -> Install Dev Addon and provide the following URL: `https://localhost/addon.json`
+
+This addon uses [c3addon](https://github.com/ConstructFund/c3addon) for
+packing and publishing the addon to Construct Addons page.
 
 ## License
 

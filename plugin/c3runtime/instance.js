@@ -14,22 +14,13 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
     }
   }
 
-  _release()
-	{
-		super._release();
-	}
+  _release() { super._release(); }
 
-	_saveToJson()
-	{
-		return {
-			// data to be saved for savegames
-		};
-	}
+    // data to be saved for savegames
+  _saveToJson() { return {}; }
 
-	_loadFromJson(o)
-	{
 		// load state for savegames
-	}
+  _loadFromJson(o) { }
 
   _MatchMake(methodName, roomName, rawOptions) {
     const self = this;
@@ -48,17 +39,17 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
       self.room = room;
 
       self.sessionId = self.room.sessionId;
-      self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnJoinRoom);
+      self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnJoinRoom);
 
       room.onError(function (code, message) {
         self.lastError = { code: code, message: message };
-        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomError);
-        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomError);
+        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
       });
 
       room.onLeave(function (code) {
         self.lastCloseCode = code;
-        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnLeaveRoom);
+        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnLeaveRoom);
       });
 
       room.onStateChange.once(function () {
@@ -71,7 +62,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
             const schemaType = typeof(type);
 
             if (schemaType === "object") {
-              const isSchemaChild = Object.values(type).some((value) => value['_definition']);
+              const isSchemaChild = Object.values(type).some((value) => value[Symbol.metadata]);
 
               // on item added to collection
               $(schemaInstance)[field].onAdd(function (item, key) {
@@ -95,6 +86,18 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
                 self.lastCollection = schemaInstance[field];
                 onItemRemove([...path, field], item, key);
               });
+
+              //
+              // only register onChange in the collection itself if it's not
+              // a Schema child.
+              //
+              if (!isSchemaChild) {
+                // on item changed in collection
+                $(schemaInstance)[field].onChange(function (item, key) {
+                  self.lastCollection = schemaInstance[field];
+                  onItemChange([...path, field], item, key);
+                });
+              }
 
             } else if (schemaType === "function") {
               $(schemaInstance).listen(field, function (instance, _) {
@@ -128,7 +131,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
           if (self.debug) {
             console.log("onChange", self.lastPath, self.lastKey, self.lastValue);
           }
-          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
+          self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
         }
 
         function onItemAdd(path, instance, key, isSchemaChild) {
@@ -141,8 +144,8 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
           self.lastPath = self.lastCollectionPath + "." + key;
           self.lastKey = key;
           self.lastValue = instance;
-          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
-          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemAdd);
+          self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnChangeAtPath);
+          self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemAdd);
         }
 
         function onItemChange(path, instance, key) {
@@ -150,7 +153,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
           self.lastPath = self.lastCollectionPath + "." + key;
           self.lastKey = key;
           self.lastValue = instance;
-          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemChange);
+          self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemChange);
         }
 
         function onItemRemove(path, instance, key) {
@@ -158,7 +161,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
           self.lastPath = self.lastCollectionPath + "." + key;
           self.lastKey = key;
           self.lastValue = instance;
-          self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemRemove);
+          self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnCollectionItemRemove);
         }
 
         registerCallbacksOnStructure(self.room.state, []);
@@ -168,7 +171,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
         self.lastPath = "";
         self.lastKey = undefined;
         self.lastValue = state;
-        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnStateChange);
+        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnStateChange);
       });
 
       room.onMessage("*", function (type, message) {
@@ -177,7 +180,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
         }
         self.lastMessage = message;
         self.lastType = type;
-        self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnMessage);
+        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnMessage);
       });
 
     }).catch(function (e) {
@@ -190,9 +193,51 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
       } else {
         self.lastError = e;
       }
-      self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnJoinError);
-      self.Trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+      self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnJoinError);
+      self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
     });
+  }
+
+  _HttpRequest(method, tag, path, _body, _headers) {
+    let body;
+    try { body = JSON.parse(_body); } catch (e) { body = _body; }
+
+    let headers;
+    try { headers = JSON.parse(_headers); } catch (e) { headers = {}; }
+
+    this.client.http[method](path, { headers, body })
+      .then(async (response) => {
+        this.lastRequestTag = tag;
+        this.lastHttpStatusCode = response.statusCode;
+
+        //
+        // TODO: The HTTP client should parse text data internally. We shouldn't do it ourselves here.
+        //
+        if (response.data instanceof ReadableStream) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let result = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            result += decoder.decode(value);
+          }
+          this.lastValue = result;
+
+        } else {
+          this.lastValue = response.data;
+        }
+
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRequestComplete);
+      })
+      .catch((e) => {
+        this.lastValue = undefined;
+        this.lastRequestTag = tag;
+        this.lastError = e;
+        this.lastHttpStatusCode = e.code;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRequestError);
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+      });
   }
 
   getDeepVariable(rawPath, container) {

@@ -51,4 +51,100 @@ C3.Plugins.Colyseus_SDK.Acts =
     }
   },
 
-};
+  /**
+   * Auth methods
+   */
+
+  AuthGetUserData() {
+    this.client.auth.getUserData()
+      .then((authData) => {
+        this.lastAuthUserData = authData.user || {};
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthChange);
+      })
+      .catch((e) => {
+        this.lastError = e;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthError);
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+      });
+  },
+
+  RegisterWithEmailAndPassword(name, password, options) {
+    this.client.auth.registerWithEmailAndPassword(name, password, JSON.parse(options))
+      .then((authData) => {
+        this.lastAuthUserData = authData.user || {};
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthChange);
+      })
+      .catch((e) => {
+        this.lastError = e;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthError);
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+      });
+  },
+
+  SignInWithEmailAndPassword(name, password) {
+    this.client.auth.signInWithEmailAndPassword(name, password)
+      .then((authData) => {
+        this.lastAuthUserData = authData.user || {};
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthChange);
+      })
+      .catch((e) => {
+        this.lastError = e;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthError);
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+      });
+  },
+
+  SignInAnonymously(options) {
+    this.client.auth.signInAnonymously(JSON.parse(options))
+      .then((authData) => {
+        this.lastAuthUserData = authData.user || {};
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthChange);
+      })
+      .catch((e) => {
+        this.lastError = e;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthError);
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+      });
+  },
+
+  SignInWithProvider(provider) {
+    throw new Error("SignInWithProvider is not supported on this SDK because it rely on window.open() which is not available inside Web Workers.");
+    // this.client.auth.signInWithProvider(provider)
+    //   .then((authData) => {
+    //     this.lastAuthUserData = authData.user || {};
+    //     this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthChange);
+    //   })
+    //   .catch((e) => {
+    //     this.lastError = e;
+    //     this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthError);
+    //   });
+  },
+
+  SendPasswordResetEmail(email) {
+    this.client.auth.sendPasswordResetEmail(email)
+      .then(() => {
+        console.log("SendPasswordResetEmail complete.");
+      })
+      .catch((e) => {
+        this.lastError = e;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthError);
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+      });
+  },
+
+  SignOut() {
+    this.client.auth.signOut();
+    this.lastError = undefined;
+    this.lastAuthUserData = undefined;
+    this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAuthChange);
+  },
+
+  /**
+   * HTTP Methods
+   */
+  HttpGet(tag, path, headers) { this._HttpRequest('get', tag, path, undefined, headers); },
+  HttpPost(tag, path, body, headers) { this._HttpRequest('post', tag, path, body, headers); },
+  HttpDel(tag, path, body, headers) { this._HttpRequest('del', tag, path, body, headers); },
+  HttpPut(tag, path, body, headers) { this._HttpRequest('put', tag, path, body, headers); },
+
+}

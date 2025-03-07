@@ -66,6 +66,18 @@
     ],
     "expressions": [
       {
+        "id": "error-code",
+        "expressionName": "ErrorCode",
+        "scriptName": "ErrorCode",
+        "returnType": "number"
+      },
+      {
+        "id": "error-message",
+        "expressionName": "ErrorMessage",
+        "scriptName": "ErrorMessage",
+        "returnType": "string"
+      },
+      {
         "id": "error-code-sdk-exception",
         "expressionName": "ErrorCode_SDK_EXCEPTION",
         "scriptName": "ErrorCode_SDK_EXCEPTION",
@@ -118,6 +130,87 @@
         "expressionName": "ErrorCode_APPLICATION_ERROR",
         "scriptName": "ErrorCode_APPLICATION_ERROR",
         "returnType": "number"
+      }
+    ]
+  },
+
+  "auth": {
+    "conditions": [
+      {
+        "id": "on-auth-change",
+        "scriptName": "OnAuthChange",
+        "isTrigger": true
+      },
+      {
+        "id": "on-auth-error",
+        "scriptName": "OnAuthError",
+        "isTrigger": true
+      }
+    ],
+    "actions": [
+      {
+        "id": "auth-get-userdata",
+        "scriptName": "AuthGetUserData"
+      },
+      {
+        "id": "register-with-email-and-password",
+        "scriptName": "RegisterWithEmailAndPassword",
+        "params": [
+          { "id": "email", "type": "string", "initialValue": "" },
+          { "id": "password", "type": "string", "initialValue": "" },
+          { "id": "options", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" }
+        ]
+      },
+      {
+        "id": "sign-in-with-email-and-password",
+        "scriptName": "SignInWithEmailAndPassword",
+        "params": [
+          { "id": "email", "type": "string", "initialValue": "" },
+          { "id": "password", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "sign-in-anonymously",
+        "scriptName": "SignInAnonymously",
+        "params": [
+          { "id": "options", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" }
+        ]
+      },
+      {
+        "id": "send-password-reset-email",
+        "scriptName": "SendPasswordResetEmail",
+        "params": [
+          { "id": "email", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "sign-in-with-provider",
+        "scriptName": "SignInWithProvider",
+        "params": [
+          { "id": "provider", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "sign-out",
+        "scriptName": "SignOut",
+        "params": []
+      }
+    ],
+    "expressions": [
+      {
+        "id": "auth-token",
+        "expressionName": "AuthToken",
+        "scriptName": "AuthToken",
+        "returnType": "string"
+      },
+      {
+        "id": "auth-user-data-at",
+        "expressionName": "AuthUserDataAt",
+        "scriptName": "AuthUserDataAt",
+        "returnType": "any",
+        "params": [
+          { "id": "path", "type": "string", "initialValue": "" }
+        ]
       }
     ]
   },
@@ -255,18 +348,6 @@
         "expressionName": "CloseCode",
         "scriptName": "CloseCode",
         "returnType": "number"
-      },
-      {
-        "id": "error-code",
-        "expressionName": "ErrorCode",
-        "scriptName": "ErrorCode",
-        "returnType": "number"
-      },
-      {
-        "id": "error-message",
-        "expressionName": "ErrorMessage",
-        "scriptName": "ErrorMessage",
-        "returnType": "string"
       }
     ]
   },
@@ -554,6 +635,83 @@
           { "id": "path", "type": "string" }
         ]
       }
+    ]
+  },
+
+  "http": {
+    "conditions": [
+      {
+        "id": "on-request-complete",
+        "scriptName": "OnRequestComplete",
+        "isTrigger": true,
+        "params": [
+          { "id": "tag", "type": "string" }
+        ]
+      },
+      {
+        "id": "on-request-error",
+        "scriptName": "OnRequestError",
+        "isTrigger": true,
+        "params": [
+          { "id": "tag", "type": "string" }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "http-get",
+        "scriptName": "HttpGet",
+        "params": [
+          { "id": "tag", "type": "string", "initialValue": "" },
+          { "id": "path", "type": "string", "initialValue": "" },
+          { "id": "headers", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" }
+        ]
+      },
+      {
+        "id": "http-post",
+        "scriptName": "HttpPost",
+        "params": [
+          { "id": "tag", "type": "string", "initialValue": "" },
+          { "id": "path", "type": "string", "initialValue": "" },
+          { "id": "body", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" },
+          { "id": "headers", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" }
+        ]
+      },
+      {
+        "id": "http-del",
+        "scriptName": "HttpDel",
+        "params": [
+          { "id": "tag", "type": "string", "initialValue": "" },
+          { "id": "path", "type": "string", "initialValue": "" },
+          { "id": "body", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" },
+          { "id": "headers", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" }
+        ]
+      },
+      {
+        "id": "http-put",
+        "scriptName": "HttpPut",
+        "params": [
+          { "id": "tag", "type": "string", "initialValue": "" },
+          { "id": "path", "type": "string", "initialValue": "" },
+          { "id": "body", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" },
+          { "id": "headers", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" }
+        ]
+      }
+    ],
+    "expressions": [
+      {
+        "id": "http-status-code",
+        "expressionName": "HttpStatusCode",
+        "scriptName": "HttpStatusCode",
+        "returnType": "number"
+      },
+      {
+        "id": "http-tag",
+        "expressionName": "HttpTag",
+        "scriptName": "HttpTag",
+        "returnType": "string"
+      }
+
     ]
   }
 }
