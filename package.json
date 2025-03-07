@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "caddy run",
-    "build": "c3addon pack --root plugin",
+    "build": "c3addon pack plugin",
     "copy-dist": "cp ../colyseus-js/dist/colyseus.js ./plugin",
     "chrome": "open -a Google\\ Chrome --args https://editor.construct.net '--disable-web-security' '--disable-extensions' '--disable-plugins'"
   },
