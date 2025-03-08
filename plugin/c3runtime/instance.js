@@ -34,8 +34,6 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
       : [roomName, options];
 
     this.client[methodName](...args).then(function (room) {
-      const $ = Colyseus.getStateCallbacks(room);
-
       self.room = room;
 
       self.sessionId = self.room.sessionId;
@@ -52,7 +50,26 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
         self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnLeaveRoom);
       });
 
+      room.onStateChange(function (state) {
+        self.lastPath = "";
+        self.lastKey = undefined;
+        self.lastValue = state;
+        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnStateChange);
+      });
+
+      room.onMessage("*", function (type, message) {
+        if (self.debug) {
+          console.info("Colyseus: onMessage", type, message);
+        }
+        self.lastMessage = message;
+        self.lastType = type;
+        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnMessage);
+      });
+
+      // listen for changes on the room's state
       room.onStateChange.once(function () {
+        const $ = Colyseus.getStateCallbacks(room);
+
         function registerCallbacksOnStructure(schemaInstance, path) {
           const metadata = schemaInstance.constructor[Symbol.metadata];
 
@@ -165,22 +182,6 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
         }
 
         registerCallbacksOnStructure(self.room.state, []);
-      });
-
-      room.onStateChange(function (state) {
-        self.lastPath = "";
-        self.lastKey = undefined;
-        self.lastValue = state;
-        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnStateChange);
-      });
-
-      room.onMessage("*", function (type, message) {
-        if (self.debug) {
-          console.info("Colyseus: onMessage", type, message);
-        }
-        self.lastMessage = message;
-        self.lastType = type;
-        self._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnMessage);
       });
 
     }).catch(function (e) {

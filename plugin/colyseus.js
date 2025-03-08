@@ -1,4 +1,4 @@
-// colyseus.js@0.16.9 (@colyseus/schema 3.0.18)
+// colyseus.js@0.16.10 (@colyseus/schema 3.0.18)
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('colyseus.js', ['exports'], factory) :
@@ -5481,7 +5481,14 @@
     }
 
     function getStateCallbacks(room) {
-        return umd.getDecoderStateCallbacks(room['serializer'].decoder);
+        try {
+            // SchemaSerializer
+            return umd.getDecoderStateCallbacks(room['serializer'].decoder);
+        }
+        catch (e) {
+            // NoneSerializer
+            return undefined;
+        }
     }
     var SchemaSerializer = /** @class */ (function () {
         function SchemaSerializer() {
@@ -8654,7 +8661,7 @@
                 ? ":".concat(this.settings.port)
                 : "";
         };
-        Client.VERSION = "0.16.9";
+        Client.VERSION = "0.16.10";
         return Client;
     }());
 
