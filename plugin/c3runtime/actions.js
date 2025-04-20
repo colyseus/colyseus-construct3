@@ -55,6 +55,10 @@ C3.Plugins.Colyseus_SDK.Acts =
    * Auth methods
    */
 
+  SetEndpoint(token) {
+    client.auth.token = token;
+  },
+
   AuthGetUserData() {
     this.client.auth.getUserData()
       .then((authData) => {

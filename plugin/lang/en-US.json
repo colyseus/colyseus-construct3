@@ -606,6 +606,11 @@
             }
           },
 
+          "set-auth-token": {
+            "list-name": "Set Auth Token",
+            "display-text": "Set auth token",
+            "description": "Set the authentication token from the server-side"
+          },
           "auth-get-userdata": {
             "list-name": "Get User Data",
             "display-text": "Get user data",
@@ -945,6 +950,7 @@
             "description": "Get the authentication token",
             "translated-name": "AuthToken"
           },
+          
           "auth-user-data-at": {
             "description": "Get the user data at a path",
             "translated-name": "AuthUserDataAt",

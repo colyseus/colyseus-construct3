@@ -149,6 +149,13 @@
     ],
     "actions": [
       {
+        "id": "set-auth-token",
+        "scriptName": "SetAuthToken",
+        "params": [
+          { "id": "token", "type": "string" }
+        ]
+      },
+      {
         "id": "auth-get-userdata",
         "scriptName": "AuthGetUserData"
       },
