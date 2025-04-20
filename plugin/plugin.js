@@ -12,7 +12,7 @@ const SDK = globalThis.SDK;
 const PLUGIN_ID = "Colyseus_SDK";
 ////////////////////////////////////////////
 
-const PLUGIN_VERSION = "0.16.0.2";
+const PLUGIN_VERSION = "0.16.0.4";
 const PLUGIN_CATEGORY = "web";
 
 const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK = class Colyseus_SDK extends SDK.IPluginBase {
