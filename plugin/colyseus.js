@@ -1,4 +1,4 @@
-// colyseus.js@0.16.16 (@colyseus/schema 3.0.24)
+// colyseus.js@0.16.16 (@colyseus/schema 3.0.34)
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('colyseus.js', ['exports'], factory) :
@@ -1078,9 +1078,15 @@
     		                fields[metadata[i].name] = metadata[i].type;
     		            }
     		            return fields;
+    		        },
+    		        hasViewTagAtIndex(metadata, index) {
+    		            return metadata?.[$viewFieldIndexes]?.includes(index);
     		        }
     		    };
 
+    		    function createChangeSet() {
+    		        return { indexes: {}, operations: [] };
+    		    }
     		    function setOperationAtIndex(changeSet, index) {
     		        const operationsIndex = changeSet.indexes[index];
     		        if (operationsIndex === undefined) {
@@ -1091,14 +1097,26 @@
     		        }
     		    }
     		    function deleteOperationAtIndex(changeSet, index) {
-    		        const operationsIndex = changeSet.indexes[index];
-    		        if (operationsIndex !== undefined) {
-    		            changeSet.operations[operationsIndex] = undefined;
+    		        let operationsIndex = changeSet.indexes[index];
+    		        if (operationsIndex === undefined) {
+    		            //
+    		            // if index is not found, we need to find the last operation
+    		            // FIXME: this is not very efficient
+    		            //
+    		            // > See "should allow consecutive splices (same place)" tests
+    		            //
+    		            operationsIndex = Object.values(changeSet.indexes).at(-1);
+    		            index = Object.entries(changeSet.indexes).find(([_, value]) => value === operationsIndex)?.[0];
     		        }
+    		        changeSet.operations[operationsIndex] = undefined;
     		        delete changeSet.indexes[index];
     		    }
     		    function enqueueChangeTree(root, changeTree, changeSet, queueRootIndex = changeTree[changeSet].queueRootIndex) {
-    		        if (root && root[changeSet][queueRootIndex] !== changeTree) {
+    		        if (!root) {
+    		            // skip
+    		            return;
+    		        }
+    		        else if (root[changeSet][queueRootIndex] !== changeTree) {
     		            changeTree[changeSet].queueRootIndex = root[changeSet].push(changeTree) - 1;
     		        }
     		    }
@@ -1206,8 +1224,14 @@
     		        operation(op) {
     		            // operations without index use negative values to represent them
     		            // this is checked during .encode() time.
-    		            this.changes.operations.push(-op);
-    		            enqueueChangeTree(this.root, this, 'changes');
+    		            if (this.filteredChanges !== undefined) {
+    		                this.filteredChanges.operations.push(-op);
+    		                enqueueChangeTree(this.root, this, 'filteredChanges');
+    		            }
+    		            else {
+    		                this.changes.operations.push(-op);
+    		                enqueueChangeTree(this.root, this, 'changes');
+    		            }
     		        }
     		        change(index, operation = exports.OPERATION.ADD) {
     		            const metadata = this.ref.constructor[Symbol.metadata];
@@ -1253,7 +1277,7 @@
     		            const newIndexes = {};
     		            for (const index in this.indexedOperations) {
     		                newIndexedOperations[Number(index) + shiftIndex] = this.indexedOperations[index];
-    		                newIndexes[Number(index) + shiftIndex] = changeSet[index];
+    		                newIndexes[Number(index) + shiftIndex] = changeSet.indexes[index];
     		            }
     		            this.indexedOperations = newIndexedOperations;
     		            changeSet.indexes = newIndexes;
@@ -1275,14 +1299,9 @@
     		        }
     		        _shiftAllChangeIndexes(shiftIndex, startIndex = 0, changeSet) {
     		            const newIndexes = {};
+    		            let newKey = 0;
     		            for (const key in changeSet.indexes) {
-    		                const index = changeSet.indexes[key];
-    		                if (index > startIndex) {
-    		                    newIndexes[Number(key) + shiftIndex] = index;
-    		                }
-    		                else {
-    		                    newIndexes[key] = index;
-    		                }
+    		                newIndexes[newKey++] = changeSet.indexes[key];
     		            }
     		            changeSet.indexes = newIndexes;
     		            for (let i = 0; i < changeSet.operations.length; i++) {
@@ -1347,6 +1366,7 @@
     		                : this.changes;
     		            this.indexedOperations[index] = operation ?? exports.OPERATION.DELETE;
     		            setOperationAtIndex(changeSet, index);
+    		            deleteOperationAtIndex(this.allChanges, allChangesIndex);
     		            const previousValue = this.getValue(index);
     		            // remove `root` reference
     		            if (previousValue && previousValue[$changes]) {
@@ -1362,7 +1382,6 @@
     		                //
     		                this.root?.remove(previousValue[$changes]);
     		            }
-    		            deleteOperationAtIndex(this.allChanges, allChangesIndex);
     		            //
     		            // FIXME: this is looking a ugly and repeated
     		            //
@@ -1375,11 +1394,12 @@
     		            }
     		            return previousValue;
     		        }
-    		        endEncode() {
+    		        endEncode(changeSetName) {
     		            this.indexedOperations = {};
-    		            // // clear changes
-    		            // this.changes.indexes = {};
-    		            // this.changes.operations.length = 0;
+    		            // clear changeset
+    		            this[changeSetName].indexes = {};
+    		            this[changeSetName].operations.length = 0;
+    		            this[changeSetName].queueRootIndex = undefined;
     		            // ArraySchema and MapSchema have a custom "encode end" method
     		            this.ref[$onEncodeEnd]?.();
     		            // Not a new instance anymore
@@ -1471,10 +1491,15 @@
     		            const refType = Metadata.isValidInstance(this.ref)
     		                ? this.ref.constructor
     		                : this.ref[$childType];
-    		            if (!Metadata.isValidInstance(parent)) {
-    		                const parentChangeTree = parent[$changes];
+    		            let parentChangeTree;
+    		            let parentIsCollection = !Metadata.isValidInstance(parent);
+    		            if (parentIsCollection) {
+    		                parentChangeTree = parent[$changes];
     		                parent = parentChangeTree.parent;
     		                parentIndex = parentChangeTree.parentIndex;
+    		            }
+    		            else {
+    		                parentChangeTree = parent[$changes];
     		            }
     		            const parentConstructor = parent.constructor;
     		            let key = `${this.root.types.getTypeId(refType)}`;
@@ -1482,28 +1507,28 @@
     		                key += `-${this.root.types.schemas.get(parentConstructor)}`;
     		            }
     		            key += `-${parentIndex}`;
+    		            const fieldHasViewTag = Metadata.hasViewTagAtIndex(parentConstructor?.[Symbol.metadata], parentIndex);
     		            this.isFiltered = parent[$changes].isFiltered // in case parent is already filtered
     		                || this.root.types.parentFiltered[key]
-    		                || parentConstructor?.[Symbol.metadata]?.[$viewFieldIndexes]?.includes(parentIndex);
+    		                || fieldHasViewTag;
     		            //
-    		            // TODO: refactor this!
-    		            //
-    		            //      swapping `changes` and `filteredChanges` is required here
-    		            //      because "isFiltered" may not be imedialely available on `change()`
-    		            //      (this happens when instance is detached from root or parent)
+    		            // "isFiltered" may not be imedialely available during `change()` due to the instance not being attached to the root yet.
+    		            // when it's available, we need to enqueue the "changes" changeset into the "filteredChanges" changeset.
     		            //
     		            if (this.isFiltered) {
-    		                this.filteredChanges = { indexes: {}, operations: [] };
-    		                this.allFilteredChanges = { indexes: {}, operations: [] };
+    		                this.isVisibilitySharedWithParent = (parentChangeTree.isFiltered &&
+    		                    typeof (refType) !== "string" &&
+    		                    !fieldHasViewTag &&
+    		                    parentIsCollection);
+    		                if (!this.filteredChanges) {
+    		                    this.filteredChanges = createChangeSet();
+    		                    this.allFilteredChanges = createChangeSet();
+    		                }
     		                if (this.changes.operations.length > 0) {
-    		                    // swap changes reference
-    		                    const changes = this.changes;
-    		                    this.changes = this.filteredChanges;
-    		                    this.filteredChanges = changes;
-    		                    // swap "all changes" reference
-    		                    const allFilteredChanges = this.allFilteredChanges;
-    		                    this.allFilteredChanges = this.allChanges;
-    		                    this.allChanges = allFilteredChanges;
+    		                    this.changes.operations.forEach((index) => setOperationAtIndex(this.filteredChanges, index));
+    		                    this.allChanges.operations.forEach((index) => setOperationAtIndex(this.allFilteredChanges, index));
+    		                    this.changes = createChangeSet();
+    		                    this.allChanges = createChangeSet();
     		                }
     		            }
     		        }
@@ -1625,11 +1650,12 @@
     		        // encode index
     		        encode.number(bytes, refOrIndex, it);
     		        // Do not encode value for DELETE operations
-    		        if (operation === exports.OPERATION.DELETE) {
+    		        if (operation === exports.OPERATION.DELETE || operation === exports.OPERATION.DELETE_BY_REFID) {
     		            return;
     		        }
     		        const type = changeTree.getType(field);
     		        const value = changeTree.getValue(field, isEncodeAll);
+    		        // console.log({ type, field, value });
     		        // console.log("encodeArray -> ", {
     		        //     ref: changeTree.ref.constructor.name,
     		        //     field,
@@ -1845,10 +1871,14 @@
     		        else if (operation === exports.OPERATION.ADD_BY_REFID) {
     		            const refId = decode.number(bytes, it);
     		            const itemByRefId = decoder.root.refs.get(refId);
-    		            // use existing index, or push new value
-    		            index = (itemByRefId)
-    		                ? ref.findIndex((value) => value === itemByRefId)
-    		                : ref.length;
+    		            // if item already exists, use existing index
+    		            if (itemByRefId) {
+    		                index = ref.findIndex((value) => value === itemByRefId);
+    		            }
+    		            // fallback to use last index
+    		            if (index === -1 || index === undefined) {
+    		                index = ref.length;
+    		            }
     		        }
     		        else {
     		            index = decode.number(bytes, it);
@@ -1951,8 +1981,7 @@
     		        static [(_a$4 = $encoder, _b$4 = $decoder, $filter)](ref, index, view) {
     		            return (!view ||
     		                typeof (ref[$childType]) === "string" ||
-    		                // view.items.has(ref[$getByIndex](index)[$changes])
-    		                view.visible.has(ref['tmpItems'][index]?.[$changes]));
+    		                view.isChangeTreeVisible(ref['tmpItems'][index]?.[$changes]));
     		        }
     		        static is(type) {
     		            return (
@@ -1968,6 +1997,7 @@
     		            this.items = [];
     		            this.tmpItems = [];
     		            this.deletedIndexes = {};
+    		            this.isMovingItems = false;
     		            Object.defineProperty(this, $childType, {
     		                value: undefined,
     		                enumerable: false,
@@ -1995,31 +2025,38 @@
     		                            if (setValue[$changes]) {
     		                                assertInstanceType(setValue, obj[$childType], obj, key);
     		                                const previousValue = obj.items[key];
-    		                                if (previousValue !== undefined) {
-    		                                    if (setValue[$changes].isNew) {
-    		                                        this[$changes].indexedOperation(Number(key), exports.OPERATION.MOVE_AND_ADD);
-    		                                    }
-    		                                    else {
-    		                                        if ((obj[$changes].getChange(Number(key)) & exports.OPERATION.DELETE) === exports.OPERATION.DELETE) {
-    		                                            this[$changes].indexedOperation(Number(key), exports.OPERATION.DELETE_AND_MOVE);
+    		                                if (!obj.isMovingItems) {
+    		                                    obj.$changeAt(Number(key), setValue);
+    		                                }
+    		                                else {
+    		                                    if (previousValue !== undefined) {
+    		                                        if (setValue[$changes].isNew) {
+    		                                            obj[$changes].indexedOperation(Number(key), exports.OPERATION.MOVE_AND_ADD);
     		                                        }
     		                                        else {
-    		                                            this[$changes].indexedOperation(Number(key), exports.OPERATION.MOVE);
+    		                                            if ((obj[$changes].getChange(Number(key)) & exports.OPERATION.DELETE) === exports.OPERATION.DELETE) {
+    		                                                obj[$changes].indexedOperation(Number(key), exports.OPERATION.DELETE_AND_MOVE);
+    		                                            }
+    		                                            else {
+    		                                                obj[$changes].indexedOperation(Number(key), exports.OPERATION.MOVE);
+    		                                            }
     		                                        }
     		                                    }
+    		                                    else if (setValue[$changes].isNew) {
+    		                                        obj[$changes].indexedOperation(Number(key), exports.OPERATION.ADD);
+    		                                    }
+    		                                    setValue[$changes].setParent(this, obj[$changes].root, key);
+    		                                }
+    		                                if (previousValue !== undefined) {
     		                                    // remove root reference from previous value
     		                                    previousValue[$changes].root?.remove(previousValue[$changes]);
     		                                }
-    		                                else if (setValue[$changes].isNew) {
-    		                                    this[$changes].indexedOperation(Number(key), exports.OPERATION.ADD);
-    		                                }
-    		                                setValue[$changes].setParent(this, obj[$changes].root, key);
     		                            }
     		                            else {
     		                                obj.$changeAt(Number(key), setValue);
     		                            }
-    		                            this.items[key] = setValue;
-    		                            this.tmpItems[key] = setValue;
+    		                            obj.items[key] = setValue;
+    		                            obj.tmpItems[key] = setValue;
     		                        }
     		                        return true;
     		                    }
@@ -2108,8 +2145,6 @@
     		                return undefined;
     		            }
     		            this[$changes].delete(index, undefined, this.items.length - 1);
-    		            // this.tmpItems[index] = undefined;
-    		            // this.tmpItems.pop();
     		            this.deletedIndexes[index] = true;
     		            return this.items.pop();
     		        }
@@ -2129,8 +2164,12 @@
     		            if (this.items[index] === value) {
     		                return;
     		            }
+    		            const operation = (this.items[index] !== undefined)
+    		                ? typeof (value) === "object"
+    		                    ? exports.OPERATION.DELETE_AND_ADD // schema child
+    		                    : exports.OPERATION.REPLACE // primitive
+    		                : exports.OPERATION.ADD;
     		            const changeTree = this[$changes];
-    		            const operation = changeTree.indexes?.[index]?.op ?? exports.OPERATION.ADD;
     		            changeTree.change(index, operation);
     		            //
     		            // set value's parent after the value is set
@@ -2219,10 +2258,11 @@
     		                return undefined;
     		            }
     		            // const index = Number(Object.keys(changeTree.indexes)[0]);
-    		            const index = this.tmpItems.findIndex((item, i) => item === this.items[0]);
     		            const changeTree = this[$changes];
-    		            changeTree.delete(index);
-    		            changeTree.shiftAllChangeIndexes(-1, index);
+    		            const index = this.tmpItems.findIndex(item => item === this.items[0]);
+    		            const allChangesIndex = this.items.findIndex(item => item === this.items[0]);
+    		            changeTree.delete(index, exports.OPERATION.DELETE, allChangesIndex);
+    		            changeTree.shiftAllChangeIndexes(-1, allChangesIndex);
     		            // this.deletedIndexes[index] = true;
     		            return this.items.shift();
     		        }
@@ -2246,11 +2286,13 @@
     		         * ```
     		         */
     		        sort(compareFn = DEFAULT_SORT) {
+    		            this.isMovingItems = true;
     		            const changeTree = this[$changes];
     		            const sortedItems = this.items.sort(compareFn);
     		            // wouldn't OPERATION.MOVE make more sense here?
     		            sortedItems.forEach((_, i) => changeTree.change(i, exports.OPERATION.REPLACE));
     		            this.tmpItems.sort(compareFn);
+    		            this.isMovingItems = false;
     		            return this;
     		        }
     		        /**
@@ -2259,31 +2301,50 @@
     		         * @param deleteCount The number of elements to remove.
     		         * @param insertItems Elements to insert into the array in place of the deleted elements.
     		         */
-    		        splice(start, deleteCount = this.items.length - start, ...insertItems) {
+    		        splice(start, deleteCount, ...insertItems) {
     		            const changeTree = this[$changes];
+    		            const itemsLength = this.items.length;
     		            const tmpItemsLength = this.tmpItems.length;
     		            const insertCount = insertItems.length;
     		            // build up-to-date list of indexes, excluding removed values.
     		            const indexes = [];
     		            for (let i = 0; i < tmpItemsLength; i++) {
-    		                // if (this.tmpItems[i] !== undefined) {
     		                if (this.deletedIndexes[i] !== true) {
     		                    indexes.push(i);
     		                }
     		            }
-    		            // delete operations at correct index
-    		            for (let i = start; i < start + deleteCount; i++) {
-    		                const index = indexes[i];
-    		                changeTree.delete(index);
-    		                // this.tmpItems[index] = undefined;
-    		                this.deletedIndexes[index] = true;
+    		            if (itemsLength > start) {
+    		                // if deleteCount is not provided, delete all items from start to end
+    		                if (deleteCount === undefined) {
+    		                    deleteCount = itemsLength - start;
+    		                }
+    		                //
+    		                // delete operations at correct index
+    		                //
+    		                for (let i = start; i < start + deleteCount; i++) {
+    		                    const index = indexes[i];
+    		                    changeTree.delete(index, exports.OPERATION.DELETE);
+    		                    this.deletedIndexes[index] = true;
+    		                }
     		            }
-    		            // force insert operations
-    		            for (let i = 0; i < insertCount; i++) {
-    		                const addIndex = indexes[start] + i;
-    		                changeTree.indexedOperation(addIndex, exports.OPERATION.ADD);
-    		                // set value's parent/root
-    		                insertItems[i][$changes]?.setParent(this, changeTree.root, addIndex);
+    		            else {
+    		                // not enough items to delete
+    		                deleteCount = 0;
+    		            }
+    		            // insert operations
+    		            if (insertCount > 0) {
+    		                if (insertCount > deleteCount) {
+    		                    console.error("Inserting more elements than deleting during ArraySchema#splice()");
+    		                    throw new Error("ArraySchema#splice(): insertCount must be equal or lower than deleteCount.");
+    		                }
+    		                for (let i = 0; i < insertCount; i++) {
+    		                    const addIndex = (indexes[start] ?? itemsLength) + i;
+    		                    changeTree.indexedOperation(addIndex, (this.deletedIndexes[addIndex])
+    		                        ? exports.OPERATION.DELETE_AND_ADD
+    		                        : exports.OPERATION.ADD);
+    		                    // set value's parent/root
+    		                    insertItems[i][$changes]?.setParent(this, changeTree.root, addIndex);
+    		                }
     		            }
     		            //
     		            // delete exceeding indexes from "allChanges"
@@ -2291,6 +2352,16 @@
     		            //
     		            if (deleteCount > insertCount) {
     		                changeTree.shiftAllChangeIndexes(-(deleteCount - insertCount), indexes[start + insertCount]);
+    		                // debugChangeSet("AFTER SHIFT indexes", changeTree.allChanges);
+    		            }
+    		            //
+    		            // FIXME: this code block is duplicated on ChangeTree
+    		            //
+    		            if (changeTree.filteredChanges !== undefined) {
+    		                enqueueChangeTree(changeTree.root, changeTree, 'filteredChanges');
+    		            }
+    		            else {
+    		                enqueueChangeTree(changeTree.root, changeTree, 'changes');
     		            }
     		            return this.items.splice(start, deleteCount, ...insertItems);
     		        }
@@ -2534,6 +2605,37 @@
     		            // @ts-ignore
     		            return this.items.toSpliced.apply(copy, arguments);
     		        }
+    		        shuffle() {
+    		            return this.move((_) => {
+    		                let currentIndex = this.items.length;
+    		                while (currentIndex != 0) {
+    		                    let randomIndex = Math.floor(Math.random() * currentIndex);
+    		                    currentIndex--;
+    		                    [this[currentIndex], this[randomIndex]] = [this[randomIndex], this[currentIndex]];
+    		                }
+    		            });
+    		        }
+    		        /**
+    		         * Allows to move items around in the array.
+    		         *
+    		         * Example:
+    		         *     state.cards.move((cards) => {
+    		         *         [cards[4], cards[3]] = [cards[3], cards[4]];
+    		         *         [cards[3], cards[2]] = [cards[2], cards[3]];
+    		         *         [cards[2], cards[0]] = [cards[0], cards[2]];
+    		         *         [cards[1], cards[1]] = [cards[1], cards[1]];
+    		         *         [cards[0], cards[0]] = [cards[0], cards[0]];
+    		         *     })
+    		         *
+    		         * @param cb
+    		         * @returns
+    		         */
+    		        move(cb) {
+    		            this.isMovingItems = true;
+    		            cb(this);
+    		            this.isMovingItems = false;
+    		            return this;
+    		        }
     		        [($getByIndex)](index, isEncodeAll = false) {
     		            //
     		            // TODO: avoid unecessary `this.tmpItems` check during decoding.
@@ -2546,9 +2648,6 @@
     		                : this.deletedIndexes[index]
     		                    ? this.items[index]
     		                    : this.tmpItems[index] || this.items[index];
-    		            // return (isEncodeAll)
-    		            //     ? this.items[index]
-    		            //     : this.tmpItems[index] ?? this.items[index];
     		        }
     		        [$deleteByIndex](index) {
     		            this.items[index] = undefined;
@@ -2608,7 +2707,7 @@
     		        static [(_a$3 = $encoder, _b$3 = $decoder, $filter)](ref, index, view) {
     		            return (!view ||
     		                typeof (ref[$childType]) === "string" ||
-    		                view.visible.has((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
+    		                view.isChangeTreeVisible((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
     		        }
     		        static is(type) {
     		            return type['map'] !== undefined;
@@ -3159,6 +3258,10 @@
     		        };
     		        // for (const refId in $root.changes) {
     		        $root.changes.forEach(changeTree => {
+    		            // skip if ChangeTree is undefined
+    		            if (changeTree === undefined) {
+    		                return;
+    		            }
     		            const changes = changeTree.indexedOperations;
     		            dump.refs.push(`refId#${changeTree.refId}`);
     		            for (const index in changes) {
@@ -3225,7 +3328,7 @@
     		            }
     		            else if (tag === DEFAULT_VIEW_TAG) {
     		                // view pass: default tag
-    		                return view.visible.has(ref[$changes]);
+    		                return view.isChangeTreeVisible(ref[$changes]);
     		            }
     		            else {
     		                // view pass: custom tag
@@ -3438,7 +3541,7 @@
     		        static [(_a$1 = $encoder, _b$1 = $decoder, $filter)](ref, index, view) {
     		            return (!view ||
     		                typeof (ref[$childType]) === "string" ||
-    		                view.visible.has((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
+    		                view.isChangeTreeVisible((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
     		        }
     		        static is(type) {
     		            return type['collection'] !== undefined;
@@ -3783,19 +3886,6 @@
     		        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
     		    };
 
-    		    function spliceOne(arr, index) {
-    		        // manually splice an array
-    		        if (index === -1 || index >= arr.length) {
-    		            return false;
-    		        }
-    		        const len = arr.length - 1;
-    		        for (let i = index; i < len; i++) {
-    		            arr[i] = arr[i + 1];
-    		        }
-    		        arr.length = len;
-    		        return true;
-    		    }
-
     		    class Root {
     		        constructor(types) {
     		            this.types = types;
@@ -3876,11 +3966,16 @@
     		        }
     		        removeChangeFromChangeSet(changeSetName, changeTree) {
     		            const changeSet = this[changeSetName];
-    		            if (spliceOne(changeSet, changeSet.indexOf(changeTree))) {
+    		            const changeSetIndex = changeSet.indexOf(changeTree);
+    		            if (changeSetIndex !== -1) {
     		                changeTree[changeSetName].queueRootIndex = -1;
-    		                // changeSet[index] = undefined;
+    		                changeSet[changeSetIndex] = undefined;
     		                return true;
     		            }
+    		            // if (spliceOne(changeSet, changeSet.indexOf(changeTree))) {
+    		            //     changeTree[changeSetName].queueRootIndex = -1;
+    		            //     return true;
+    		            // }
     		        }
     		        clear() {
     		            this.changes.length = 0;
@@ -3913,23 +4008,24 @@
     		        ) {
     		            const hasView = (view !== undefined);
     		            const rootChangeTree = this.state[$changes];
-    		            const shouldDiscardChanges = !isEncodeAll && !hasView;
     		            const changeTrees = this.root[changeSetName];
     		            for (let i = 0, numChangeTrees = changeTrees.length; i < numChangeTrees; i++) {
     		                const changeTree = changeTrees[i];
+    		                if (!changeTree) {
+    		                    continue;
+    		                }
     		                if (hasView) {
-    		                    if (!view.visible.has(changeTree)) {
+    		                    if (!view.isChangeTreeVisible(changeTree)) {
+    		                        // console.log("MARK AS INVISIBLE:", { ref: changeTree.ref.constructor.name, refId: changeTree.refId, raw: changeTree.ref.toJSON() });
     		                        view.invisible.add(changeTree);
     		                        continue; // skip this change tree
     		                    }
-    		                    else {
-    		                        view.invisible.delete(changeTree); // remove from invisible list
-    		                    }
+    		                    view.invisible.delete(changeTree); // remove from invisible list
     		                }
-    		                const operations = changeTree[changeSetName];
+    		                const changeSet = changeTree[changeSetName];
     		                const ref = changeTree.ref;
     		                // TODO: avoid iterating over change tree if no changes were made
-    		                const numChanges = operations.operations.length;
+    		                const numChanges = changeSet.operations.length;
     		                if (numChanges === 0) {
     		                    continue;
     		                }
@@ -3944,7 +4040,7 @@
     		                    encode.number(buffer, changeTree.refId, it);
     		                }
     		                for (let j = 0; j < numChanges; j++) {
-    		                    const fieldIndex = operations.operations[j];
+    		                    const fieldIndex = changeSet.operations[j];
     		                    const operation = (fieldIndex < 0)
     		                        ? Math.abs(fieldIndex) // "pure" operation without fieldIndex (e.g. CLEAR, REVERSE, etc.)
     		                        : (isEncodeAll)
@@ -3964,10 +4060,6 @@
     		                    }
     		                    encoder(this, buffer, changeTree, fieldIndex, operation, it, isEncodeAll, hasView, metadata);
     		                }
-    		                // if (shouldDiscardChanges) {
-    		                //     changeTree.discard();
-    		                //     changeTree.isNew = false; // Not a new instance anymore
-    		                // }
     		            }
     		            if (it.offset > buffer.byteLength) {
     		                // we can assume that n + 1 poolSize will suffice given that we are likely done with encoding at this point
@@ -3991,19 +4083,6 @@
     		                return this.encode({ offset: initialOffset }, view, buffer, changeSetName, isEncodeAll);
     		            }
     		            else {
-    		                //
-    		                // only clear changes after making sure buffer resize is not required.
-    		                //
-    		                if (shouldDiscardChanges) {
-    		                    //
-    		                    // TODO: avoid iterating over change trees twice.
-    		                    //
-    		                    for (let i = 0, numChangeTrees = changeTrees.length; i < numChangeTrees; i++) {
-    		                        const changeTree = changeTrees[i];
-    		                        changeTree.discard();
-    		                        changeTree.isNew = false; // Not a new instance anymore
-    		                    }
-    		                }
     		                return buffer.subarray(0, it.offset);
     		            }
     		        }
@@ -4088,7 +4167,7 @@
     		            let length = this.root.changes.length;
     		            if (length > 0) {
     		                while (length--) {
-    		                    this.root.changes[length]?.endEncode();
+    		                    this.root.changes[length]?.endEncode('changes');
     		                }
     		                this.root.changes.length = 0;
     		            }
@@ -4096,7 +4175,7 @@
     		            length = this.root.filteredChanges.length;
     		            if (length > 0) {
     		                while (length--) {
-    		                    this.root.filteredChanges[length]?.endEncode();
+    		                    this.root.filteredChanges[length]?.endEncode('filteredChanges');
     		                }
     		                this.root.filteredChanges.length = 0;
     		            }
@@ -4117,6 +4196,19 @@
     		            return (this.root.changes.length > 0 ||
     		                this.root.filteredChanges.length > 0);
     		        }
+    		    }
+
+    		    function spliceOne(arr, index) {
+    		        // manually splice an array
+    		        if (index === -1 || index >= arr.length) {
+    		            return false;
+    		        }
+    		        const len = arr.length - 1;
+    		        for (let i = index; i < len; i++) {
+    		            arr[i] = arr[i + 1];
+    		        }
+    		        arr.length = len;
+    		        return true;
     		    }
 
     		    class DecodingWarning extends Error {
@@ -4639,7 +4731,8 @@
     		                            }
     		                        }
     		                    }
-    		                    else if ((change.op & exports.OPERATION.ADD) === exports.OPERATION.ADD && change.previousValue === undefined) {
+    		                    else if ((change.op & exports.OPERATION.ADD) === exports.OPERATION.ADD &&
+    		                        change.previousValue !== change.value) {
     		                        // triger onAdd
     		                        const addCallbacks = $callbacks[exports.OPERATION.ADD];
     		                        for (let i = addCallbacks?.length - 1; i >= 0; i--) {
@@ -5061,6 +5154,25 @@
     		            }
     		            // clear items array
     		            this.items.length = 0;
+    		        }
+    		        isChangeTreeVisible(changeTree) {
+    		            let isVisible = this.visible.has(changeTree);
+    		            //
+    		            // TODO: avoid checking for parent visibility, most of the time it's not needed
+    		            // See test case: 'should not be required to manually call view.add() items to child arrays without @view() tag'
+    		            //
+    		            if (!isVisible && changeTree.isVisibilitySharedWithParent) {
+    		                // console.log("CHECK AGAINST PARENT...", {
+    		                //     ref: changeTree.ref.constructor.name,
+    		                //     refId: changeTree.refId,
+    		                //     parent: changeTree.parent.constructor.name,
+    		                // });
+    		                if (this.visible.has(changeTree.parent[$changes])) {
+    		                    this.visible.add(changeTree);
+    		                    isVisible = true;
+    		                }
+    		            }
+    		            return isVisible;
     		        }
     		    }
 
@@ -8491,6 +8603,10 @@
         }
         buildEndpoint(room, options = {}, protocol = "ws") {
             const params = [];
+            // forward authentication token
+            if (this.http.authToken) {
+                options['_authToken'] = this.http.authToken;
+            }
             // append provided options
             for (const name in options) {
                 if (!options.hasOwnProperty(name)) {
