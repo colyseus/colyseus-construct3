@@ -312,6 +312,11 @@
         "id": "on-room-error",
         "scriptName": "OnRoomError",
         "isTrigger": true
+      },
+      {
+        "id": "on-room-ping",
+        "scriptName": "OnRoomPing",
+        "isTrigger": true
       }
     ],
 
@@ -322,6 +327,10 @@
         "params": [
           { "id": "consented", "type": "boolean", "initialValue": "true" }
         ]
+      },
+      {
+        "id": "get-room-ping",
+        "scriptName": "GetRoomPing"
       }
     ],
 
@@ -354,6 +363,12 @@
         "id": "close-code",
         "expressionName": "CloseCode",
         "scriptName": "CloseCode",
+        "returnType": "number"
+      },
+      {
+        "id": "current-ping",
+        "expressionName": "CurrentPing",
+        "scriptName": "CurrentPing",
         "returnType": "number"
       }
     ]

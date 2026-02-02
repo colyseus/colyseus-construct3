@@ -12,7 +12,7 @@ const SDK = globalThis.SDK;
 const PLUGIN_ID = "Colyseus_SDK";
 ////////////////////////////////////////////
 
-const PLUGIN_VERSION = "0.16.0.7";
+const PLUGIN_VERSION = "0.17.0.0";
 const PLUGIN_CATEGORY = "web";
 
 const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK = class Colyseus_SDK extends SDK.IPluginBase {
@@ -31,14 +31,30 @@ const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK = class Colyseus_SDK extends SDK.I
     this._info.SetIsSingleGlobal(false);
     this._info.SetRuntimeModuleMainScript("c3runtime/main.js");
 
+    // this._info.AddC3RuntimeScript("c3runtime/colyseus.js");
+
+    // Main Colyseus library - always loaded
     this._info.AddFileDependency({
       filename: "colyseus.js",
       type: "external-runtime-script"
     });
 
+    //
+    // // TODO: Add Debug Panel
+    // // The Debug Panel relies heavily on the DOM, and requires global Colyseus
+    // // to be available, so it cannot be loaded this way.
+    //
+    // this._info.AddFileDependency({
+    //   filename: "colyseus-debug.js",
+    //   type: "external-dom-script"
+    // });
+
     SDK.Lang.PushContext(".properties");
     this._info.SetProperties([
-      new SDK.PluginProperty("text", "endpoint", "http://localhost:2567")
+      // Add "Default Endpoint" property
+      new SDK.PluginProperty("text", "endpoint", "http://localhost:2567"),
+      // Add "Debug" property
+      new SDK.PluginProperty("check", "debug", true)
     ]);
     SDK.Lang.PopContext(); // .properties
 

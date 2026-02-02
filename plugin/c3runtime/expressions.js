@@ -8,6 +8,7 @@ C3.Plugins.Colyseus_SDK.Exps =
   SessionId() { return this.room && this.room.sessionId; },
   ReconnectionToken() { return this.room && this.room.reconnectionToken; },
   CloseCode() { return this.lastCloseCode || -1; },
+  CurrentPing() { return this.lastPing || -1; },
   Endpoint() { return this.endpoint; },
 
   JSON(data) { return JSON.stringify(eval(`(${data})`)); },

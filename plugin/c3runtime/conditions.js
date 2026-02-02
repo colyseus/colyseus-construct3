@@ -39,6 +39,7 @@ C3.Plugins.Colyseus_SDK.Cnds =
   OnLeaveRoom() { return true; },
   OnRoomError() { return true; },
   OnStateChange() { return true; },
+  OnRoomPing() { return true; },
   OnMessage(type) {
     return (
       type === "*" ||

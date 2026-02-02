@@ -12,6 +12,10 @@
           "endpoint": {
             "name": "Default Endpoint",
             "desc": "Default Endpoint to use on \"Connect\" action."
+          },
+          "debug": {
+            "name": "Debug Panel",
+            "desc": "Show the debug panel in the top right corner of the screen."
           }
         },
 
@@ -76,6 +80,12 @@
             "list-name": "On State Change",
             "display-text": "On State Change",
             "description": "Triggered after full state updates have been applied. To detect specific changes use conditions under \"room state\" section."
+          },
+          "on-room-ping": {
+            "isStatic": true,
+            "list-name": "On Room Ping",
+            "display-text": "On Room Ping",
+            "description": "Triggered when the ping measurement is complete. Use CurrentPing expression to get the latency in milliseconds."
           },
 
           "is-message-type": {
@@ -606,6 +616,12 @@
             }
           },
 
+          "get-room-ping": {
+            "list-name": "Get Room Ping",
+            "display-text": "Get room ping",
+            "description": "Measure the latency to the room server. Triggers \"On Room Ping\" when complete."
+          },
+
           "set-auth-token": {
             "list-name": "Set Auth Token",
             "display-text": "Set Auth Token token to [i]{0}[/i]",
@@ -906,6 +922,10 @@
           "close-code": {
             "description": "Get close code from the last disconnection. (Available during \"On Leave Room\")",
             "translated-name": "CloseCode"
+          },
+          "current-ping": {
+            "description": "Get the last measured ping latency in milliseconds. (Available during \"On Room Ping\")",
+            "translated-name": "CurrentPing"
           },
           "error-code": {
             "description": "Get last error code",

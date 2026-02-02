@@ -51,6 +51,15 @@ C3.Plugins.Colyseus_SDK.Acts =
     }
   },
 
+  GetRoomPing() {
+    if (this.room && this.room.connection) {
+      this.room.ping((ms) => {
+        this.lastPing = ms;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomPing);
+      });
+    }
+  },
+
   /**
    * Auth methods
    */

@@ -68,7 +68,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
 
       // listen for changes on the room's state
       room.onStateChange.once(function () {
-        const $ = Colyseus.getStateCallbacks(room);
+        const callbacks = Colyseus.Callbacks.get(room);
 
         function registerCallbacksOnStructure(schemaInstance, path) {
           const metadata = schemaInstance.constructor[Symbol.metadata];
@@ -82,7 +82,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
               const isSchemaChild = Object.values(type).some((value) => value[Symbol.metadata]);
 
               // on item added to collection
-              $(schemaInstance)[field].onAdd(function (item, key) {
+              callbacks.onAdd(schemaInstance, field, function (item, key) {
                 self.lastCollection = schemaInstance[field];
                 onItemAdd([...path, field], item, key, isSchemaChild);
 
@@ -92,14 +92,14 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
                 //
                 if (isSchemaChild) {
                   // trigger "On item change"
-                  $(item).onChange(function () {
+                  callbacks.onChange(item, function () {
                     onItemChange([...path, field], item, key);
                   });
                 }
               });
 
               // on item removed from collection
-              $(schemaInstance)[field].onRemove(function (item, key) {
+              callbacks.onRemove(schemaInstance, field, function (item, key) {
                 self.lastCollection = schemaInstance[field];
                 onItemRemove([...path, field], item, key);
               });
@@ -110,19 +110,19 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
               //
               if (!isSchemaChild) {
                 // on item changed in collection
-                $(schemaInstance)[field].onChange(function (item, key) {
+                callbacks.onChange(schemaInstance, field, function (item, key) {
                   self.lastCollection = schemaInstance[field];
                   onItemChange([...path, field], item, key);
                 });
               }
 
             } else if (schemaType === "function") {
-              $(schemaInstance).listen(field, function (instance, _) {
+              callbacks.listen(schemaInstance, field, function (instance, _) {
                 // created the schema instance
                 onChangeAtPath(field, path, instance, undefined);
 
                 // direct schema instance
-                $(instance).onChange(function () {
+                callbacks.onChange(instance, function () {
                   onChangeAtPath(field, path, instance, undefined);
                 });
 
@@ -133,7 +133,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
             } else {
 
               // field on schema instance
-              $(schemaInstance).listen(field, function (value, previousValue) {
+              callbacks.listen(schemaInstance, field, function (value, previousValue) {
                 onChangeAtPath(field, path, value, previousValue);
               });
             }
