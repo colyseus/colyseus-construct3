@@ -1,24 +1,14 @@
-// colyseus.js@0.16.16 (@colyseus/schema 3.0.34)
+// Copyright (c) 2026 Endel Dreyer.
+//
+// This software is released under the MIT License.
+// https://opensource.org/license/MIT
+//
+// colyseus.js@0.17.31 - @colyseus/schema 4.0.11
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-    typeof define === 'function' && define.amd ? define('colyseus.js', ['exports'], factory) :
+    typeof define === 'function' && define.amd ? define('@colyseus/sdk', ['exports'], factory) :
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Colyseus = {}));
 })(this, (function (exports) { 'use strict';
-
-    function _mergeNamespaces(n, m) {
-        m.forEach(function (e) {
-            e && typeof e !== 'string' && !Array.isArray(e) && Object.keys(e).forEach(function (k) {
-                if (k !== 'default' && !(k in n)) {
-                    var d = Object.getOwnPropertyDescriptor(e, k);
-                    Object.defineProperty(n, k, d.get ? d : {
-                        enumerable: true,
-                        get: function () { return e[k]; }
-                    });
-                }
-            });
-        });
-        return Object.freeze(n);
-    }
 
     //
     // Polyfills for legacy environments
@@ -31,19 +21,19 @@
             return a !== null && typeof (a) === 'object' && a.buffer instanceof ArrayBuffer;
         };
     }
-    // Cocos Creator does not provide "FormData"
-    // Define a dummy implementation so it doesn't crash
-    if (typeof (FormData) === "undefined") {
-        // @ts-ignore
-        global['FormData'] = class {
-        };
-    }
     // Define globalThis if not available.
     // https://github.com/colyseus/colyseus.js/issues/86
     if (typeof (globalThis) === "undefined" &&
         typeof (window) !== "undefined") {
         // @ts-ignore
         window['globalThis'] = window;
+    }
+    // Cocos Creator does not provide "FormData"
+    // Define a dummy implementation so it doesn't crash
+    if (typeof (FormData) === "undefined") {
+        // @ts-ignore
+        globalThis['FormData'] = class {
+        };
     }
 
     /******************************************************************************
@@ -91,16 +81,69 @@
         return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
     };
 
-    var CloseCode;
-    (function (CloseCode) {
-        CloseCode[CloseCode["CONSENTED"] = 4000] = "CONSENTED";
-        CloseCode[CloseCode["DEVMODE_RESTART"] = 4010] = "DEVMODE_RESTART";
-    })(CloseCode || (CloseCode = {}));
+    // packages/shared-types/src/Protocol.ts
+    var Protocol = {
+      // Room-related (10~19)
+      JOIN_ROOM: 10,
+      ERROR: 11,
+      LEAVE_ROOM: 12,
+      ROOM_DATA: 13,
+      ROOM_STATE: 14,
+      ROOM_STATE_PATCH: 15,
+      ROOM_DATA_SCHEMA: 16,
+      // DEPRECATED: used to send schema instances via room.send()
+      ROOM_DATA_BYTES: 17,
+      PING: 18
+    };
+    var ErrorCode = {
+      MATCHMAKE_NO_HANDLER: 520,
+      MATCHMAKE_INVALID_CRITERIA: 521,
+      MATCHMAKE_INVALID_ROOM_ID: 522,
+      MATCHMAKE_UNHANDLED: 523,
+      // generic exception during onCreate/onJoin
+      MATCHMAKE_EXPIRED: 524,
+      // generic exception during onCreate/onJoin
+      AUTH_FAILED: 525,
+      APPLICATION_ERROR: 526,
+      INVALID_PAYLOAD: 4217
+    };
+    var CloseCode = {
+      NORMAL_CLOSURE: 1e3,
+      GOING_AWAY: 1001,
+      NO_STATUS_RECEIVED: 1005,
+      ABNORMAL_CLOSURE: 1006,
+      CONSENTED: 4e3,
+      SERVER_SHUTDOWN: 4001,
+      WITH_ERROR: 4002,
+      FAILED_TO_RECONNECT: 4003,
+      MAY_TRY_RECONNECT: 4010
+    };
+
     class ServerError extends Error {
-        constructor(code, message) {
+        constructor(code, message, opts) {
             super(message);
             this.name = "ServerError";
             this.code = code;
+            if (opts) {
+                this.headers = opts.headers;
+                this.status = opts.status;
+                this.response = opts.response;
+                this.data = opts.data;
+            }
+        }
+    }
+    class AbortError extends Error {
+        constructor(message) {
+            super(message);
+            this.name = "AbortError";
+        }
+    }
+    class MatchMakeError extends Error {
+        constructor(message, code) {
+            super(message);
+            this.code = code;
+            this.name = "MatchMakeError";
+            Object.setPrototypeOf(this, MatchMakeError.prototype);
         }
     }
 
@@ -108,25 +151,25 @@
     	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
     }
 
-    var umd$1 = {exports: {}};
+    var build$1 = {exports: {}};
 
-    var umd = umd$1.exports;
+    var build = build$1.exports;
 
-    var hasRequiredUmd;
+    var hasRequiredBuild;
 
-    function requireUmd () {
-    	if (hasRequiredUmd) return umd$1.exports;
-    	hasRequiredUmd = 1;
-    	(function (module, exports) {
+    function requireBuild () {
+    	if (hasRequiredBuild) return build$1.exports;
+    	hasRequiredBuild = 1;
+    	(function (module, exports$1) {
     		(function (global, factory) {
-    		    factory(exports) ;
-    		})(umd, (function (exports) {
+    		    factory(exports$1) ;
+    		})(build, (function (exports$1) {
     		    const SWITCH_TO_STRUCTURE = 255; // (decoding collides with DELETE_AND_ADD + fieldIndex = 63)
     		    const TYPE_ID = 213;
     		    /**
     		     * Encoding Schema field operations.
     		     */
-    		    exports.OPERATION = void 0;
+    		    exports$1.OPERATION = void 0;
     		    (function (OPERATION) {
     		        OPERATION[OPERATION["ADD"] = 128] = "ADD";
     		        OPERATION[OPERATION["REPLACE"] = 0] = "REPLACE";
@@ -145,65 +188,45 @@
     		        OPERATION[OPERATION["MOVE"] = 32] = "MOVE";
     		        OPERATION[OPERATION["DELETE_BY_REFID"] = 33] = "DELETE_BY_REFID";
     		        OPERATION[OPERATION["ADD_BY_REFID"] = 129] = "ADD_BY_REFID";
-    		    })(exports.OPERATION || (exports.OPERATION = {}));
+    		    })(exports$1.OPERATION || (exports$1.OPERATION = {}));
 
     		    Symbol.metadata ??= Symbol.for("Symbol.metadata");
 
-    		    const $track = Symbol("$track");
-    		    const $encoder = Symbol("$encoder");
-    		    const $decoder = Symbol("$decoder");
-    		    const $filter = Symbol("$filter");
-    		    const $getByIndex = Symbol("$getByIndex");
-    		    const $deleteByIndex = Symbol("$deleteByIndex");
+    		    const $refId = "~refId";
+    		    const $track = "~track";
+    		    const $encoder = "~encoder";
+    		    const $decoder = "~decoder";
+    		    const $filter = "~filter";
+    		    const $getByIndex = "~getByIndex";
+    		    const $deleteByIndex = "~deleteByIndex";
     		    /**
     		     * Used to hold ChangeTree instances whitin the structures
     		     */
-    		    const $changes = Symbol('$changes');
+    		    const $changes = '~changes';
     		    /**
     		     * Used to keep track of the type of the child elements of a collection
     		     * (MapSchema, ArraySchema, etc.)
     		     */
-    		    const $childType = Symbol('$childType');
+    		    const $childType = '~childType';
     		    /**
     		     * Optional "discard" method for custom types (ArraySchema)
     		     * (Discards changes for next serialization)
     		     */
-    		    const $onEncodeEnd = Symbol('$onEncodeEnd');
+    		    const $onEncodeEnd = '~onEncodeEnd';
     		    /**
     		     * When decoding, this method is called after the instance is fully decoded
     		     */
-    		    const $onDecodeEnd = Symbol("$onDecodeEnd");
+    		    const $onDecodeEnd = "~onDecodeEnd";
     		    /**
     		     * Metadata
     		     */
-    		    const $descriptors = Symbol("$descriptors");
-    		    const $numFields = "$__numFields";
-    		    const $refTypeFieldIndexes = "$__refTypeFieldIndexes";
-    		    const $viewFieldIndexes = "$__viewFieldIndexes";
+    		    const $descriptors = "~descriptors";
+    		    const $numFields = "~__numFields";
+    		    const $refTypeFieldIndexes = "~__refTypeFieldIndexes";
+    		    const $viewFieldIndexes = "~__viewFieldIndexes";
     		    const $fieldIndexesByViewTag = "$__fieldIndexesByViewTag";
 
-    		    /**
-    		     * Copyright (c) 2018 Endel Dreyer
-    		     * Copyright (c) 2014 Ion Drive Software Ltd.
-    		     *
-    		     * Permission is hereby granted, free of charge, to any person obtaining a copy
-    		     * of this software and associated documentation files (the "Software"), to deal
-    		     * in the Software without restriction, including without limitation the rights
-    		     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    		     * copies of the Software, and to permit persons to whom the Software is
-    		     * furnished to do so, subject to the following conditions:
-    		     *
-    		     * The above copyright notice and this permission notice shall be included in all
-    		     * copies or substantial portions of the Software.
-    		     *
-    		     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    		     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    		     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    		     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    		     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    		     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    		     * SOFTWARE
-    		     */
+    		    // @ts-nocheck
     		    /**
     		     * msgpack implementation highly based on notepack.io
     		     * https://github.com/darrachequesne/notepack
@@ -350,7 +373,7 @@
     		        // str 8
     		        else if (length < 0x100) {
     		            bytes[it.offset++] = 0xd9;
-    		            bytes[it.offset++] = length % 255;
+    		            bytes[it.offset++] = length;
     		            size = 2;
     		        }
     		        // str 16
@@ -471,28 +494,7 @@
     		        utf8Length,
     		    };
 
-    		    /**
-    		     * Copyright (c) 2018 Endel Dreyer
-    		     * Copyright (c) 2014 Ion Drive Software Ltd.
-    		     *
-    		     * Permission is hereby granted, free of charge, to any person obtaining a copy
-    		     * of this software and associated documentation files (the "Software"), to deal
-    		     * in the Software without restriction, including without limitation the rights
-    		     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    		     * copies of the Software, and to permit persons to whom the Software is
-    		     * furnished to do so, subject to the following conditions:
-    		     *
-    		     * The above copyright notice and this permission notice shall be included in all
-    		     * copies or substantial portions of the Software.
-    		     *
-    		     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    		     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    		     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    		     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    		     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    		     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    		     * SOFTWARE
-    		     */
+    		    // @ts-nocheck
     		    // force little endian to facilitate decoding on multiple implementations
     		    const _convoBuffer = new ArrayBuffer(8);
     		    const _int32 = new Int32Array(_convoBuffer);
@@ -501,6 +503,10 @@
     		    const _uint64 = new BigUint64Array(_convoBuffer);
     		    const _int64 = new BigInt64Array(_convoBuffer);
     		    function utf8Read(bytes, it, length) {
+    		        // boundary check
+    		        if (length > bytes.length - it.offset) {
+    		            length = bytes.length - it.offset;
+    		        }
     		        var string = '', chr = 0;
     		        for (var i = it.offset, end = it.offset + length; i < end; i++) {
     		            var byte = bytes[i];
@@ -533,9 +539,10 @@
     		                }
     		                continue;
     		            }
-    		            console.error('Invalid byte ' + byte.toString(16));
     		            // (do not throw error to avoid server/client from crashing due to hack attemps)
     		            // throw new Error('Invalid byte ' + byte.toString(16));
+    		            console.error('decode.utf8Read(): Invalid byte ' + byte + ' at offset ' + i + '. Skip to end of string: ' + (it.offset + length));
+    		            break;
     		        }
     		        it.offset += length;
     		        return string;
@@ -716,12 +723,16 @@
     		    }
 
     		    class TypeContext {
+    		        types = {};
+    		        schemas = new Map();
+    		        hasFilters = false;
+    		        parentFiltered = {};
     		        /**
     		         * For inheritance support
     		         * Keeps track of which classes extends which. (parent -> children)
     		         */
-    		        static { this.inheritedTypes = new Map(); }
-    		        static { this.cachedContexts = new Map(); }
+    		        static inheritedTypes = new Map();
+    		        static cachedContexts = new Map();
     		        static register(target) {
     		            const parent = Object.getPrototypeOf(target);
     		            if (parent !== Schema) {
@@ -742,10 +753,6 @@
     		            return context;
     		        }
     		        constructor(rootClass) {
-    		            this.types = {};
-    		            this.schemas = new Map();
-    		            this.hasFilters = false;
-    		            this.parentFiltered = {};
     		            if (rootClass) {
     		                this.discoverTypes(rootClass);
     		            }
@@ -806,15 +813,7 @@
     		                if (typeof (fieldType) === "string") {
     		                    continue;
     		                }
-    		                if (Array.isArray(fieldType)) {
-    		                    const type = fieldType[0];
-    		                    // skip primitive types
-    		                    if (type === "string") {
-    		                        continue;
-    		                    }
-    		                    this.discoverTypes(type, klass, index, parentHasViewTag || fieldHasViewTag);
-    		                }
-    		                else if (typeof (fieldType) === "function") {
+    		                if (typeof (fieldType) === "function") {
     		                    this.discoverTypes(fieldType, klass, index, parentHasViewTag || fieldHasViewTag);
     		                }
     		                else {
@@ -864,11 +863,43 @@
     		    }
 
     		    function getNormalizedType(type) {
-    		        return (Array.isArray(type))
-    		            ? { array: type[0] }
-    		            : (typeof (type['type']) !== "undefined")
-    		                ? type['type']
-    		                : type;
+    		        if (Array.isArray(type)) {
+    		            return { array: getNormalizedType(type[0]) };
+    		        }
+    		        else if (typeof (type['type']) !== "undefined") {
+    		            return type['type'];
+    		        }
+    		        else if (isTSEnum(type)) {
+    		            // Detect TS Enum type (either string or number)
+    		            return Object.keys(type).every(key => typeof type[key] === "string")
+    		                ? "string"
+    		                : "number";
+    		        }
+    		        else if (typeof type === "object" && type !== null) {
+    		            // Handle collection types
+    		            const collectionType = Object.keys(type).find(k => registeredTypes[k] !== undefined);
+    		            if (collectionType) {
+    		                type[collectionType] = getNormalizedType(type[collectionType]);
+    		                return type;
+    		            }
+    		        }
+    		        return type;
+    		    }
+    		    function isTSEnum(_enum) {
+    		        if (typeof _enum === 'function' && _enum[Symbol.metadata]) {
+    		            return false;
+    		        }
+    		        const keys = Object.keys(_enum);
+    		        const numericFields = keys.filter(k => /\d+/.test(k));
+    		        // Check for number enum (has numeric keys and reverse mapping)
+    		        if (numericFields.length > 0 && numericFields.length === (keys.length / 2) && _enum[_enum[numericFields[0]]] == numericFields[0]) {
+    		            return true;
+    		        }
+    		        // Check for string enum (all values are strings and keys match values)
+    		        if (keys.length > 0 && keys.every(key => typeof _enum[key] === 'string' && _enum[key] === key)) {
+    		            return true;
+    		        }
+    		        return false;
     		    }
     		    const Metadata = {
     		        addField(metadata, index, name, type, descriptor) {
@@ -983,14 +1014,12 @@
     		                ?? -1; // no fields defined
     		            fieldIndex++;
     		            for (const field in fields) {
-    		                const type = fields[field];
+    		                const type = getNormalizedType(fields[field]);
     		                // FIXME: this code is duplicated from @type() annotation
-    		                const complexTypeKlass = (Array.isArray(type))
-    		                    ? getType("array")
-    		                    : (typeof (Object.keys(type)[0]) === "string") && getType(Object.keys(type)[0]);
+    		                const complexTypeKlass = typeof (Object.keys(type)[0]) === "string" && getType(Object.keys(type)[0]);
     		                const childType = (complexTypeKlass)
     		                    ? Object.values(type)[0]
-    		                    : getNormalizedType(type);
+    		                    : type;
     		                Metadata.addField(metadata, fieldIndex, field, type, getPropertyDescriptor(`_${field}`, fieldIndex, childType, complexTypeKlass));
     		                fieldIndex++;
     		            }
@@ -1064,7 +1093,11 @@
     		                    });
     		                }
     		            }
-    		            constructor[Symbol.metadata] = metadata;
+    		            Object.defineProperty(constructor, Symbol.metadata, {
+    		                value: metadata,
+    		                writable: false,
+    		                configurable: true
+    		            });
     		            return metadata;
     		        },
     		        isValidInstance(klass) {
@@ -1084,8 +1117,12 @@
     		        }
     		    };
 
-    		    function createChangeSet() {
-    		        return { indexes: {}, operations: [] };
+    		    function createChangeSet(queueRootNode) {
+    		        return { indexes: {}, operations: [], queueRootNode };
+    		    }
+    		    // Linked list helper functions
+    		    function createChangeTreeList() {
+    		        return { next: undefined, tail: undefined };
     		    }
     		    function setOperationAtIndex(changeSet, index) {
     		        const operationsIndex = changeSet.indexes[index];
@@ -1111,92 +1148,88 @@
     		        changeSet.operations[operationsIndex] = undefined;
     		        delete changeSet.indexes[index];
     		    }
-    		    function enqueueChangeTree(root, changeTree, changeSet, queueRootIndex = changeTree[changeSet].queueRootIndex) {
-    		        if (!root) {
-    		            // skip
-    		            return;
-    		        }
-    		        else if (root[changeSet][queueRootIndex] !== changeTree) {
-    		            changeTree[changeSet].queueRootIndex = root[changeSet].push(changeTree) - 1;
-    		        }
-    		    }
     		    class ChangeTree {
+    		        ref;
+    		        metadata;
+    		        root;
+    		        parentChain; // Linked list for tracking parents
+    		        /**
+    		         * Whether this structure is parent of a filtered structure.
+    		         */
+    		        isFiltered = false;
+    		        isVisibilitySharedWithParent; // See test case: 'should not be required to manually call view.add() items to child arrays without @view() tag'
+    		        indexedOperations = {};
+    		        //
+    		        // TODO:
+    		        //   try storing the index + operation per item.
+    		        //   example: 1024 & 1025 => ADD, 1026 => DELETE
+    		        //
+    		        // => https://chatgpt.com/share/67107d0c-bc20-8004-8583-83b17dd7c196
+    		        //
+    		        changes = { indexes: {}, operations: [] };
+    		        allChanges = { indexes: {}, operations: [] };
+    		        filteredChanges;
+    		        allFilteredChanges;
+    		        indexes; // TODO: remove this, only used by MapSchema/SetSchema/CollectionSchema (`encodeKeyValueOperation`)
+    		        /**
+    		         * Is this a new instance? Used on ArraySchema to determine OPERATION.MOVE_AND_ADD operation.
+    		         */
+    		        isNew = true;
     		        constructor(ref) {
-    		            /**
-    		             * Whether this structure is parent of a filtered structure.
-    		             */
-    		            this.isFiltered = false;
-    		            this.indexedOperations = {};
-    		            //
-    		            // TODO:
-    		            //   try storing the index + operation per item.
-    		            //   example: 1024 & 1025 => ADD, 1026 => DELETE
-    		            //
-    		            // => https://chatgpt.com/share/67107d0c-bc20-8004-8583-83b17dd7c196
-    		            //
-    		            this.changes = { indexes: {}, operations: [] };
-    		            this.allChanges = { indexes: {}, operations: [] };
-    		            /**
-    		             * Is this a new instance? Used on ArraySchema to determine OPERATION.MOVE_AND_ADD operation.
-    		             */
-    		            this.isNew = true;
     		            this.ref = ref;
+    		            this.metadata = ref.constructor[Symbol.metadata];
     		            //
     		            // Does this structure have "filters" declared?
     		            //
-    		            const metadata = ref.constructor[Symbol.metadata];
-    		            if (metadata?.[$viewFieldIndexes]) {
+    		            if (this.metadata?.[$viewFieldIndexes]) {
     		                this.allFilteredChanges = { indexes: {}, operations: [] };
     		                this.filteredChanges = { indexes: {}, operations: [] };
     		            }
     		        }
     		        setRoot(root) {
     		            this.root = root;
-    		            this.checkIsFiltered(this.parent, this.parentIndex);
+    		            const isNewChangeTree = this.root.add(this);
+    		            this.checkIsFiltered(this.parent, this.parentIndex, isNewChangeTree);
     		            // Recursively set root on child structures
-    		            const metadata = this.ref.constructor[Symbol.metadata];
-    		            if (metadata) {
-    		                metadata[$refTypeFieldIndexes]?.forEach((index) => {
-    		                    const field = metadata[index];
-    		                    const value = this.ref[field.name];
-    		                    value?.[$changes].setRoot(root);
-    		                });
-    		            }
-    		            else if (this.ref[$childType] && typeof (this.ref[$childType]) !== "string") {
-    		                // MapSchema / ArraySchema, etc.
-    		                this.ref.forEach((value, key) => {
-    		                    value[$changes].setRoot(root);
+    		            if (isNewChangeTree) {
+    		                this.forEachChild((child, _) => {
+    		                    if (child.root !== root) {
+    		                        child.setRoot(root);
+    		                    }
+    		                    else {
+    		                        root.add(child); // increment refCount
+    		                    }
     		                });
     		            }
     		        }
     		        setParent(parent, root, parentIndex) {
-    		            this.parent = parent;
-    		            this.parentIndex = parentIndex;
+    		            this.addParent(parent, parentIndex);
     		            // avoid setting parents with empty `root`
     		            if (!root) {
     		                return;
     		            }
+    		            const isNewChangeTree = root.add(this);
     		            // skip if parent is already set
     		            if (root !== this.root) {
     		                this.root = root;
-    		                this.checkIsFiltered(parent, parentIndex);
-    		            }
-    		            else {
-    		                root.add(this);
+    		                this.checkIsFiltered(parent, parentIndex, isNewChangeTree);
     		            }
     		            // assign same parent on child structures
-    		            const metadata = this.ref.constructor[Symbol.metadata];
-    		            if (metadata) {
-    		                metadata[$refTypeFieldIndexes]?.forEach((index) => {
-    		                    const field = metadata[index];
-    		                    const value = this.ref[field.name];
-    		                    value?.[$changes].setParent(this.ref, root, index);
-    		                });
-    		            }
-    		            else if (this.ref[$childType] && typeof (this.ref[$childType]) !== "string") {
-    		                // MapSchema / ArraySchema, etc.
-    		                this.ref.forEach((value, key) => {
-    		                    value[$changes].setParent(this.ref, root, this.indexes[key] ?? key);
+    		            if (isNewChangeTree) {
+    		                //
+    		                // assign same parent on child structures
+    		                //
+    		                this.forEachChild((child, index) => {
+    		                    if (child.root === root) {
+    		                        //
+    		                        // re-assigning a child of the same root, move it next to parent
+    		                        // so encoding order is preserved
+    		                        //
+    		                        root.add(child);
+    		                        root.moveNextToParent(child);
+    		                        return;
+    		                    }
+    		                    child.setParent(this.ref, root, index);
     		                });
     		            }
     		        }
@@ -1204,21 +1237,26 @@
     		            //
     		            // assign same parent on child structures
     		            //
-    		            const metadata = this.ref.constructor[Symbol.metadata];
-    		            if (metadata) {
-    		                metadata[$refTypeFieldIndexes]?.forEach((index) => {
-    		                    const field = metadata[index];
-    		                    const value = this.ref[field.name];
-    		                    if (value) {
-    		                        callback(value[$changes], index);
+    		            if (this.ref[$childType]) {
+    		                if (typeof (this.ref[$childType]) !== "string") {
+    		                    // MapSchema / ArraySchema, etc.
+    		                    for (const [key, value] of this.ref.entries()) {
+    		                        if (!value) {
+    		                            continue;
+    		                        } // sparse arrays can have undefined values
+    		                        callback(value[$changes], this.indexes?.[key] ?? key);
     		                    }
-    		                });
+    		                }
     		            }
-    		            else if (this.ref[$childType] && typeof (this.ref[$childType]) !== "string") {
-    		                // MapSchema / ArraySchema, etc.
-    		                this.ref.forEach((value, key) => {
-    		                    callback(value[$changes], this.indexes[key] ?? key);
-    		                });
+    		            else {
+    		                for (const index of this.metadata?.[$refTypeFieldIndexes] ?? []) {
+    		                    const field = this.metadata[index];
+    		                    const value = this.ref[field.name];
+    		                    if (!value) {
+    		                        continue;
+    		                    }
+    		                    callback(value[$changes], index);
+    		                }
     		            }
     		        }
     		        operation(op) {
@@ -1226,25 +1264,24 @@
     		            // this is checked during .encode() time.
     		            if (this.filteredChanges !== undefined) {
     		                this.filteredChanges.operations.push(-op);
-    		                enqueueChangeTree(this.root, this, 'filteredChanges');
+    		                this.root?.enqueueChangeTree(this, 'filteredChanges');
     		            }
     		            else {
     		                this.changes.operations.push(-op);
-    		                enqueueChangeTree(this.root, this, 'changes');
+    		                this.root?.enqueueChangeTree(this, 'changes');
     		            }
     		        }
-    		        change(index, operation = exports.OPERATION.ADD) {
-    		            const metadata = this.ref.constructor[Symbol.metadata];
-    		            const isFiltered = this.isFiltered || (metadata?.[index]?.tag !== undefined);
+    		        change(index, operation = exports$1.OPERATION.ADD) {
+    		            const isFiltered = this.isFiltered || (this.metadata?.[index]?.tag !== undefined);
     		            const changeSet = (isFiltered)
     		                ? this.filteredChanges
     		                : this.changes;
     		            const previousOperation = this.indexedOperations[index];
-    		            if (!previousOperation || previousOperation === exports.OPERATION.DELETE) {
+    		            if (!previousOperation || previousOperation === exports$1.OPERATION.DELETE) {
     		                const op = (!previousOperation)
     		                    ? operation
-    		                    : (previousOperation === exports.OPERATION.DELETE)
-    		                        ? exports.OPERATION.DELETE_AND_ADD
+    		                    : (previousOperation === exports$1.OPERATION.DELETE)
+    		                        ? exports$1.OPERATION.DELETE_AND_ADD
     		                        : operation;
     		                //
     		                // TODO: are DELETE operations being encoded as ADD here ??
@@ -1255,13 +1292,13 @@
     		            if (isFiltered) {
     		                setOperationAtIndex(this.allFilteredChanges, index);
     		                if (this.root) {
-    		                    enqueueChangeTree(this.root, this, 'filteredChanges');
-    		                    enqueueChangeTree(this.root, this, 'allFilteredChanges');
+    		                    this.root.enqueueChangeTree(this, 'filteredChanges');
+    		                    this.root.enqueueChangeTree(this, 'allFilteredChanges');
     		                }
     		            }
     		            else {
     		                setOperationAtIndex(this.allChanges, index);
-    		                enqueueChangeTree(this.root, this, 'changes');
+    		                this.root?.enqueueChangeTree(this, 'changes');
     		            }
     		        }
     		        shiftChangeIndexes(shiftIndex) {
@@ -1316,28 +1353,25 @@
     		            if (this.filteredChanges !== undefined) {
     		                setOperationAtIndex(this.allFilteredChanges, allChangesIndex);
     		                setOperationAtIndex(this.filteredChanges, index);
-    		                enqueueChangeTree(this.root, this, 'filteredChanges');
+    		                this.root?.enqueueChangeTree(this, 'filteredChanges');
     		            }
     		            else {
     		                setOperationAtIndex(this.allChanges, allChangesIndex);
     		                setOperationAtIndex(this.changes, index);
-    		                enqueueChangeTree(this.root, this, 'changes');
+    		                this.root?.enqueueChangeTree(this, 'changes');
     		            }
     		        }
     		        getType(index) {
-    		            if (Metadata.isValidInstance(this.ref)) {
-    		                const metadata = this.ref.constructor[Symbol.metadata];
-    		                return metadata[index].type;
-    		            }
-    		            else {
-    		                //
-    		                // Get the child type from parent structure.
-    		                // - ["string"] => "string"
-    		                // - { map: "string" } => "string"
-    		                // - { set: "string" } => "string"
-    		                //
-    		                return this.ref[$childType];
-    		            }
+    		            return (
+    		            //
+    		            // Get the child type from parent structure.
+    		            // - ["string"] => "string"
+    		            // - { map: "string" } => "string"
+    		            // - { set: "string" } => "string"
+    		            //
+    		            this.ref[$childType] || // ArraySchema | MapSchema | SetSchema | CollectionSchema
+    		                this.metadata[index].type // Schema
+    		            );
     		        }
     		        getChange(index) {
     		            return this.indexedOperations[index];
@@ -1364,7 +1398,7 @@
     		            const changeSet = (this.filteredChanges !== undefined)
     		                ? this.filteredChanges
     		                : this.changes;
-    		            this.indexedOperations[index] = operation ?? exports.OPERATION.DELETE;
+    		            this.indexedOperations[index] = operation ?? exports$1.OPERATION.DELETE;
     		            setOperationAtIndex(changeSet, index);
     		            deleteOperationAtIndex(this.allChanges, allChangesIndex);
     		            const previousValue = this.getValue(index);
@@ -1387,19 +1421,17 @@
     		            //
     		            if (this.filteredChanges !== undefined) {
     		                deleteOperationAtIndex(this.allFilteredChanges, allChangesIndex);
-    		                enqueueChangeTree(this.root, this, 'filteredChanges');
+    		                this.root?.enqueueChangeTree(this, 'filteredChanges');
     		            }
     		            else {
-    		                enqueueChangeTree(this.root, this, 'changes');
+    		                this.root?.enqueueChangeTree(this, 'changes');
     		            }
     		            return previousValue;
     		        }
     		        endEncode(changeSetName) {
     		            this.indexedOperations = {};
     		            // clear changeset
-    		            this[changeSetName].indexes = {};
-    		            this[changeSetName].operations.length = 0;
-    		            this[changeSetName].queueRootIndex = undefined;
+    		            this[changeSetName] = createChangeSet();
     		            // ArraySchema and MapSchema have a custom "encode end" method
     		            this.ref[$onEncodeEnd]?.();
     		            // Not a new instance anymore
@@ -1413,27 +1445,21 @@
     		            //
     		            this.ref[$onEncodeEnd]?.();
     		            this.indexedOperations = {};
-    		            this.changes.indexes = {};
-    		            this.changes.operations.length = 0;
-    		            this.changes.queueRootIndex = undefined;
+    		            this.changes = createChangeSet(this.changes.queueRootNode);
     		            if (this.filteredChanges !== undefined) {
-    		                this.filteredChanges.indexes = {};
-    		                this.filteredChanges.operations.length = 0;
-    		                this.filteredChanges.queueRootIndex = undefined;
+    		                this.filteredChanges = createChangeSet(this.filteredChanges.queueRootNode);
     		            }
     		            if (discardAll) {
-    		                this.allChanges.indexes = {};
-    		                this.allChanges.operations.length = 0;
+    		                // preserve queueRootNode references
+    		                this.allChanges = createChangeSet(this.allChanges.queueRootNode);
     		                if (this.allFilteredChanges !== undefined) {
-    		                    this.allFilteredChanges.indexes = {};
-    		                    this.allFilteredChanges.operations.length = 0;
+    		                    this.allFilteredChanges = createChangeSet(this.allFilteredChanges.queueRootNode);
     		                }
-    		                // remove children references
-    		                this.forEachChild((changeTree, _) => this.root?.remove(changeTree));
     		            }
     		        }
     		        /**
     		         * Recursively discard all changes from this, and child structures.
+    		         * (Used in tests only)
     		         */
     		        discardAll() {
     		            const keys = Object.keys(this.indexedOperations);
@@ -1445,18 +1471,10 @@
     		            }
     		            this.discard();
     		        }
-    		        ensureRefId() {
-    		            // skip if refId is already set.
-    		            if (this.refId !== undefined) {
-    		                return;
-    		            }
-    		            this.refId = this.root.getNextUniqueId();
-    		        }
     		        get changed() {
     		            return (Object.entries(this.indexedOperations).length > 0);
     		        }
-    		        checkIsFiltered(parent, parentIndex) {
-    		            const isNewChangeTree = this.root.add(this);
+    		        checkIsFiltered(parent, parentIndex, isNewChangeTree) {
     		            if (this.root.types.hasFilters) {
     		                //
     		                // At Schema initialization, the "root" structure might not be available
@@ -1466,16 +1484,16 @@
     		                //
     		                this._checkFilteredByParent(parent, parentIndex);
     		                if (this.filteredChanges !== undefined) {
-    		                    enqueueChangeTree(this.root, this, 'filteredChanges');
+    		                    this.root?.enqueueChangeTree(this, 'filteredChanges');
     		                    if (isNewChangeTree) {
-    		                        this.root.allFilteredChanges.push(this);
+    		                        this.root?.enqueueChangeTree(this, 'allFilteredChanges');
     		                    }
     		                }
     		            }
     		            if (!this.isFiltered) {
-    		                enqueueChangeTree(this.root, this, 'changes');
+    		                this.root?.enqueueChangeTree(this, 'changes');
     		                if (isNewChangeTree) {
-    		                    this.root.allChanges.push(this);
+    		                    this.root?.enqueueChangeTree(this, 'allChanges');
     		                }
     		            }
     		        }
@@ -1532,6 +1550,92 @@
     		                }
     		            }
     		        }
+    		        /**
+    		         * Get the immediate parent
+    		         */
+    		        get parent() {
+    		            return this.parentChain?.ref;
+    		        }
+    		        /**
+    		         * Get the immediate parent index
+    		         */
+    		        get parentIndex() {
+    		            return this.parentChain?.index;
+    		        }
+    		        /**
+    		         * Add a parent to the chain
+    		         */
+    		        addParent(parent, index) {
+    		            // Check if this parent already exists in the chain
+    		            if (this.hasParent((p, _) => p[$changes] === parent[$changes])) {
+    		                // if (this.hasParent((p, i) => p[$changes] === parent[$changes] && i === index)) {
+    		                this.parentChain.index = index;
+    		                return;
+    		            }
+    		            this.parentChain = {
+    		                ref: parent,
+    		                index,
+    		                next: this.parentChain
+    		            };
+    		        }
+    		        /**
+    		         * Remove a parent from the chain
+    		         * @param parent - The parent to remove
+    		         * @returns true if parent was removed
+    		         */
+    		        removeParent(parent = this.parent) {
+    		            let current = this.parentChain;
+    		            let previous = null;
+    		            while (current) {
+    		                //
+    		                // FIXME: it is required to check against `$changes` here because
+    		                // ArraySchema is instance of Proxy
+    		                //
+    		                if (current.ref[$changes] === parent[$changes]) {
+    		                    if (previous) {
+    		                        previous.next = current.next;
+    		                    }
+    		                    else {
+    		                        this.parentChain = current.next;
+    		                    }
+    		                    return true;
+    		                }
+    		                previous = current;
+    		                current = current.next;
+    		            }
+    		            return this.parentChain === undefined;
+    		        }
+    		        /**
+    		         * Find a specific parent in the chain
+    		         */
+    		        findParent(predicate) {
+    		            let current = this.parentChain;
+    		            while (current) {
+    		                if (predicate(current.ref, current.index)) {
+    		                    return current;
+    		                }
+    		                current = current.next;
+    		            }
+    		            return undefined;
+    		        }
+    		        /**
+    		         * Check if this ChangeTree has a specific parent
+    		         */
+    		        hasParent(predicate) {
+    		            return this.findParent(predicate) !== undefined;
+    		        }
+    		        /**
+    		         * Get all parents as an array (for debugging/testing)
+    		         */
+    		        getAllParents() {
+    		            const parents = [];
+    		            let current = this.parentChain;
+    		            while (current) {
+    		                parents.push({ ref: current.ref, index: current.index });
+    		                current = current.next;
+    		            }
+    		            return parents;
+    		        }
     		    }
 
     		    function encodeValue(encoder, bytes, type, value, operation, it) {
@@ -1543,9 +1647,9 @@
     		            // Encode refId for this instance.
     		            // The actual instance is going to be encoded on next `changeTree` iteration.
     		            //
-    		            encode.number(bytes, value[$changes].refId, it);
+    		            encode.number(bytes, value[$refId], it);
     		            // Try to encode inherited TYPE_ID if it's an ADD operation.
-    		            if ((operation & exports.OPERATION.ADD) === exports.OPERATION.ADD) {
+    		            if ((operation & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD) {
     		                encoder.tryEncodeTypeId(bytes, type, value.constructor, it);
     		            }
     		        }
@@ -1554,7 +1658,7 @@
     		            // Encode refId for this instance.
     		            // The actual instance is going to be encoded on next `changeTree` iteration.
     		            //
-    		            encode.number(bytes, value[$changes].refId, it);
+    		            encode.number(bytes, value[$refId], it);
     		        }
     		    }
     		    /**
@@ -1565,7 +1669,7 @@
     		        // "compress" field index + operation
     		        bytes[it.offset++] = (index | operation) & 255;
     		        // Do not encode value for DELETE operations
-    		        if (operation === exports.OPERATION.DELETE) {
+    		        if (operation === exports$1.OPERATION.DELETE) {
     		            return;
     		        }
     		        const ref = changeTree.ref;
@@ -1580,21 +1684,17 @@
     		    const encodeKeyValueOperation = function (encoder, bytes, changeTree, index, operation, it) {
     		        // encode operation
     		        bytes[it.offset++] = operation & 255;
-    		        // custom operations
-    		        if (operation === exports.OPERATION.CLEAR) {
-    		            return;
-    		        }
     		        // encode index
     		        encode.number(bytes, index, it);
     		        // Do not encode value for DELETE operations
-    		        if (operation === exports.OPERATION.DELETE) {
+    		        if (operation === exports$1.OPERATION.DELETE) {
     		            return;
     		        }
     		        const ref = changeTree.ref;
     		        //
     		        // encode "alias" for dynamic fields (maps)
     		        //
-    		        if ((operation & exports.OPERATION.ADD) === exports.OPERATION.ADD) { // ADD or DELETE_AND_ADD
+    		        if ((operation & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD) { // ADD or DELETE_AND_ADD
     		            if (typeof (ref['set']) === "function") {
     		                //
     		                // MapSchema dynamic key
@@ -1629,12 +1729,17 @@
     		        const useOperationByRefId = hasView && changeTree.isFiltered && (typeof (changeTree.getType(field)) !== "string");
     		        let refOrIndex;
     		        if (useOperationByRefId) {
-    		            refOrIndex = ref['tmpItems'][field][$changes].refId;
-    		            if (operation === exports.OPERATION.DELETE) {
-    		                operation = exports.OPERATION.DELETE_BY_REFID;
+    		            const item = ref['tmpItems'][field];
+    		            // Skip encoding if item is undefined (e.g. when clear() is called)
+    		            if (!item) {
+    		                return;
     		            }
-    		            else if (operation === exports.OPERATION.ADD) {
-    		                operation = exports.OPERATION.ADD_BY_REFID;
+    		            refOrIndex = item[$refId];
+    		            if (operation === exports$1.OPERATION.DELETE) {
+    		                operation = exports$1.OPERATION.DELETE_BY_REFID;
+    		            }
+    		            else if (operation === exports$1.OPERATION.ADD) {
+    		                operation = exports$1.OPERATION.ADD_BY_REFID;
     		            }
     		        }
     		        else {
@@ -1642,15 +1747,10 @@
     		        }
     		        // encode operation
     		        bytes[it.offset++] = operation & 255;
-    		        // custom operations
-    		        if (operation === exports.OPERATION.CLEAR ||
-    		            operation === exports.OPERATION.REVERSE) {
-    		            return;
-    		        }
     		        // encode index
     		        encode.number(bytes, refOrIndex, it);
     		        // Do not encode value for DELETE operations
-    		        if (operation === exports.OPERATION.DELETE || operation === exports.OPERATION.DELETE_BY_REFID) {
+    		        if (operation === exports$1.OPERATION.DELETE || operation === exports$1.OPERATION.DELETE_BY_REFID) {
     		            return;
     		        }
     		        const type = changeTree.getType(field);
@@ -1672,31 +1772,31 @@
     		        const $root = decoder.root;
     		        const previousValue = ref[$getByIndex](index);
     		        let value;
-    		        if ((operation & exports.OPERATION.DELETE) === exports.OPERATION.DELETE) {
+    		        if ((operation & exports$1.OPERATION.DELETE) === exports$1.OPERATION.DELETE) {
     		            // Flag `refId` for garbage collection.
-    		            const previousRefId = $root.refIds.get(previousValue);
+    		            const previousRefId = previousValue?.[$refId];
     		            if (previousRefId !== undefined) {
     		                $root.removeRef(previousRefId);
     		            }
     		            //
     		            // Delete operations
     		            //
-    		            if (operation !== exports.OPERATION.DELETE_AND_ADD) {
+    		            if (operation !== exports$1.OPERATION.DELETE_AND_ADD) {
     		                ref[$deleteByIndex](index);
     		            }
     		            value = undefined;
     		        }
-    		        if (operation === exports.OPERATION.DELETE) ;
+    		        if (operation === exports$1.OPERATION.DELETE) ;
     		        else if (Schema.is(type)) {
     		            const refId = decode.number(bytes, it);
     		            value = $root.refs.get(refId);
-    		            if ((operation & exports.OPERATION.ADD) === exports.OPERATION.ADD) {
+    		            if ((operation & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD) {
     		                const childType = decoder.getInstanceType(bytes, it, type);
     		                if (!value) {
     		                    value = decoder.createInstanceOfType(childType);
     		                }
     		                $root.addRef(refId, value, (value !== previousValue || // increment ref count if value has changed
-    		                    (operation === exports.OPERATION.DELETE_AND_ADD && value === previousValue) // increment ref count if the same instance is being added again
+    		                    (operation === exports$1.OPERATION.DELETE_AND_ADD && value === previousValue) // increment ref count if the same instance is being added again
     		                ));
     		            }
     		        }
@@ -1715,7 +1815,7 @@
     		            value = valueRef.clone(true);
     		            value[$childType] = Object.values(type)[0]; // cache childType for ArraySchema and MapSchema
     		            if (previousValue) {
-    		                let previousRefId = $root.refIds.get(previousValue);
+    		                let previousRefId = previousValue[$refId];
     		                if (previousRefId !== undefined && refId !== previousRefId) {
     		                    //
     		                    // enqueue onRemove if structure has been replaced.
@@ -1726,13 +1826,13 @@
     		                        const [key, value] = iter.value;
     		                        // if value is a schema, remove its reference
     		                        if (typeof (value) === "object") {
-    		                            previousRefId = $root.refIds.get(value);
+    		                            previousRefId = value[$refId];
     		                            $root.removeRef(previousRefId);
     		                        }
     		                        allChanges.push({
     		                            ref: previousValue,
     		                            refId: previousRefId,
-    		                            op: exports.OPERATION.DELETE,
+    		                            op: exports$1.OPERATION.DELETE,
     		                            field: key,
     		                            value: undefined,
     		                            previousValue: value,
@@ -1741,7 +1841,7 @@
     		                }
     		            }
     		            $root.addRef(refId, value, (valueRef !== previousValue ||
-    		                (operation === exports.OPERATION.DELETE_AND_ADD && valueRef === previousValue)));
+    		                (operation === exports$1.OPERATION.DELETE_AND_ADD && valueRef === previousValue)));
     		        }
     		        return { value, previousValue };
     		    }
@@ -1776,7 +1876,7 @@
     		    const decodeKeyValueOperation = function (decoder, bytes, it, ref, allChanges) {
     		        // "uncompressed" index + operation (array/map items)
     		        const operation = bytes[it.offset++];
-    		        if (operation === exports.OPERATION.CLEAR) {
+    		        if (operation === exports$1.OPERATION.CLEAR) {
     		            //
     		            // When decoding:
     		            // - enqueue items for DELETE callback.
@@ -1789,7 +1889,7 @@
     		        const index = decode.number(bytes, it);
     		        const type = ref[$childType];
     		        let dynamicIndex;
-    		        if ((operation & exports.OPERATION.ADD) === exports.OPERATION.ADD) { // ADD or DELETE_AND_ADD
+    		        if ((operation & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD) { // ADD or DELETE_AND_ADD
     		            if (typeof (ref['set']) === "function") {
     		                dynamicIndex = decode.string(bytes, it); // MapSchema
     		                ref['setIndex'](index, dynamicIndex);
@@ -1837,7 +1937,7 @@
     		        // "uncompressed" index + operation (array/map items)
     		        let operation = bytes[it.offset++];
     		        let index;
-    		        if (operation === exports.OPERATION.CLEAR) {
+    		        if (operation === exports$1.OPERATION.CLEAR) {
     		            //
     		            // When decoding:
     		            // - enqueue items for DELETE callback.
@@ -1847,11 +1947,11 @@
     		            ref.clear();
     		            return;
     		        }
-    		        else if (operation === exports.OPERATION.REVERSE) {
+    		        else if (operation === exports$1.OPERATION.REVERSE) {
     		            ref.reverse();
     		            return;
     		        }
-    		        else if (operation === exports.OPERATION.DELETE_BY_REFID) {
+    		        else if (operation === exports$1.OPERATION.DELETE_BY_REFID) {
     		            // TODO: refactor here, try to follow same flow as below
     		            const refId = decode.number(bytes, it);
     		            const previousValue = decoder.root.refs.get(refId);
@@ -1860,7 +1960,7 @@
     		            allChanges.push({
     		                ref,
     		                refId: decoder.currentRefId,
-    		                op: exports.OPERATION.DELETE,
+    		                op: exports$1.OPERATION.DELETE,
     		                field: "", // FIXME: remove this
     		                dynamicIndex: index,
     		                value: undefined,
@@ -1868,7 +1968,7 @@
     		            });
     		            return;
     		        }
-    		        else if (operation === exports.OPERATION.ADD_BY_REFID) {
+    		        else if (operation === exports$1.OPERATION.ADD_BY_REFID) {
     		            const refId = decode.number(bytes, it);
     		            const itemByRefId = decoder.root.refs.get(refId);
     		            // if item already exists, use existing index
@@ -1955,7 +2055,6 @@
     		        }
     		    }
 
-    		    var _a$4, _b$4;
     		    const DEFAULT_SORT = (a, b) => {
     		        const A = a.toString();
     		        const B = b.toString();
@@ -1967,8 +2066,15 @@
     		            return 0;
     		    };
     		    class ArraySchema {
-    		        static { this[_a$4] = encodeArray; }
-    		        static { this[_b$4] = decodeArray; }
+    		        [$changes];
+    		        [$refId];
+    		        [$childType];
+    		        items = [];
+    		        tmpItems = [];
+    		        deletedIndexes = {};
+    		        isMovingItems = false;
+    		        static [$encoder] = encodeArray;
+    		        static [$decoder] = decodeArray;
     		        /**
     		         * Determine if a property must be filtered.
     		         * - If returns false, the property is NOT going to be encoded.
@@ -1978,7 +2084,7 @@
     		         * - First, the encoder iterates over all "not owned" properties and encodes them.
     		         * - Then, the encoder iterates over all "owned" properties per instance and encodes them.
     		         */
-    		        static [(_a$4 = $encoder, _b$4 = $decoder, $filter)](ref, index, view) {
+    		        static [$filter](ref, index, view) {
     		            return (!view ||
     		                typeof (ref[$childType]) === "string" ||
     		                view.isChangeTreeVisible(ref['tmpItems'][index]?.[$changes]));
@@ -1994,10 +2100,6 @@
     		            return new ArraySchema(...Array.from(iterable));
     		        }
     		        constructor(...items) {
-    		            this.items = [];
-    		            this.tmpItems = [];
-    		            this.deletedIndexes = {};
-    		            this.isMovingItems = false;
     		            Object.defineProperty(this, $childType, {
     		                value: undefined,
     		                enumerable: false,
@@ -2031,19 +2133,19 @@
     		                                else {
     		                                    if (previousValue !== undefined) {
     		                                        if (setValue[$changes].isNew) {
-    		                                            obj[$changes].indexedOperation(Number(key), exports.OPERATION.MOVE_AND_ADD);
+    		                                            obj[$changes].indexedOperation(Number(key), exports$1.OPERATION.MOVE_AND_ADD);
     		                                        }
     		                                        else {
-    		                                            if ((obj[$changes].getChange(Number(key)) & exports.OPERATION.DELETE) === exports.OPERATION.DELETE) {
-    		                                                obj[$changes].indexedOperation(Number(key), exports.OPERATION.DELETE_AND_MOVE);
+    		                                            if ((obj[$changes].getChange(Number(key)) & exports$1.OPERATION.DELETE) === exports$1.OPERATION.DELETE) {
+    		                                                obj[$changes].indexedOperation(Number(key), exports$1.OPERATION.DELETE_AND_MOVE);
     		                                            }
     		                                            else {
-    		                                                obj[$changes].indexedOperation(Number(key), exports.OPERATION.MOVE);
+    		                                                obj[$changes].indexedOperation(Number(key), exports$1.OPERATION.MOVE);
     		                                            }
     		                                        }
     		                                    }
     		                                    else if (setValue[$changes].isNew) {
-    		                                        obj[$changes].indexedOperation(Number(key), exports.OPERATION.ADD);
+    		                                        obj[$changes].indexedOperation(Number(key), exports$1.OPERATION.ADD);
     		                                    }
     		                                    setValue[$changes].setParent(this, obj[$changes].root, key);
     		                                }
@@ -2080,8 +2182,11 @@
     		                    return Reflect.has(obj, key);
     		                }
     		            });
-    		            this[$changes] = new ChangeTree(proxy);
-    		            this[$changes].indexes = {};
+    		            Object.defineProperty(this, $changes, {
+    		                value: new ChangeTree(proxy),
+    		                enumerable: false,
+    		                writable: true,
+    		            });
     		            if (items.length > 0) {
     		                this.push(...items);
     		            }
@@ -2104,8 +2209,7 @@
     		        push(...values) {
     		            let length = this.tmpItems.length;
     		            const changeTree = this[$changes];
-    		            // values.forEach((value, i) => {
-    		            for (let i = 0, l = values.length; i < values.length; i++, length++) {
+    		            for (let i = 0, l = values.length; i < l; i++, length++) {
     		                const value = values[i];
     		                if (value === undefined || value === null) {
     		                    // skip null values
@@ -2115,7 +2219,7 @@
     		                    assertInstanceType(value, this[$childType], this, i);
     		                    // TODO: move value[$changes]?.setParent() to this block.
     		                }
-    		                changeTree.indexedOperation(length, exports.OPERATION.ADD, this.items.length);
+    		                changeTree.indexedOperation(length, exports$1.OPERATION.ADD, this.items.length);
     		                this.items.push(value);
     		                this.tmpItems.push(value);
     		                //
@@ -2124,8 +2228,6 @@
     		                //
     		                value[$changes]?.setParent(this, changeTree.root, length);
     		            }
-    		            //     length++;
-    		            // });
     		            return length;
     		        }
     		        /**
@@ -2166,9 +2268,9 @@
     		            }
     		            const operation = (this.items[index] !== undefined)
     		                ? typeof (value) === "object"
-    		                    ? exports.OPERATION.DELETE_AND_ADD // schema child
-    		                    : exports.OPERATION.REPLACE // primitive
-    		                : exports.OPERATION.ADD;
+    		                    ? exports$1.OPERATION.DELETE_AND_ADD // schema child
+    		                    : exports$1.OPERATION.REPLACE // primitive
+    		                : exports$1.OPERATION.ADD;
     		            const changeTree = this[$changes];
     		            changeTree.change(index, operation);
     		            //
@@ -2184,12 +2286,12 @@
     		        // decoding only
     		        $setAt(index, value, operation) {
     		            if (index === 0 &&
-    		                operation === exports.OPERATION.ADD &&
+    		                operation === exports$1.OPERATION.ADD &&
     		                this.items[index] !== undefined) {
     		                // handle decoding unshift
     		                this.items.unshift(value);
     		            }
-    		            else if (operation === exports.OPERATION.DELETE_AND_MOVE) {
+    		            else if (operation === exports$1.OPERATION.DELETE_AND_MOVE) {
     		                this.items.splice(index, 1);
     		                this.items[index] = value;
     		            }
@@ -2204,24 +2306,12 @@
     		            }
     		            // discard previous operations.
     		            const changeTree = this[$changes];
-    		            // discard children
-    		            changeTree.forEachChild((changeTree, _) => {
-    		                changeTree.discard(true);
-    		                //
-    		                // TODO: add tests with instance sharing + .clear()
-    		                // FIXME: this.root? is required because it is being called at decoding time.
-    		                //
-    		                // TODO: do not use [$changes] at decoding time.
-    		                //
-    		                const root = changeTree.root;
-    		                if (root !== undefined) {
-    		                    root.removeChangeFromChangeSet("changes", changeTree);
-    		                    root.removeChangeFromChangeSet("allChanges", changeTree);
-    		                    root.removeChangeFromChangeSet("allFilteredChanges", changeTree);
-    		                }
+    		            // remove children references
+    		            changeTree.forEachChild((childChangeTree, _) => {
+    		                changeTree.root?.remove(childChangeTree);
     		            });
     		            changeTree.discard(true);
-    		            changeTree.operation(exports.OPERATION.CLEAR);
+    		            changeTree.operation(exports$1.OPERATION.CLEAR);
     		            this.items.length = 0;
     		            this.tmpItems.length = 0;
     		        }
@@ -2245,7 +2335,7 @@
     		         */
     		        // @ts-ignore
     		        reverse() {
-    		            this[$changes].operation(exports.OPERATION.REVERSE);
+    		            this[$changes].operation(exports$1.OPERATION.REVERSE);
     		            this.items.reverse();
     		            this.tmpItems.reverse();
     		            return this;
@@ -2257,13 +2347,12 @@
     		            if (this.items.length === 0) {
     		                return undefined;
     		            }
-    		            // const index = Number(Object.keys(changeTree.indexes)[0]);
     		            const changeTree = this[$changes];
     		            const index = this.tmpItems.findIndex(item => item === this.items[0]);
     		            const allChangesIndex = this.items.findIndex(item => item === this.items[0]);
-    		            changeTree.delete(index, exports.OPERATION.DELETE, allChangesIndex);
+    		            changeTree.delete(index, exports$1.OPERATION.DELETE, allChangesIndex);
     		            changeTree.shiftAllChangeIndexes(-1, allChangesIndex);
-    		            // this.deletedIndexes[index] = true;
+    		            this.deletedIndexes[index] = true;
     		            return this.items.shift();
     		        }
     		        /**
@@ -2290,7 +2379,7 @@
     		            const changeTree = this[$changes];
     		            const sortedItems = this.items.sort(compareFn);
     		            // wouldn't OPERATION.MOVE make more sense here?
-    		            sortedItems.forEach((_, i) => changeTree.change(i, exports.OPERATION.REPLACE));
+    		            sortedItems.forEach((_, i) => changeTree.change(i, exports$1.OPERATION.REPLACE));
     		            this.tmpItems.sort(compareFn);
     		            this.isMovingItems = false;
     		            return this;
@@ -2323,7 +2412,7 @@
     		                //
     		                for (let i = start; i < start + deleteCount; i++) {
     		                    const index = indexes[i];
-    		                    changeTree.delete(index, exports.OPERATION.DELETE);
+    		                    changeTree.delete(index, exports$1.OPERATION.DELETE);
     		                    this.deletedIndexes[index] = true;
     		                }
     		            }
@@ -2340,8 +2429,8 @@
     		                for (let i = 0; i < insertCount; i++) {
     		                    const addIndex = (indexes[start] ?? itemsLength) + i;
     		                    changeTree.indexedOperation(addIndex, (this.deletedIndexes[addIndex])
-    		                        ? exports.OPERATION.DELETE_AND_ADD
-    		                        : exports.OPERATION.ADD);
+    		                        ? exports$1.OPERATION.DELETE_AND_ADD
+    		                        : exports$1.OPERATION.ADD);
     		                    // set value's parent/root
     		                    insertItems[i][$changes]?.setParent(this, changeTree.root, addIndex);
     		                }
@@ -2358,10 +2447,10 @@
     		            // FIXME: this code block is duplicated on ChangeTree
     		            //
     		            if (changeTree.filteredChanges !== undefined) {
-    		                enqueueChangeTree(changeTree.root, changeTree, 'filteredChanges');
+    		                changeTree.root?.enqueueChangeTree(changeTree, 'filteredChanges');
     		            }
     		            else {
-    		                enqueueChangeTree(changeTree.root, changeTree, 'changes');
+    		                changeTree.root?.enqueueChangeTree(changeTree, 'changes');
     		            }
     		            return this.items.splice(start, deleteCount, ...insertItems);
     		        }
@@ -2384,7 +2473,7 @@
     		            }
     		            // FIXME: should we use OPERATION.MOVE here instead?
     		            items.forEach((_, index) => {
-    		                changeTree.change(index, exports.OPERATION.ADD);
+    		                changeTree.change(index, exports$1.OPERATION.ADD);
     		            });
     		            this.tmpItems.unshift(...items);
     		            return this.items.unshift(...items);
@@ -2527,6 +2616,10 @@
     		        static get [Symbol.species]() {
     		            return ArraySchema;
     		        }
+    		        // WORKAROUND for compatibility
+    		        // - TypeScript 4 defines @@unscopables as a function
+    		        // - TypeScript 5 defines @@unscopables as an object
+    		        [Symbol.unscopables];
     		        /**
     		         * Returns an iterable of key, value pairs for every entry in the array
     		         */
@@ -2636,7 +2729,7 @@
     		            this.isMovingItems = false;
     		            return this;
     		        }
-    		        [($getByIndex)](index, isEncodeAll = false) {
+    		        [$getByIndex](index, isEncodeAll = false) {
     		            //
     		            // TODO: avoid unecessary `this.tmpItems` check during decoding.
     		            //
@@ -2691,10 +2784,16 @@
     		    }
     		    registerType("array", { constructor: ArraySchema });
 
-    		    var _a$3, _b$3;
     		    class MapSchema {
-    		        static { this[_a$3] = encodeKeyValueOperation; }
-    		        static { this[_b$3] = decodeKeyValueOperation; }
+    		        [$changes];
+    		        [$refId];
+    		        childType;
+    		        [$childType];
+    		        $items = new Map();
+    		        $indexes = new Map();
+    		        deletedItems = {};
+    		        static [$encoder] = encodeKeyValueOperation;
+    		        static [$decoder] = decodeKeyValueOperation;
     		        /**
     		         * Determine if a property must be filtered.
     		         * - If returns false, the property is NOT going to be encoded.
@@ -2704,7 +2803,7 @@
     		         * - First, the encoder iterates over all "not owned" properties and encodes them.
     		         * - Then, the encoder iterates over all "owned" properties per instance and encodes them.
     		         */
-    		        static [(_a$3 = $encoder, _b$3 = $decoder, $filter)](ref, index, view) {
+    		        static [$filter](ref, index, view) {
     		            return (!view ||
     		                typeof (ref[$childType]) === "string" ||
     		                view.isChangeTreeVisible((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
@@ -2713,11 +2812,13 @@
     		            return type['map'] !== undefined;
     		        }
     		        constructor(initialValues) {
-    		            this.$items = new Map();
-    		            this.$indexes = new Map();
-    		            this.deletedItems = {};
-    		            this[$changes] = new ChangeTree(this);
-    		            this[$changes].indexes = {};
+    		            const changeTree = new ChangeTree(this);
+    		            changeTree.indexes = {};
+    		            Object.defineProperty(this, $changes, {
+    		                value: changeTree,
+    		                enumerable: false,
+    		                writable: true,
+    		            });
     		            if (initialValues) {
     		                if (initialValues instanceof Map ||
     		                    initialValues instanceof MapSchema) {
@@ -2757,7 +2858,7 @@
     		            // IS REPLACE?
     		            if (typeof (changeTree.indexes[key]) !== "undefined") {
     		                index = changeTree.indexes[key];
-    		                operation = exports.OPERATION.REPLACE;
+    		                operation = exports$1.OPERATION.REPLACE;
     		                const previousValue = this.$items.get(key);
     		                if (previousValue === value) {
     		                    // if value is the same, avoid re-encoding it.
@@ -2765,16 +2866,19 @@
     		                }
     		                else if (isRef) {
     		                    // if is schema, force ADD operation if value differ from previous one.
-    		                    operation = exports.OPERATION.DELETE_AND_ADD;
+    		                    operation = exports$1.OPERATION.DELETE_AND_ADD;
     		                    // remove reference from previous value
     		                    if (previousValue !== undefined) {
     		                        previousValue[$changes].root?.remove(previousValue[$changes]);
     		                    }
     		                }
+    		                if (this.deletedItems[index]) {
+    		                    delete this.deletedItems[index];
+    		                }
     		            }
     		            else {
     		                index = changeTree.indexes[$numFields] ?? 0;
-    		                operation = exports.OPERATION.ADD;
+    		                operation = exports$1.OPERATION.ADD;
     		                this.$indexes.set(index, key);
     		                changeTree.indexes[key] = index;
     		                changeTree.indexes[$numFields] = index + 1;
@@ -2794,6 +2898,9 @@
     		            return this.$items.get(key);
     		        }
     		        delete(key) {
+    		            if (!this.$items.has(key)) {
+    		                return false;
+    		            }
     		            const index = this[$changes].indexes[key];
     		            this.deletedItems[index] = this[$changes].delete(index);
     		            return this.$items.delete(key);
@@ -2803,11 +2910,15 @@
     		            // discard previous operations.
     		            changeTree.discard(true);
     		            changeTree.indexes = {};
+    		            // remove children references
+    		            changeTree.forEachChild((childChangeTree, _) => {
+    		                changeTree.root?.remove(childChangeTree);
+    		            });
     		            // clear previous indexes
     		            this.$indexes.clear();
     		            // clear items
     		            this.$items.clear();
-    		            changeTree.operation(exports.OPERATION.CLEAR);
+    		            changeTree.operation(exports$1.OPERATION.CLEAR);
     		        }
     		        has(key) {
     		            return this.$items.has(key);
@@ -2842,6 +2953,17 @@
     		            this.$indexes.delete(index);
     		        }
     		        [$onEncodeEnd]() {
+    		            const changeTree = this[$changes];
+    		            // - cleanup changeTree.indexes
+    		            // - cleanup $indexes
+    		            for (const indexStr in this.deletedItems) {
+    		                const index = parseInt(indexStr);
+    		                const key = this.$indexes.get(index);
+    		                // TODO: refactor this.
+    		                // it shouldn't be necessary to keep track of indexes both on changeTree and on $indexes
+    		                delete changeTree.indexes[key];
+    		                this.$indexes.delete(index);
+    		            }
     		            this.deletedItems = {};
     		        }
     		        toJSON() {
@@ -2879,6 +3001,346 @@
     		        }
     		    }
     		    registerType("map", { constructor: MapSchema });
+
+    		    class CollectionSchema {
+    		        [$changes];
+    		        [$refId];
+    		        [$childType];
+    		        $items = new Map();
+    		        $indexes = new Map();
+    		        deletedItems = {};
+    		        $refId = 0;
+    		        static [$encoder] = encodeKeyValueOperation;
+    		        static [$decoder] = decodeKeyValueOperation;
+    		        /**
+    		         * Determine if a property must be filtered.
+    		         * - If returns false, the property is NOT going to be encoded.
+    		         * - If returns true, the property is going to be encoded.
+    		         *
+    		         * Encoding with "filters" happens in two steps:
+    		         * - First, the encoder iterates over all "not owned" properties and encodes them.
+    		         * - Then, the encoder iterates over all "owned" properties per instance and encodes them.
+    		         */
+    		        static [$filter](ref, index, view) {
+    		            return (!view ||
+    		                typeof (ref[$childType]) === "string" ||
+    		                view.isChangeTreeVisible((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
+    		        }
+    		        static is(type) {
+    		            return type['collection'] !== undefined;
+    		        }
+    		        constructor(initialValues) {
+    		            this[$changes] = new ChangeTree(this);
+    		            this[$changes].indexes = {};
+    		            if (initialValues) {
+    		                initialValues.forEach((v) => this.add(v));
+    		            }
+    		            Object.defineProperty(this, $childType, {
+    		                value: undefined,
+    		                enumerable: false,
+    		                writable: true,
+    		                configurable: true,
+    		            });
+    		        }
+    		        add(value) {
+    		            // set "index" for reference.
+    		            const index = this.$refId++;
+    		            const isRef = (value[$changes]) !== undefined;
+    		            if (isRef) {
+    		                value[$changes].setParent(this, this[$changes].root, index);
+    		            }
+    		            this[$changes].indexes[index] = index;
+    		            this.$indexes.set(index, index);
+    		            this.$items.set(index, value);
+    		            this[$changes].change(index);
+    		            return index;
+    		        }
+    		        at(index) {
+    		            const key = Array.from(this.$items.keys())[index];
+    		            return this.$items.get(key);
+    		        }
+    		        entries() {
+    		            return this.$items.entries();
+    		        }
+    		        delete(item) {
+    		            const entries = this.$items.entries();
+    		            let index;
+    		            let entry;
+    		            while (entry = entries.next()) {
+    		                if (entry.done) {
+    		                    break;
+    		                }
+    		                if (item === entry.value[1]) {
+    		                    index = entry.value[0];
+    		                    break;
+    		                }
+    		            }
+    		            if (index === undefined) {
+    		                return false;
+    		            }
+    		            this.deletedItems[index] = this[$changes].delete(index);
+    		            this.$indexes.delete(index);
+    		            return this.$items.delete(index);
+    		        }
+    		        clear() {
+    		            const changeTree = this[$changes];
+    		            // discard previous operations.
+    		            changeTree.discard(true);
+    		            changeTree.indexes = {};
+    		            // remove children references
+    		            changeTree.forEachChild((childChangeTree, _) => {
+    		                changeTree.root?.remove(childChangeTree);
+    		            });
+    		            // clear previous indexes
+    		            this.$indexes.clear();
+    		            // clear items
+    		            this.$items.clear();
+    		            changeTree.operation(exports$1.OPERATION.CLEAR);
+    		        }
+    		        has(value) {
+    		            return Array.from(this.$items.values()).some((v) => v === value);
+    		        }
+    		        forEach(callbackfn) {
+    		            this.$items.forEach((value, key, _) => callbackfn(value, key, this));
+    		        }
+    		        values() {
+    		            return this.$items.values();
+    		        }
+    		        get size() {
+    		            return this.$items.size;
+    		        }
+    		        /** Iterator */
+    		        [Symbol.iterator]() {
+    		            return this.$items.values();
+    		        }
+    		        setIndex(index, key) {
+    		            this.$indexes.set(index, key);
+    		        }
+    		        getIndex(index) {
+    		            return this.$indexes.get(index);
+    		        }
+    		        [$getByIndex](index) {
+    		            return this.$items.get(this.$indexes.get(index));
+    		        }
+    		        [$deleteByIndex](index) {
+    		            const key = this.$indexes.get(index);
+    		            this.$items.delete(key);
+    		            this.$indexes.delete(index);
+    		        }
+    		        [$onEncodeEnd]() {
+    		            this.deletedItems = {};
+    		        }
+    		        toArray() {
+    		            return Array.from(this.$items.values());
+    		        }
+    		        toJSON() {
+    		            const values = [];
+    		            this.forEach((value, key) => {
+    		                values.push((typeof (value['toJSON']) === "function")
+    		                    ? value['toJSON']()
+    		                    : value);
+    		            });
+    		            return values;
+    		        }
+    		        //
+    		        // Decoding utilities
+    		        //
+    		        clone(isDecoding) {
+    		            let cloned;
+    		            if (isDecoding) {
+    		                // client-side
+    		                cloned = Object.assign(new CollectionSchema(), this);
+    		            }
+    		            else {
+    		                // server-side
+    		                cloned = new CollectionSchema();
+    		                this.forEach((value) => {
+    		                    if (value[$changes]) {
+    		                        cloned.add(value['clone']());
+    		                    }
+    		                    else {
+    		                        cloned.add(value);
+    		                    }
+    		                });
+    		            }
+    		            return cloned;
+    		        }
+    		    }
+    		    registerType("collection", { constructor: CollectionSchema, });
+
+    		    class SetSchema {
+    		        [$changes];
+    		        [$refId];
+    		        [$childType];
+    		        $items = new Map();
+    		        $indexes = new Map();
+    		        deletedItems = {};
+    		        $refId = 0;
+    		        static [$encoder] = encodeKeyValueOperation;
+    		        static [$decoder] = decodeKeyValueOperation;
+    		        /**
+    		         * Determine if a property must be filtered.
+    		         * - If returns false, the property is NOT going to be encoded.
+    		         * - If returns true, the property is going to be encoded.
+    		         *
+    		         * Encoding with "filters" happens in two steps:
+    		         * - First, the encoder iterates over all "not owned" properties and encodes them.
+    		         * - Then, the encoder iterates over all "owned" properties per instance and encodes them.
+    		         */
+    		        static [$filter](ref, index, view) {
+    		            return (!view ||
+    		                typeof (ref[$childType]) === "string" ||
+    		                view.visible.has((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
+    		        }
+    		        static is(type) {
+    		            return type['set'] !== undefined;
+    		        }
+    		        constructor(initialValues) {
+    		            this[$changes] = new ChangeTree(this);
+    		            this[$changes].indexes = {};
+    		            if (initialValues) {
+    		                initialValues.forEach((v) => this.add(v));
+    		            }
+    		            Object.defineProperty(this, $childType, {
+    		                value: undefined,
+    		                enumerable: false,
+    		                writable: true,
+    		                configurable: true,
+    		            });
+    		        }
+    		        add(value) {
+    		            // immediatelly return false if value already added.
+    		            if (this.has(value)) {
+    		                return false;
+    		            }
+    		            // set "index" for reference.
+    		            const index = this.$refId++;
+    		            if ((value[$changes]) !== undefined) {
+    		                value[$changes].setParent(this, this[$changes].root, index);
+    		            }
+    		            const operation = this[$changes].indexes[index]?.op ?? exports$1.OPERATION.ADD;
+    		            this[$changes].indexes[index] = index;
+    		            this.$indexes.set(index, index);
+    		            this.$items.set(index, value);
+    		            this[$changes].change(index, operation);
+    		            return index;
+    		        }
+    		        entries() {
+    		            return this.$items.entries();
+    		        }
+    		        delete(item) {
+    		            const entries = this.$items.entries();
+    		            let index;
+    		            let entry;
+    		            while (entry = entries.next()) {
+    		                if (entry.done) {
+    		                    break;
+    		                }
+    		                if (item === entry.value[1]) {
+    		                    index = entry.value[0];
+    		                    break;
+    		                }
+    		            }
+    		            if (index === undefined) {
+    		                return false;
+    		            }
+    		            this.deletedItems[index] = this[$changes].delete(index);
+    		            this.$indexes.delete(index);
+    		            return this.$items.delete(index);
+    		        }
+    		        clear() {
+    		            const changeTree = this[$changes];
+    		            // discard previous operations.
+    		            changeTree.discard(true);
+    		            changeTree.indexes = {};
+    		            // clear previous indexes
+    		            this.$indexes.clear();
+    		            // clear items
+    		            this.$items.clear();
+    		            changeTree.operation(exports$1.OPERATION.CLEAR);
+    		        }
+    		        has(value) {
+    		            const values = this.$items.values();
+    		            let has = false;
+    		            let entry;
+    		            while (entry = values.next()) {
+    		                if (entry.done) {
+    		                    break;
+    		                }
+    		                if (value === entry.value) {
+    		                    has = true;
+    		                    break;
+    		                }
+    		            }
+    		            return has;
+    		        }
+    		        forEach(callbackfn) {
+    		            this.$items.forEach((value, key, _) => callbackfn(value, key, this));
+    		        }
+    		        values() {
+    		            return this.$items.values();
+    		        }
+    		        get size() {
+    		            return this.$items.size;
+    		        }
+    		        /** Iterator */
+    		        [Symbol.iterator]() {
+    		            return this.$items.values();
+    		        }
+    		        setIndex(index, key) {
+    		            this.$indexes.set(index, key);
+    		        }
+    		        getIndex(index) {
+    		            return this.$indexes.get(index);
+    		        }
+    		        [$getByIndex](index) {
+    		            return this.$items.get(this.$indexes.get(index));
+    		        }
+    		        [$deleteByIndex](index) {
+    		            const key = this.$indexes.get(index);
+    		            this.$items.delete(key);
+    		            this.$indexes.delete(index);
+    		        }
+    		        [$onEncodeEnd]() {
+    		            this.deletedItems = {};
+    		        }
+    		        toArray() {
+    		            return Array.from(this.$items.values());
+    		        }
+    		        toJSON() {
+    		            const values = [];
+    		            this.forEach((value, key) => {
+    		                values.push((typeof (value['toJSON']) === "function")
+    		                    ? value['toJSON']()
+    		                    : value);
+    		            });
+    		            return values;
+    		        }
+    		        //
+    		        // Decoding utilities
+    		        //
+    		        clone(isDecoding) {
+    		            let cloned;
+    		            if (isDecoding) {
+    		                // client-side
+    		                cloned = Object.assign(new SetSchema(), this);
+    		            }
+    		            else {
+    		                // server-side
+    		                cloned = new SetSchema();
+    		                this.forEach((value) => {
+    		                    if (value[$changes]) {
+    		                        cloned.add(value['clone']());
+    		                    }
+    		                    else {
+    		                        cloned.add(value);
+    		                    }
+    		                });
+    		            }
+    		            return cloned;
+    		        }
+    		    }
+    		    registerType("set", { constructor: SetSchema });
 
     		    const DEFAULT_VIEW_TAG = -1;
     		    function entity(constructor) {
@@ -3055,6 +3517,8 @@
     		            if (!type) {
     		                throw new Error(`${constructor.name}: @type() reference provided for "${field}" is undefined. Make sure you don't have any circular dependencies.`);
     		            }
+    		            // Normalize type (enum/collection/etc)
+    		            type = getNormalizedType(type);
     		            // for inheritance support
     		            TypeContext.register(constructor);
     		            const parentClass = Object.getPrototypeOf(constructor);
@@ -3099,9 +3563,7 @@
     		                });
     		            }
     		            else {
-    		                const complexTypeKlass = (Array.isArray(type))
-    		                    ? getType("array")
-    		                    : (typeof (Object.keys(type)[0]) === "string") && getType(Object.keys(type)[0]);
+    		                const complexTypeKlass = typeof (Object.keys(type)[0]) === "string" && getType(Object.keys(type)[0]);
     		                const childType = (complexTypeKlass)
     		                    ? Object.values(type)[0]
     		                    : type;
@@ -3129,6 +3591,10 @@
     		                        if (complexTypeKlass.constructor === MapSchema && !(value instanceof MapSchema)) {
     		                            value = new MapSchema(value);
     		                        }
+    		                        // // automaticallty transform Array into SetSchema
+    		                        // if (complexTypeKlass.constructor === SetSchema && !(value instanceof SetSchema)) {
+    		                        //     value = new SetSchema(value);
+    		                        // }
     		                        value[$childType] = type;
     		                    }
     		                    else if (typeof (type) !== "string") {
@@ -3143,10 +3609,10 @@
     		                    //
     		                    if (previousValue !== undefined && previousValue[$changes]) {
     		                        changeTree.root?.remove(previousValue[$changes]);
-    		                        this.constructor[$track](changeTree, fieldIndex, exports.OPERATION.DELETE_AND_ADD);
+    		                        this.constructor[$track](changeTree, fieldIndex, exports$1.OPERATION.DELETE_AND_ADD);
     		                    }
     		                    else {
-    		                        this.constructor[$track](changeTree, fieldIndex, exports.OPERATION.ADD);
+    		                        this.constructor[$track](changeTree, fieldIndex, exports$1.OPERATION.ADD);
     		                    }
     		                    //
     		                    // call setParent() recursively for this and its child
@@ -3215,28 +3681,124 @@
     		        }
     		        return target;
     		    }
-    		    function schema(fields, name, inherits = Schema) {
+    		    function schema(fieldsAndMethods, name, inherits = Schema) {
+    		        const fields = {};
+    		        const methods = {};
     		        const defaultValues = {};
     		        const viewTagFields = {};
-    		        for (let fieldName in fields) {
-    		            const field = fields[fieldName];
-    		            if (typeof (field) === "object") {
-    		                if (field['default'] !== undefined) {
-    		                    defaultValues[fieldName] = field['default'];
-    		                }
-    		                if (field['view'] !== undefined) {
-    		                    viewTagFields[fieldName] = (typeof (field['view']) === "boolean")
+    		        for (let fieldName in fieldsAndMethods) {
+    		            const value = fieldsAndMethods[fieldName];
+    		            if (typeof (value) === "object") {
+    		                if (value['view'] !== undefined) {
+    		                    viewTagFields[fieldName] = (typeof (value['view']) === "boolean")
     		                        ? DEFAULT_VIEW_TAG
-    		                        : field['view'];
+    		                        : value['view'];
     		                }
+    		                // allow to define a field as not synced
+    		                if (value['sync'] !== false) {
+    		                    fields[fieldName] = getNormalizedType(value);
+    		                }
+    		                // If no explicit default provided, handle automatic instantiation for collection types
+    		                if (!Object.prototype.hasOwnProperty.call(value, 'default')) {
+    		                    // TODO: remove Array.isArray() check. Use ['array'] !== undefined only.
+    		                    if (Array.isArray(value) || value['array'] !== undefined) {
+    		                        // Collection: Array → new ArraySchema()
+    		                        defaultValues[fieldName] = new ArraySchema();
+    		                    }
+    		                    else if (value['map'] !== undefined) {
+    		                        // Collection: Map → new MapSchema()
+    		                        defaultValues[fieldName] = new MapSchema();
+    		                    }
+    		                    else if (value['collection'] !== undefined) {
+    		                        // Collection: Collection → new CollectionSchema()
+    		                        defaultValues[fieldName] = new CollectionSchema();
+    		                    }
+    		                    else if (value['set'] !== undefined) {
+    		                        // Collection: Set → new SetSchema()
+    		                        defaultValues[fieldName] = new SetSchema();
+    		                    }
+    		                    else if (value['type'] !== undefined && Schema.is(value['type'])) {
+    		                        // Direct Schema type: Type → new Type()
+    		                        if (!value['type'].prototype.initialize || value['type'].prototype.initialize.length === 0) {
+    		                            // only auto-initialize Schema instances if:
+    		                            // - they don't have an initialize method
+    		                            // - or initialize method doesn't accept any parameters
+    		                            defaultValues[fieldName] = new value['type']();
+    		                        }
+    		                    }
+    		                }
+    		                else {
+    		                    defaultValues[fieldName] = value['default'];
+    		                }
+    		            }
+    		            else if (typeof (value) === "function") {
+    		                if (Schema.is(value)) {
+    		                    // Direct Schema type: Type → new Type()
+    		                    if (!value.prototype.initialize || value.prototype.initialize.length === 0) {
+    		                        // only auto-initialize Schema instances if:
+    		                        // - they don't have an initialize method
+    		                        // - or initialize method doesn't accept any parameters
+    		                        defaultValues[fieldName] = new value();
+    		                    }
+    		                    fields[fieldName] = getNormalizedType(value);
+    		                }
+    		                else {
+    		                    methods[fieldName] = value;
+    		                }
+    		            }
+    		            else {
+    		                fields[fieldName] = getNormalizedType(value);
     		            }
     		        }
+    		        const getDefaultValues = () => {
+    		            const defaults = {};
+    		            // use current class default values
+    		            for (const fieldName in defaultValues) {
+    		                const defaultValue = defaultValues[fieldName];
+    		                if (defaultValue && typeof defaultValue.clone === 'function') {
+    		                    // complex, cloneable values, e.g. Schema, ArraySchema, MapSchema, CollectionSchema, SetSchema
+    		                    defaults[fieldName] = defaultValue.clone();
+    		                }
+    		                else {
+    		                    // primitives and non-cloneable values
+    		                    defaults[fieldName] = defaultValue;
+    		                }
+    		            }
+    		            return defaults;
+    		        };
+    		        const getParentProps = (props) => {
+    		            const fieldNames = Object.keys(fields);
+    		            const parentProps = {};
+    		            for (const key in props) {
+    		                if (!fieldNames.includes(key)) {
+    		                    parentProps[key] = props[key];
+    		                }
+    		            }
+    		            return parentProps;
+    		        };
+    		        /** @codegen-ignore */
     		        const klass = Metadata.setFields(class extends inherits {
     		            constructor(...args) {
-    		                args[0] = Object.assign({}, defaultValues, args[0]);
-    		                super(...args);
+    		                // call initialize method
+    		                if (methods.initialize && typeof methods.initialize === 'function') {
+    		                    super(Object.assign({}, getDefaultValues(), getParentProps(args[0] || {})));
+    		                    /**
+    		                     * only call initialize() in the current class, not the parent ones.
+    		                     * see "should not call initialize automatically when creating an instance of inherited Schema"
+    		                     */
+    		                    if (new.target === klass) {
+    		                        methods.initialize.apply(this, args);
+    		                    }
+    		                }
+    		                else {
+    		                    super(Object.assign({}, getDefaultValues(), args[0] || {}));
+    		                }
     		            }
     		        }, fields);
+    		        // Store the getDefaultValues function on the class for inheritance
+    		        klass._getDefaultValues = getDefaultValues;
+    		        // Add methods to the prototype
+    		        Object.assign(klass.prototype, methods);
     		        for (let fieldName in viewTagFields) {
     		            view(viewTagFields[fieldName])(klass.prototype, fieldName);
     		        }
@@ -3257,32 +3819,37 @@
     		            refs: []
     		        };
     		        // for (const refId in $root.changes) {
-    		        $root.changes.forEach(changeTree => {
+    		        let current = $root.changes.next;
+    		        while (current) {
+    		            const changeTree = current.changeTree;
     		            // skip if ChangeTree is undefined
     		            if (changeTree === undefined) {
-    		                return;
+    		                current = current.next;
+    		                continue;
     		            }
     		            const changes = changeTree.indexedOperations;
-    		            dump.refs.push(`refId#${changeTree.refId}`);
+    		            dump.refs.push(`refId#${changeTree.ref[$refId]}`);
     		            for (const index in changes) {
     		                const op = changes[index];
-    		                const opName = exports.OPERATION[op];
+    		                const opName = exports$1.OPERATION[op];
     		                if (!dump.ops[opName]) {
     		                    dump.ops[opName] = 0;
     		                }
-    		                dump.ops[exports.OPERATION[op]]++;
+    		                dump.ops[exports$1.OPERATION[op]]++;
     		            }
-    		        });
+    		            current = current.next;
+    		        }
     		        return dump;
     		    }
 
-    		    var _a$2, _b$2;
     		    /**
     		     * Schema encoder / decoder
     		     */
     		    class Schema {
-    		        static { this[_a$2] = encodeSchemaOperation; }
-    		        static { this[_b$2] = decodeSchemaOperation; }
+    		        static [Symbol.metadata];
+    		        static [$encoder] = encodeSchemaOperation;
+    		        static [$decoder] = decodeSchemaOperation;
+    		        [$refId];
     		        /**
     		         * Assign the property descriptors required to track changes on this instance.
     		         * @param instance
@@ -3297,13 +3864,20 @@
     		        }
     		        static is(type) {
     		            return typeof (type[Symbol.metadata]) === "object";
-    		            // const metadata = type[Symbol.metadata];
-    		            // return metadata && Object.prototype.hasOwnProperty.call(metadata, -1);
+    		        }
+    		        /**
+    		         * Check if a value is an instance of Schema.
+    		         * This method uses duck-typing to avoid issues with multiple @colyseus/schema versions.
+    		         * @param obj Value to check
+    		         * @returns true if the value is a Schema instance
+    		         */
+    		        static isSchema(obj) {
+    		            return typeof obj?.assign === "function";
     		        }
     		        /**
     		         * Track property changes
     		         */
-    		        static [(_a$2 = $encoder, _b$2 = $decoder, $track)](changeTree, index, operation = exports.OPERATION.ADD) {
+    		        static [$track](changeTree, index, operation = exports$1.OPERATION.ADD) {
     		            changeTree.change(index, operation);
     		        }
     		        /**
@@ -3337,7 +3911,7 @@
     		            }
     		        }
     		        // allow inherited classes to have a constructor
-    		        constructor(...args) {
+    		        constructor(arg) {
     		            //
     		            // inline
     		            // Schema.initialize(this);
@@ -3346,12 +3920,76 @@
     		            //
     		            // Assign initial values
     		            //
-    		            if (args[0]) {
-    		                Object.assign(this, args[0]);
+    		            if (arg) {
+    		                Object.assign(this, arg);
     		            }
     		        }
+    		        /**
+    		         * Assign properties to the instance.
+    		         * @param props Properties to assign to the instance
+    		         * @returns
+    		         */
     		        assign(props) {
     		            Object.assign(this, props);
+    		            return this;
+    		        }
+    		        /**
+    		         * Restore the instance from JSON data.
+    		         * @param jsonData JSON data to restore the instance from
+    		         * @returns
+    		         */
+    		        restore(jsonData) {
+    		            const metadata = this.constructor[Symbol.metadata];
+    		            for (const fieldIndex in metadata) {
+    		                const field = metadata[fieldIndex];
+    		                const fieldName = field.name;
+    		                const fieldType = field.type;
+    		                const value = jsonData[fieldName];
+    		                if (value === undefined || value === null) {
+    		                    continue;
+    		                }
+    		                if (typeof fieldType === "string") {
+    		                    // Primitive type: assign directly
+    		                    this[fieldName] = value;
+    		                }
+    		                else if (Schema.is(fieldType)) {
+    		                    // Schema type: create instance and restore
+    		                    const instance = new fieldType();
+    		                    instance.restore(value);
+    		                    this[fieldName] = instance;
+    		                }
+    		                else if (typeof fieldType === "object") {
+    		                    // Collection types: { map: ... }, { array: ... }, etc.
+    		                    const collectionType = Object.keys(fieldType)[0];
+    		                    const childType = fieldType[collectionType];
+    		                    if (collectionType === "map") {
+    		                        const mapSchema = this[fieldName];
+    		                        for (const key in value) {
+    		                            if (Schema.is(childType)) {
+    		                                const childInstance = new childType();
+    		                                childInstance.restore(value[key]);
+    		                                mapSchema.set(key, childInstance);
+    		                            }
+    		                            else {
+    		                                mapSchema.set(key, value[key]);
+    		                            }
+    		                        }
+    		                    }
+    		                    else if (collectionType === "array") {
+    		                        const arraySchema = this[fieldName];
+    		                        for (let i = 0; i < value.length; i++) {
+    		                            if (Schema.is(childType)) {
+    		                                const childInstance = new childType();
+    		                                childInstance.restore(value[i]);
+    		                                arraySchema.push(childInstance);
+    		                            }
+    		                            else {
+    		                                arraySchema.push(value[i]);
+    		                            }
+    		                        }
+    		                    }
+    		                }
+    		            }
     		            return this;
     		        }
     		        /**
@@ -3365,14 +4003,15 @@
     		            this[$changes].change(metadata[metadata[property]].index, operation);
     		        }
     		        clone() {
-    		            const cloned = new (this.constructor);
+    		            // Create instance without calling custom constructor
+    		            const cloned = Object.create(this.constructor.prototype);
+    		            Schema.initialize(cloned);
     		            const metadata = this.constructor[Symbol.metadata];
     		            //
     		            // TODO: clone all properties, not only annotated ones
     		            //
     		            // for (const field in this) {
     		            for (const fieldIndex in metadata) {
-    		                // const field = metadata[metadata[fieldIndex]].name;
     		                const field = metadata[fieldIndex].name;
     		                if (typeof (this[field]) === "object" &&
     		                    typeof (this[field]?.clone) === "function") {
@@ -3400,6 +4039,10 @@
     		            }
     		            return obj;
     		        }
+    		        /**
+    		         * Used in tests only
+    		         * @internal
+    		         */
     		        discardAllChanges() {
     		            this[$changes].discardAll();
     		        }
@@ -3418,14 +4061,40 @@
     		         * @param showContents display JSON contents of the instance
     		         * @returns
     		         */
-    		        static debugRefIds(ref, showContents = false, level = 0) {
+    		        static debugRefIds(ref, showContents = false, level = 0, decoder, keyPrefix = "") {
     		            const contents = (showContents) ? ` - ${JSON.stringify(ref.toJSON())}` : "";
     		            const changeTree = ref[$changes];
-    		            const refId = changeTree.refId;
-    		            let output = "";
-    		            output += `${getIndent(level)}${ref.constructor.name} (refId: ${refId})${contents}\n`;
-    		            changeTree.forEachChild((childChangeTree) => output += this.debugRefIds(childChangeTree.ref, showContents, level + 1));
+    		            const refId = ref[$refId];
+    		            const root = (decoder) ? decoder.root : changeTree.root;
+    		            // log reference count if > 1
+    		            const refCount = (root?.refCount?.[refId] > 1)
+    		                ? ` [×${root.refCount[refId]}]`
+    		                : '';
+    		            let output = `${getIndent(level)}${keyPrefix}${ref.constructor.name} (refId: ${refId})${refCount}${contents}\n`;
+    		            changeTree.forEachChild((childChangeTree, indexOrKey) => {
+    		                let key = indexOrKey;
+    		                if (typeof indexOrKey === 'number' && ref['$indexes']) {
+    		                    // MapSchema
+    		                    key = ref['$indexes'].get(indexOrKey) ?? indexOrKey;
+    		                }
+    		                const keyPrefix = (ref['forEach'] !== undefined && key !== undefined) ? `["${key}"]: ` : "";
+    		                output += this.debugRefIds(childChangeTree.ref, showContents, level + 1, decoder, keyPrefix);
+    		            });
     		            return output;
+    		        }
+    		        static debugRefIdEncodingOrder(ref, changeSet = 'allChanges') {
+    		            let encodeOrder = [];
+    		            let current = ref[$changes].root[changeSet].next;
+    		            while (current) {
+    		                if (current.changeTree) {
+    		                    encodeOrder.push(current.changeTree.ref[$refId]);
+    		                }
+    		                current = current.next;
+    		            }
+    		            return encodeOrder;
+    		        }
+    		        static debugRefIdsFromDecoder(decoder) {
+    		            return this.debugRefIds(decoder.state, false, 0, decoder);
     		        }
     		        /**
     		         * Return a string representation of the changes on a Schema instance.
@@ -3439,14 +4108,13 @@
     		            const changeTree = instance[$changes];
     		            const changeSet = (isEncodeAll) ? changeTree.allChanges : changeTree.changes;
     		            const changeSetName = (isEncodeAll) ? "allChanges" : "changes";
-    		            let output = `${instance.constructor.name} (${changeTree.refId}) -> .${changeSetName}:\n`;
+    		            let output = `${instance.constructor.name} (${instance[$refId]}) -> .${changeSetName}:\n`;
     		            function dumpChangeSet(changeSet) {
     		                changeSet.operations
     		                    .filter(op => op)
     		                    .forEach((index) => {
     		                    const operation = changeTree.indexedOperations[index];
-    		                    console.log({ index, operation });
-    		                    output += `- [${index}]: ${exports.OPERATION[operation]} (${JSON.stringify(changeTree.getValue(Number(index), isEncodeAll))})\n`;
+    		                    output += `- [${index}]: ${exports$1.OPERATION[operation]} (${JSON.stringify(changeTree.getValue(Number(index), isEncodeAll))})\n`;
     		                });
     		            }
     		            dumpChangeSet(changeSet);
@@ -3454,14 +4122,14 @@
     		            if (!isEncodeAll &&
     		                changeTree.filteredChanges &&
     		                (changeTree.filteredChanges.operations).filter(op => op).length > 0) {
-    		                output += `${instance.constructor.name} (${changeTree.refId}) -> .filteredChanges:\n`;
+    		                output += `${instance.constructor.name} (${instance[$refId]}) -> .filteredChanges:\n`;
     		                dumpChangeSet(changeTree.filteredChanges);
     		            }
     		            // display filtered changes
     		            if (isEncodeAll &&
     		                changeTree.allFilteredChanges &&
     		                (changeTree.allFilteredChanges.operations).filter(op => op).length > 0) {
-    		                output += `${instance.constructor.name} (${changeTree.refId}) -> .allFilteredChanges:\n`;
+    		                output += `${instance.constructor.name} (${instance[$refId]}) -> .allFilteredChanges:\n`;
     		                dumpChangeSet(changeTree.allFilteredChanges);
     		            }
     		            return output;
@@ -3473,8 +4141,12 @@
     		            const changeTrees = new Map();
     		            const instanceRefIds = [];
     		            let totalOperations = 0;
+    		            // TODO: FIXME: this method is not working as expected
     		            for (const [refId, changes] of Object.entries(root[changeSetName])) {
     		                const changeTree = root.changeTrees[refId];
+    		                if (!changeTree) {
+    		                    continue;
+    		                }
     		                let includeChangeTree = false;
     		                let parentChangeTrees = [];
     		                let parentChangeTree = changeTree.parent?.[$changes];
@@ -3492,13 +4164,13 @@
     		                    }
     		                }
     		                if (includeChangeTree) {
-    		                    instanceRefIds.push(changeTree.refId);
+    		                    instanceRefIds.push(changeTree.ref[$refId]);
     		                    totalOperations += Object.keys(changes).length;
     		                    changeTrees.set(changeTree, parentChangeTrees.reverse());
     		                }
     		            }
     		            output += "---\n";
-    		            output += `root refId: ${rootChangeTree.refId}\n`;
+    		            output += `root refId: ${rootChangeTree.ref[$refId]}\n`;
     		            output += `Total instances: ${instanceRefIds.length} (refIds: ${instanceRefIds.join(", ")})\n`;
     		            output += `Total changes: ${totalOperations}\n`;
     		            output += "---\n";
@@ -3507,7 +4179,7 @@
     		            for (const [changeTree, parentChangeTrees] of changeTrees.entries()) {
     		                parentChangeTrees.forEach((parentChangeTree, level) => {
     		                    if (!visitedParents.has(parentChangeTree)) {
-    		                        output += `${getIndent(level)}${parentChangeTree.ref.constructor.name} (refId: ${parentChangeTree.refId})\n`;
+    		                        output += `${getIndent(level)}${parentChangeTree.ref.constructor.name} (refId: ${parentChangeTree.ref[$refId]})\n`;
     		                        visitedParents.add(parentChangeTree);
     		                    }
     		                });
@@ -3515,401 +4187,45 @@
     		                const level = parentChangeTrees.length;
     		                const indent = getIndent(level);
     		                const parentIndex = (level > 0) ? `(${changeTree.parentIndex}) ` : "";
-    		                output += `${indent}${parentIndex}${changeTree.ref.constructor.name} (refId: ${changeTree.refId}) - changes: ${Object.keys(changes).length}\n`;
+    		                output += `${indent}${parentIndex}${changeTree.ref.constructor.name} (refId: ${changeTree.ref[$refId]}) - changes: ${Object.keys(changes).length}\n`;
     		                for (const index in changes) {
     		                    const operation = changes[index];
-    		                    output += `${getIndent(level + 1)}${exports.OPERATION[operation]}: ${index}\n`;
+    		                    output += `${getIndent(level + 1)}${exports$1.OPERATION[operation]}: ${index}\n`;
     		                }
     		            }
     		            return `${output}`;
     		        }
     		    }
 
-    		    var _a$1, _b$1;
-    		    class CollectionSchema {
-    		        static { this[_a$1] = encodeKeyValueOperation; }
-    		        static { this[_b$1] = decodeKeyValueOperation; }
-    		        /**
-    		         * Determine if a property must be filtered.
-    		         * - If returns false, the property is NOT going to be encoded.
-    		         * - If returns true, the property is going to be encoded.
-    		         *
-    		         * Encoding with "filters" happens in two steps:
-    		         * - First, the encoder iterates over all "not owned" properties and encodes them.
-    		         * - Then, the encoder iterates over all "owned" properties per instance and encodes them.
-    		         */
-    		        static [(_a$1 = $encoder, _b$1 = $decoder, $filter)](ref, index, view) {
-    		            return (!view ||
-    		                typeof (ref[$childType]) === "string" ||
-    		                view.isChangeTreeVisible((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
-    		        }
-    		        static is(type) {
-    		            return type['collection'] !== undefined;
-    		        }
-    		        constructor(initialValues) {
-    		            this.$items = new Map();
-    		            this.$indexes = new Map();
-    		            this.deletedItems = {};
-    		            this.$refId = 0;
-    		            this[$changes] = new ChangeTree(this);
-    		            this[$changes].indexes = {};
-    		            if (initialValues) {
-    		                initialValues.forEach((v) => this.add(v));
-    		            }
-    		            Object.defineProperty(this, $childType, {
-    		                value: undefined,
-    		                enumerable: false,
-    		                writable: true,
-    		                configurable: true,
-    		            });
-    		        }
-    		        add(value) {
-    		            // set "index" for reference.
-    		            const index = this.$refId++;
-    		            const isRef = (value[$changes]) !== undefined;
-    		            if (isRef) {
-    		                value[$changes].setParent(this, this[$changes].root, index);
-    		            }
-    		            this[$changes].indexes[index] = index;
-    		            this.$indexes.set(index, index);
-    		            this.$items.set(index, value);
-    		            this[$changes].change(index);
-    		            return index;
-    		        }
-    		        at(index) {
-    		            const key = Array.from(this.$items.keys())[index];
-    		            return this.$items.get(key);
-    		        }
-    		        entries() {
-    		            return this.$items.entries();
-    		        }
-    		        delete(item) {
-    		            const entries = this.$items.entries();
-    		            let index;
-    		            let entry;
-    		            while (entry = entries.next()) {
-    		                if (entry.done) {
-    		                    break;
-    		                }
-    		                if (item === entry.value[1]) {
-    		                    index = entry.value[0];
-    		                    break;
-    		                }
-    		            }
-    		            if (index === undefined) {
-    		                return false;
-    		            }
-    		            this.deletedItems[index] = this[$changes].delete(index);
-    		            this.$indexes.delete(index);
-    		            return this.$items.delete(index);
-    		        }
-    		        clear() {
-    		            const changeTree = this[$changes];
-    		            // discard previous operations.
-    		            changeTree.discard(true);
-    		            changeTree.indexes = {};
-    		            // clear previous indexes
-    		            this.$indexes.clear();
-    		            // clear items
-    		            this.$items.clear();
-    		            changeTree.operation(exports.OPERATION.CLEAR);
-    		        }
-    		        has(value) {
-    		            return Array.from(this.$items.values()).some((v) => v === value);
-    		        }
-    		        forEach(callbackfn) {
-    		            this.$items.forEach((value, key, _) => callbackfn(value, key, this));
-    		        }
-    		        values() {
-    		            return this.$items.values();
-    		        }
-    		        get size() {
-    		            return this.$items.size;
-    		        }
-    		        /** Iterator */
-    		        [Symbol.iterator]() {
-    		            return this.$items.values();
-    		        }
-    		        setIndex(index, key) {
-    		            this.$indexes.set(index, key);
-    		        }
-    		        getIndex(index) {
-    		            return this.$indexes.get(index);
-    		        }
-    		        [$getByIndex](index) {
-    		            return this.$items.get(this.$indexes.get(index));
-    		        }
-    		        [$deleteByIndex](index) {
-    		            const key = this.$indexes.get(index);
-    		            this.$items.delete(key);
-    		            this.$indexes.delete(index);
-    		        }
-    		        [$onEncodeEnd]() {
-    		            this.deletedItems = {};
-    		        }
-    		        toArray() {
-    		            return Array.from(this.$items.values());
-    		        }
-    		        toJSON() {
-    		            const values = [];
-    		            this.forEach((value, key) => {
-    		                values.push((typeof (value['toJSON']) === "function")
-    		                    ? value['toJSON']()
-    		                    : value);
-    		            });
-    		            return values;
-    		        }
-    		        //
-    		        // Decoding utilities
-    		        //
-    		        clone(isDecoding) {
-    		            let cloned;
-    		            if (isDecoding) {
-    		                // client-side
-    		                cloned = Object.assign(new CollectionSchema(), this);
-    		            }
-    		            else {
-    		                // server-side
-    		                cloned = new CollectionSchema();
-    		                this.forEach((value) => {
-    		                    if (value[$changes]) {
-    		                        cloned.add(value['clone']());
-    		                    }
-    		                    else {
-    		                        cloned.add(value);
-    		                    }
-    		                });
-    		            }
-    		            return cloned;
-    		        }
-    		    }
-    		    registerType("collection", { constructor: CollectionSchema, });
-
-    		    var _a, _b;
-    		    class SetSchema {
-    		        static { this[_a] = encodeKeyValueOperation; }
-    		        static { this[_b] = decodeKeyValueOperation; }
-    		        /**
-    		         * Determine if a property must be filtered.
-    		         * - If returns false, the property is NOT going to be encoded.
-    		         * - If returns true, the property is going to be encoded.
-    		         *
-    		         * Encoding with "filters" happens in two steps:
-    		         * - First, the encoder iterates over all "not owned" properties and encodes them.
-    		         * - Then, the encoder iterates over all "owned" properties per instance and encodes them.
-    		         */
-    		        static [(_a = $encoder, _b = $decoder, $filter)](ref, index, view) {
-    		            return (!view ||
-    		                typeof (ref[$childType]) === "string" ||
-    		                view.visible.has((ref[$getByIndex](index) ?? ref.deletedItems[index])[$changes]));
-    		        }
-    		        static is(type) {
-    		            return type['set'] !== undefined;
-    		        }
-    		        constructor(initialValues) {
-    		            this.$items = new Map();
-    		            this.$indexes = new Map();
-    		            this.deletedItems = {};
-    		            this.$refId = 0;
-    		            this[$changes] = new ChangeTree(this);
-    		            this[$changes].indexes = {};
-    		            if (initialValues) {
-    		                initialValues.forEach((v) => this.add(v));
-    		            }
-    		            Object.defineProperty(this, $childType, {
-    		                value: undefined,
-    		                enumerable: false,
-    		                writable: true,
-    		                configurable: true,
-    		            });
-    		        }
-    		        add(value) {
-    		            // immediatelly return false if value already added.
-    		            if (this.has(value)) {
-    		                return false;
-    		            }
-    		            // set "index" for reference.
-    		            const index = this.$refId++;
-    		            if ((value[$changes]) !== undefined) {
-    		                value[$changes].setParent(this, this[$changes].root, index);
-    		            }
-    		            const operation = this[$changes].indexes[index]?.op ?? exports.OPERATION.ADD;
-    		            this[$changes].indexes[index] = index;
-    		            this.$indexes.set(index, index);
-    		            this.$items.set(index, value);
-    		            this[$changes].change(index, operation);
-    		            return index;
-    		        }
-    		        entries() {
-    		            return this.$items.entries();
-    		        }
-    		        delete(item) {
-    		            const entries = this.$items.entries();
-    		            let index;
-    		            let entry;
-    		            while (entry = entries.next()) {
-    		                if (entry.done) {
-    		                    break;
-    		                }
-    		                if (item === entry.value[1]) {
-    		                    index = entry.value[0];
-    		                    break;
-    		                }
-    		            }
-    		            if (index === undefined) {
-    		                return false;
-    		            }
-    		            this.deletedItems[index] = this[$changes].delete(index);
-    		            this.$indexes.delete(index);
-    		            return this.$items.delete(index);
-    		        }
-    		        clear() {
-    		            const changeTree = this[$changes];
-    		            // discard previous operations.
-    		            changeTree.discard(true);
-    		            changeTree.indexes = {};
-    		            // clear previous indexes
-    		            this.$indexes.clear();
-    		            // clear items
-    		            this.$items.clear();
-    		            changeTree.operation(exports.OPERATION.CLEAR);
-    		        }
-    		        has(value) {
-    		            const values = this.$items.values();
-    		            let has = false;
-    		            let entry;
-    		            while (entry = values.next()) {
-    		                if (entry.done) {
-    		                    break;
-    		                }
-    		                if (value === entry.value) {
-    		                    has = true;
-    		                    break;
-    		                }
-    		            }
-    		            return has;
-    		        }
-    		        forEach(callbackfn) {
-    		            this.$items.forEach((value, key, _) => callbackfn(value, key, this));
-    		        }
-    		        values() {
-    		            return this.$items.values();
-    		        }
-    		        get size() {
-    		            return this.$items.size;
-    		        }
-    		        /** Iterator */
-    		        [Symbol.iterator]() {
-    		            return this.$items.values();
-    		        }
-    		        setIndex(index, key) {
-    		            this.$indexes.set(index, key);
-    		        }
-    		        getIndex(index) {
-    		            return this.$indexes.get(index);
-    		        }
-    		        [$getByIndex](index) {
-    		            return this.$items.get(this.$indexes.get(index));
-    		        }
-    		        [$deleteByIndex](index) {
-    		            const key = this.$indexes.get(index);
-    		            this.$items.delete(key);
-    		            this.$indexes.delete(index);
-    		        }
-    		        [$onEncodeEnd]() {
-    		            this.deletedItems = {};
-    		        }
-    		        toArray() {
-    		            return Array.from(this.$items.values());
-    		        }
-    		        toJSON() {
-    		            const values = [];
-    		            this.forEach((value, key) => {
-    		                values.push((typeof (value['toJSON']) === "function")
-    		                    ? value['toJSON']()
-    		                    : value);
-    		            });
-    		            return values;
-    		        }
-    		        //
-    		        // Decoding utilities
-    		        //
-    		        clone(isDecoding) {
-    		            let cloned;
-    		            if (isDecoding) {
-    		                // client-side
-    		                cloned = Object.assign(new SetSchema(), this);
-    		            }
-    		            else {
-    		                // server-side
-    		                cloned = new SetSchema();
-    		                this.forEach((value) => {
-    		                    if (value[$changes]) {
-    		                        cloned.add(value['clone']());
-    		                    }
-    		                    else {
-    		                        cloned.add(value);
-    		                    }
-    		                });
-    		            }
-    		            return cloned;
-    		        }
-    		    }
-    		    registerType("set", { constructor: SetSchema });
-
-    		    /******************************************************************************
-    		    Copyright (c) Microsoft Corporation.
-
-    		    Permission to use, copy, modify, and/or distribute this software for any
-    		    purpose with or without fee is hereby granted.
-
-    		    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    		    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    		    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    		    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    		    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    		    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    		    PERFORMANCE OF THIS SOFTWARE.
-    		    ***************************************************************************** */
-    		    /* global Reflect, Promise, SuppressedError, Symbol, Iterator */
-
-
-    		    function __decorate(decorators, target, key, desc) {
-    		        var c = arguments.length, r = c < 3 ? target : desc, d;
-    		        if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    		        else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    		        return c > 3 && r && Object.defineProperty(target, key, r), r;
-    		    }
-
-    		    typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-    		        var e = new Error(message);
-    		        return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-    		    };
-
     		    class Root {
+    		        types;
+    		        nextUniqueId = 0;
+    		        refCount = {};
+    		        changeTrees = {};
+    		        // all changes
+    		        allChanges = createChangeTreeList();
+    		        allFilteredChanges = createChangeTreeList(); // TODO: do not initialize it if filters are not used
+    		        // pending changes to be encoded
+    		        changes = createChangeTreeList();
+    		        filteredChanges = createChangeTreeList(); // TODO: do not initialize it if filters are not used
     		        constructor(types) {
     		            this.types = types;
-    		            this.nextUniqueId = 0;
-    		            this.refCount = {};
-    		            this.changeTrees = {};
-    		            // all changes
-    		            this.allChanges = [];
-    		            this.allFilteredChanges = []; // TODO: do not initialize it if filters are not used
-    		            // pending changes to be encoded
-    		            this.changes = [];
-    		            this.filteredChanges = []; // TODO: do not initialize it if filters are not used
     		        }
     		        getNextUniqueId() {
     		            return this.nextUniqueId++;
     		        }
     		        add(changeTree) {
-    		            // FIXME: move implementation of `ensureRefId` to `Root` class
-    		            changeTree.ensureRefId();
-    		            const isNewChangeTree = (this.changeTrees[changeTree.refId] === undefined);
-    		            if (isNewChangeTree) {
-    		                this.changeTrees[changeTree.refId] = changeTree;
+    		            const ref = changeTree.ref;
+    		            // Assign unique `refId` to ref if it doesn't have one yet.
+    		            if (ref[$refId] === undefined) {
+    		                ref[$refId] = this.getNextUniqueId();
     		            }
-    		            const previousRefCount = this.refCount[changeTree.refId];
+    		            const refId = ref[$refId];
+    		            const isNewChangeTree = (this.changeTrees[refId] === undefined);
+    		            if (isNewChangeTree) {
+    		                this.changeTrees[refId] = changeTree;
+    		            }
+    		            const previousRefCount = this.refCount[refId];
     		            if (previousRefCount === 0) {
     		                //
     		                // When a ChangeTree is re-added, it means that it was previously removed.
@@ -3918,74 +4234,209 @@
     		                const ops = changeTree.allChanges.operations;
     		                let len = ops.length;
     		                while (len--) {
-    		                    changeTree.indexedOperations[ops[len]] = exports.OPERATION.ADD;
+    		                    changeTree.indexedOperations[ops[len]] = exports$1.OPERATION.ADD;
     		                    setOperationAtIndex(changeTree.changes, len);
     		                }
     		            }
-    		            this.refCount[changeTree.refId] = (previousRefCount || 0) + 1;
+    		            this.refCount[refId] = (previousRefCount || 0) + 1;
+    		            // console.log("ADD", { refId, ref: ref.constructor.name, refCount: this.refCount[refId], isNewChangeTree });
     		            return isNewChangeTree;
     		        }
     		        remove(changeTree) {
-    		            const refCount = (this.refCount[changeTree.refId]) - 1;
+    		            const refId = changeTree.ref[$refId];
+    		            const refCount = (this.refCount[refId]) - 1;
+    		            // console.log("REMOVE", { refId, ref: changeTree.ref.constructor.name, refCount, needRemove: refCount <= 0 });
     		            if (refCount <= 0) {
     		                //
     		                // Only remove "root" reference if it's the last reference
     		                //
     		                changeTree.root = undefined;
-    		                delete this.changeTrees[changeTree.refId];
+    		                delete this.changeTrees[refId];
     		                this.removeChangeFromChangeSet("allChanges", changeTree);
     		                this.removeChangeFromChangeSet("changes", changeTree);
     		                if (changeTree.filteredChanges) {
     		                    this.removeChangeFromChangeSet("allFilteredChanges", changeTree);
     		                    this.removeChangeFromChangeSet("filteredChanges", changeTree);
     		                }
-    		                this.refCount[changeTree.refId] = 0;
+    		                this.refCount[refId] = 0;
+    		                changeTree.forEachChild((child, _) => {
+    		                    if (child.removeParent(changeTree.ref)) {
+    		                        if ((child.parentChain === undefined || // no parent, remove it
+    		                            (child.parentChain && this.refCount[child.ref[$refId]] > 0) // parent is still in use, but has more than one reference, remove it
+    		                        )) {
+    		                            this.remove(child);
+    		                        }
+    		                        else if (child.parentChain) {
+    		                            // re-assigning a child of the same root, move it next to parent
+    		                            this.moveNextToParent(child);
+    		                        }
+    		                    }
+    		                });
     		            }
     		            else {
-    		                this.refCount[changeTree.refId] = refCount;
+    		                this.refCount[refId] = refCount;
     		                //
     		                // When losing a reference to an instance, it is best to move the
-    		                // ChangeTree to the end of the encoding queue.
+    		                // ChangeTree next to its parent in the encoding queue.
     		                //
     		                // This way, at decoding time, the instance that contains the
     		                // ChangeTree will be available before the ChangeTree itself. If the
     		                // containing instance is not available, the Decoder will throw
     		                // "refId not found" error.
     		                //
-    		                if (changeTree.filteredChanges !== undefined) {
-    		                    this.removeChangeFromChangeSet("filteredChanges", changeTree);
-    		                    enqueueChangeTree(this, changeTree, "filteredChanges");
-    		                }
-    		                else {
-    		                    this.removeChangeFromChangeSet("changes", changeTree);
-    		                    enqueueChangeTree(this, changeTree, "changes");
-    		                }
+    		                this.recursivelyMoveNextToParent(changeTree);
     		            }
-    		            changeTree.forEachChild((child, _) => this.remove(child));
     		            return refCount;
+    		        }
+    		        recursivelyMoveNextToParent(changeTree) {
+    		            this.moveNextToParent(changeTree);
+    		            changeTree.forEachChild((child, _) => this.recursivelyMoveNextToParent(child));
+    		        }
+    		        moveNextToParent(changeTree) {
+    		            if (changeTree.filteredChanges) {
+    		                this.moveNextToParentInChangeTreeList("filteredChanges", changeTree);
+    		                this.moveNextToParentInChangeTreeList("allFilteredChanges", changeTree);
+    		            }
+    		            else {
+    		                this.moveNextToParentInChangeTreeList("changes", changeTree);
+    		                this.moveNextToParentInChangeTreeList("allChanges", changeTree);
+    		            }
+    		        }
+    		        moveNextToParentInChangeTreeList(changeSetName, changeTree) {
+    		            const changeSet = this[changeSetName];
+    		            const node = changeTree[changeSetName].queueRootNode;
+    		            if (!node)
+    		                return;
+    		            // Find the parent in the linked list
+    		            const parent = changeTree.parent;
+    		            if (!parent || !parent[$changes])
+    		                return;
+    		            const parentNode = parent[$changes][changeSetName]?.queueRootNode;
+    		            if (!parentNode || parentNode === node)
+    		                return;
+    		            // Use cached positions - no iteration needed!
+    		            const parentPosition = parentNode.position;
+    		            const childPosition = node.position;
+    		            // If child is already after parent, no need to move
+    		            if (childPosition > parentPosition)
+    		                return;
+    		            // Child is before parent, so we need to move it after parent
+    		            // This maintains decoding order (parent before child)
+    		            // Remove node from current position
+    		            if (node.prev) {
+    		                node.prev.next = node.next;
+    		            }
+    		            else {
+    		                changeSet.next = node.next;
+    		            }
+    		            if (node.next) {
+    		                node.next.prev = node.prev;
+    		            }
+    		            else {
+    		                changeSet.tail = node.prev;
+    		            }
+    		            // Insert node right after parent
+    		            node.prev = parentNode;
+    		            node.next = parentNode.next;
+    		            if (parentNode.next) {
+    		                parentNode.next.prev = node;
+    		            }
+    		            else {
+    		                changeSet.tail = node;
+    		            }
+    		            parentNode.next = node;
+    		            // Update positions after the move
+    		            this.updatePositionsAfterMove(changeSet, node, parentPosition + 1);
+    		        }
+    		        enqueueChangeTree(changeTree, changeSet, queueRootNode = changeTree[changeSet].queueRootNode) {
+    		            // skip
+    		            if (queueRootNode) {
+    		                return;
+    		            }
+    		            // Add to linked list if not already present
+    		            changeTree[changeSet].queueRootNode = this.addToChangeTreeList(this[changeSet], changeTree);
+    		        }
+    		        addToChangeTreeList(list, changeTree) {
+    		            const node = {
+    		                changeTree,
+    		                next: undefined,
+    		                prev: undefined,
+    		                position: list.tail ? list.tail.position + 1 : 0
+    		            };
+    		            if (!list.next) {
+    		                list.next = node;
+    		                list.tail = node;
+    		            }
+    		            else {
+    		                node.prev = list.tail;
+    		                list.tail.next = node;
+    		                list.tail = node;
+    		            }
+    		            return node;
+    		        }
+    		        updatePositionsAfterRemoval(list, removedPosition) {
+    		            // Update positions for all nodes after the removed position
+    		            let current = list.next;
+    		            let position = 0;
+    		            while (current) {
+    		                if (position >= removedPosition) {
+    		                    current.position = position;
+    		                }
+    		                current = current.next;
+    		                position++;
+    		            }
+    		        }
+    		        updatePositionsAfterMove(list, node, newPosition) {
+    		            // Recalculate all positions - this is more reliable than trying to be clever
+    		            let current = list.next;
+    		            let position = 0;
+    		            while (current) {
+    		                current.position = position;
+    		                current = current.next;
+    		                position++;
+    		            }
     		        }
     		        removeChangeFromChangeSet(changeSetName, changeTree) {
     		            const changeSet = this[changeSetName];
-    		            const changeSetIndex = changeSet.indexOf(changeTree);
-    		            if (changeSetIndex !== -1) {
-    		                changeTree[changeSetName].queueRootIndex = -1;
-    		                changeSet[changeSetIndex] = undefined;
+    		            const node = changeTree[changeSetName].queueRootNode;
+    		            if (node && node.changeTree === changeTree) {
+    		                const removedPosition = node.position;
+    		                // Remove the node from the linked list
+    		                if (node.prev) {
+    		                    node.prev.next = node.next;
+    		                }
+    		                else {
+    		                    changeSet.next = node.next;
+    		                }
+    		                if (node.next) {
+    		                    node.next.prev = node.prev;
+    		                }
+    		                else {
+    		                    changeSet.tail = node.prev;
+    		                }
+    		                // Update positions for nodes that came after the removed node
+    		                this.updatePositionsAfterRemoval(changeSet, removedPosition);
+    		                // Clear ChangeTree reference
+    		                changeTree[changeSetName].queueRootNode = undefined;
     		                return true;
     		            }
-    		            // if (spliceOne(changeSet, changeSet.indexOf(changeTree))) {
-    		            //     changeTree[changeSetName].queueRootIndex = -1;
-    		            //     return true;
-    		            // }
-    		        }
-    		        clear() {
-    		            this.changes.length = 0;
+    		            return false;
     		        }
     		    }
 
+    		    function concatBytes(a, b) {
+    		        const result = new Uint8Array(a.length + b.length);
+    		        result.set(a, 0);
+    		        result.set(b, a.length);
+    		        return result;
+    		    }
     		    class Encoder {
-    		        static { this.BUFFER_SIZE = (typeof (Buffer) !== "undefined") && Buffer.poolSize || 8 * 1024; } // 8KB
+    		        static BUFFER_SIZE = 8 * 1024; // 8KB
+    		        sharedBuffer = new Uint8Array(Encoder.BUFFER_SIZE);
+    		        context;
+    		        state;
+    		        root;
     		        constructor(state) {
-    		            this.sharedBuffer = Buffer.allocUnsafe(Encoder.BUFFER_SIZE);
     		            //
     		            // Use .cache() here to avoid re-creating a new context for every new room instance.
     		            //
@@ -4008,15 +4459,12 @@
     		        ) {
     		            const hasView = (view !== undefined);
     		            const rootChangeTree = this.state[$changes];
-    		            const changeTrees = this.root[changeSetName];
-    		            for (let i = 0, numChangeTrees = changeTrees.length; i < numChangeTrees; i++) {
-    		                const changeTree = changeTrees[i];
-    		                if (!changeTree) {
-    		                    continue;
-    		                }
+    		            let current = this.root[changeSetName];
+    		            while (current = current.next) {
+    		                const changeTree = current.changeTree;
     		                if (hasView) {
     		                    if (!view.isChangeTreeVisible(changeTree)) {
-    		                        // console.log("MARK AS INVISIBLE:", { ref: changeTree.ref.constructor.name, refId: changeTree.refId, raw: changeTree.ref.toJSON() });
+    		                        // console.log("MARK AS INVISIBLE:", { ref: changeTree.ref.constructor.name, refId: changeTree.ref[$refId], raw: changeTree.ref.toJSON() });
     		                        view.invisible.add(changeTree);
     		                        continue; // skip this change tree
     		                    }
@@ -4037,15 +4485,19 @@
     		                // (unless it "hasView", which will need to revisit the root)
     		                if (hasView || it.offset > initialOffset || changeTree !== rootChangeTree) {
     		                    buffer[it.offset++] = SWITCH_TO_STRUCTURE & 255;
-    		                    encode.number(buffer, changeTree.refId, it);
+    		                    encode.number(buffer, ref[$refId], it);
     		                }
     		                for (let j = 0; j < numChanges; j++) {
     		                    const fieldIndex = changeSet.operations[j];
-    		                    const operation = (fieldIndex < 0)
-    		                        ? Math.abs(fieldIndex) // "pure" operation without fieldIndex (e.g. CLEAR, REVERSE, etc.)
-    		                        : (isEncodeAll)
-    		                            ? exports.OPERATION.ADD
-    		                            : changeTree.indexedOperations[fieldIndex];
+    		                    if (fieldIndex < 0) {
+    		                        // "pure" operation without fieldIndex (e.g. CLEAR, REVERSE, etc.)
+    		                        // encode and continue early - no need to reach $filter check
+    		                        buffer[it.offset++] = Math.abs(fieldIndex) & 255;
+    		                        continue;
+    		                    }
+    		                    const operation = (isEncodeAll)
+    		                        ? exports$1.OPERATION.ADD
+    		                        : changeTree.indexedOperations[fieldIndex];
     		                    //
     		                    // first pass (encodeAll), identify "filtered" operations without encoding them
     		                    // they will be encoded per client, based on their view.
@@ -4062,10 +4514,9 @@
     		                }
     		            }
     		            if (it.offset > buffer.byteLength) {
-    		                // we can assume that n + 1 poolSize will suffice given that we are likely done with encoding at this point
-    		                // multiples of poolSize are faster to allocate than arbitrary sizes
-    		                // if we are on an older platform that doesn't implement pooling use 8kb as poolSize (that's the default for node)
-    		                const newSize = Math.ceil(it.offset / (Buffer.poolSize ?? 8 * 1024)) * (Buffer.poolSize ?? 8 * 1024);
+    		                // we can assume that n + 1 BUFFER_SIZE will suffice given that we are likely done with encoding at this point
+    		                // multiples of BUFFER_SIZE are faster to allocate than arbitrary sizes
+    		                const newSize = Math.ceil(it.offset / Encoder.BUFFER_SIZE) * Encoder.BUFFER_SIZE;
     		                console.warn(`@colyseus/schema buffer overflow. Encoded state is higher than default BUFFER_SIZE. Use the following to increase default BUFFER_SIZE:
 
     import { Encoder } from "@colyseus/schema";
@@ -4075,7 +4526,9 @@
     		                // resize buffer and re-encode (TODO: can we avoid re-encoding here?)
     		                // -> No we probably can't unless we catch the need for resize before encoding which is likely more computationally expensive than resizing on demand
     		                //
-    		                buffer = Buffer.alloc(newSize, buffer); // fill with buffer here to memcpy previous encoding steps beyond the initialOffset
+    		                const newBuffer = new Uint8Array(newSize);
+    		                newBuffer.set(buffer); // copy previous encoding steps beyond the initialOffset
+    		                buffer = newBuffer;
     		                // assign resized buffer to local sharedBuffer
     		                if (buffer === this.sharedBuffer) {
     		                    this.sharedBuffer = buffer;
@@ -4093,28 +4546,7 @@
     		            const viewOffset = it.offset;
     		            // try to encode "filtered" changes
     		            this.encode(it, view, bytes, "allFilteredChanges", true, viewOffset);
-    		            return Buffer.concat([
-    		                bytes.subarray(0, sharedOffset),
-    		                bytes.subarray(viewOffset, it.offset)
-    		            ]);
-    		        }
-    		        debugChanges(field) {
-    		            const rootChangeSet = (typeof (field) === "string")
-    		                ? this.root[field]
-    		                : field;
-    		            rootChangeSet.forEach((changeTree) => {
-    		                const changeSet = changeTree[field];
-    		                const metadata = changeTree.ref.constructor[Symbol.metadata];
-    		                console.log("->", { ref: changeTree.ref.constructor.name, refId: changeTree.refId, changes: Object.keys(changeSet).length });
-    		                for (const index in changeSet) {
-    		                    const op = changeSet[index];
-    		                    console.log("  ->", {
-    		                        index,
-    		                        field: metadata?.[index],
-    		                        op: exports.OPERATION[op],
-    		                    });
-    		                }
-    		            });
+    		            return concatBytes(bytes.subarray(0, sharedOffset), bytes.subarray(viewOffset, it.offset));
     		        }
     		        encodeView(view, sharedOffset, it, bytes = this.sharedBuffer) {
     		            const viewOffset = it.offset;
@@ -4138,12 +4570,12 @@
     		                const encoder = ctor[$encoder];
     		                const metadata = ctor[Symbol.metadata];
     		                bytes[it.offset++] = SWITCH_TO_STRUCTURE & 255;
-    		                encode.number(bytes, changeTree.refId, it);
+    		                encode.number(bytes, ref[$refId], it);
     		                for (let i = 0, numChanges = keys.length; i < numChanges; i++) {
     		                    const index = Number(keys[i]);
     		                    // workaround when using view.add() on item that has been deleted from state (see test "adding to view item that has been removed from state")
     		                    const value = changeTree.ref[$getByIndex](index);
-    		                    const operation = (value !== undefined && changes[index]) || exports.OPERATION.DELETE;
+    		                    const operation = (value !== undefined && changes[index]) || exports$1.OPERATION.DELETE;
     		                    // isEncodeAll = false
     		                    // hasView = true
     		                    encoder(this, bytes, changeTree, index, operation, it, false, true, metadata);
@@ -4157,28 +4589,23 @@
     		            view.changes.clear();
     		            // try to encode "filtered" changes
     		            this.encode(it, view, bytes, "filteredChanges", false, viewOffset);
-    		            return Buffer.concat([
-    		                bytes.subarray(0, sharedOffset),
-    		                bytes.subarray(viewOffset, it.offset)
-    		            ]);
+    		            return concatBytes(bytes.subarray(0, sharedOffset), bytes.subarray(viewOffset, it.offset));
     		        }
     		        discardChanges() {
     		            // discard shared changes
-    		            let length = this.root.changes.length;
-    		            if (length > 0) {
-    		                while (length--) {
-    		                    this.root.changes[length]?.endEncode('changes');
-    		                }
-    		                this.root.changes.length = 0;
+    		            let current = this.root.changes.next;
+    		            while (current) {
+    		                current.changeTree.endEncode('changes');
+    		                current = current.next;
     		            }
+    		            this.root.changes = createChangeTreeList();
     		            // discard filtered changes
-    		            length = this.root.filteredChanges.length;
-    		            if (length > 0) {
-    		                while (length--) {
-    		                    this.root.filteredChanges[length]?.endEncode('filteredChanges');
-    		                }
-    		                this.root.filteredChanges.length = 0;
+    		            current = this.root.filteredChanges.next;
+    		            while (current) {
+    		                current.changeTree.endEncode('filteredChanges');
+    		                current = current.next;
     		            }
+    		            this.root.filteredChanges = createChangeTreeList();
     		        }
     		        tryEncodeTypeId(bytes, baseType, targetType, it) {
     		            const baseTypeId = this.context.getTypeId(baseType);
@@ -4193,8 +4620,8 @@
     		            }
     		        }
     		        get hasChanges() {
-    		            return (this.root.changes.length > 0 ||
-    		                this.root.filteredChanges.length > 0);
+    		            return (this.root.changes.next !== undefined ||
+    		                this.root.filteredChanges.next !== undefined);
     		        }
     		    }
 
@@ -4218,27 +4645,24 @@
     		        }
     		    }
     		    class ReferenceTracker {
-    		        constructor() {
-    		            //
-    		            // Relation of refId => Schema structure
-    		            // For direct access of structures during decoding time.
-    		            //
-    		            this.refs = new Map();
-    		            this.refIds = new WeakMap();
-    		            this.refCounts = {};
-    		            this.deletedRefs = new Set();
-    		            this.callbacks = {};
-    		            this.nextUniqueId = 0;
-    		        }
+    		        //
+    		        // Relation of refId => Schema structure
+    		        // For direct access of structures during decoding time.
+    		        //
+    		        refs = new Map();
+    		        refCount = {};
+    		        deletedRefs = new Set();
+    		        callbacks = {};
+    		        nextUniqueId = 0;
     		        getNextUniqueId() {
     		            return this.nextUniqueId++;
     		        }
     		        // for decoding
     		        addRef(refId, ref, incrementCount = true) {
     		            this.refs.set(refId, ref);
-    		            this.refIds.set(ref, refId);
+    		            ref[$refId] = refId;
     		            if (incrementCount) {
-    		                this.refCounts[refId] = (this.refCounts[refId] || 0) + 1;
+    		                this.refCount[refId] = (this.refCount[refId] || 0) + 1;
     		            }
     		            if (this.deletedRefs.has(refId)) {
     		                this.deletedRefs.delete(refId);
@@ -4246,7 +4670,7 @@
     		        }
     		        // for decoding
     		        removeRef(refId) {
-    		            const refCount = this.refCounts[refId];
+    		            const refCount = this.refCount[refId];
     		            if (refCount === undefined) {
     		                try {
     		                    throw new DecodingWarning("trying to remove refId that doesn't exist: " + refId);
@@ -4266,7 +4690,7 @@
     		                }
     		                return;
     		            }
-    		            if ((this.refCounts[refId] = refCount - 1) <= 0) {
+    		            if ((this.refCount[refId] = refCount - 1) <= 0) {
     		                this.deletedRefs.add(refId);
     		            }
     		        }
@@ -4274,7 +4698,7 @@
     		            this.refs.clear();
     		            this.deletedRefs.clear();
     		            this.callbacks = {};
-    		            this.refCounts = {};
+    		            this.refCount = {};
     		        }
     		        // for decoding
     		        garbageCollectDeletedRefs() {
@@ -4282,7 +4706,7 @@
     		                //
     		                // Skip active references.
     		                //
-    		                if (this.refCounts[refId] > 0) {
+    		                if (this.refCount[refId] > 0) {
     		                    return;
     		                }
     		                const ref = this.refs.get(refId);
@@ -4293,9 +4717,12 @@
     		                    const metadata = ref.constructor[Symbol.metadata];
     		                    for (const index in metadata) {
     		                        const field = metadata[index].name;
-    		                        const childRefId = typeof (ref[field]) === "object" && this.refIds.get(ref[field]);
-    		                        if (childRefId && !this.deletedRefs.has(childRefId)) {
-    		                            this.removeRef(childRefId);
+    		                        const child = ref[field];
+    		                        if (typeof (child) === "object" && child) {
+    		                            const childRefId = child[$refId];
+    		                            if (childRefId !== undefined && !this.deletedRefs.has(childRefId)) {
+    		                                this.removeRef(childRefId);
+    		                            }
     		                        }
     		                    }
     		                }
@@ -4303,15 +4730,15 @@
     		                    if (typeof (ref[$childType]) === "function") {
     		                        Array.from(ref.values())
     		                            .forEach((child) => {
-    		                            const childRefId = this.refIds.get(child);
-    		                            if (!this.deletedRefs.has(childRefId)) {
+    		                            const childRefId = child[$refId];
+    		                            if (childRefId !== undefined && !this.deletedRefs.has(childRefId)) {
     		                                this.removeRef(childRefId);
     		                            }
     		                        });
     		                    }
     		                }
     		                this.refs.delete(refId); // remove ref
-    		                delete this.refCounts[refId]; // remove ref count
+    		                delete this.refCount[refId]; // remove ref count
     		                delete this.callbacks[refId]; // remove callbacks
     		            });
     		            // clear deleted refs.
@@ -4320,7 +4747,7 @@
     		        addCallback(refId, fieldOrOperation, callback) {
     		            if (refId === undefined) {
     		                const name = (typeof (fieldOrOperation) === "number")
-    		                    ? exports.OPERATION[fieldOrOperation]
+    		                    ? exports$1.OPERATION[fieldOrOperation]
     		                    : fieldOrOperation;
     		                throw new Error(`Can't addCallback on '${name}' (refId is undefined)`);
     		            }
@@ -4335,15 +4762,19 @@
     		        }
     		        removeCallback(refId, field, callback) {
     		            const index = this.callbacks?.[refId]?.[field]?.indexOf(callback);
-    		            if (index !== -1) {
+    		            if (index !== undefined && index !== -1) {
     		                spliceOne(this.callbacks[refId][field], index);
     		            }
     		        }
     		    }
 
     		    class Decoder {
+    		        context;
+    		        state;
+    		        root;
+    		        currentRefId = 0;
+    		        triggerChanges;
     		        constructor(root, context) {
-    		            this.currentRefId = 0;
     		            this.setState(root);
     		            this.context = context || new TypeContext(root.constructor);
     		            // console.log(">>>>>>>>>>>>>>>> Decoder types");
@@ -4368,36 +4799,29 @@
     		                //
     		                if (bytes[it.offset] == SWITCH_TO_STRUCTURE) {
     		                    it.offset++;
-    		                    this.currentRefId = decode.number(bytes, it);
-    		                    const nextRef = $root.refs.get(this.currentRefId);
+    		                    ref[$onDecodeEnd]?.();
+    		                    const nextRefId = decode.number(bytes, it);
+    		                    const nextRef = $root.refs.get(nextRefId);
     		                    //
     		                    // Trying to access a reference that haven't been decoded yet.
     		                    //
     		                    if (!nextRef) {
-    		                        throw new Error(`"refId" not found: ${this.currentRefId}`);
+    		                        // throw new Error(`"refId" not found: ${nextRefId}`);
+    		                        console.error(`"refId" not found: ${nextRefId}`, { previousRef: ref, previousRefId: this.currentRefId });
+    		                        console.warn("Please report this issue to the developers.");
+    		                        this.skipCurrentStructure(bytes, it, totalBytes);
     		                    }
-    		                    ref[$onDecodeEnd]?.();
-    		                    ref = nextRef;
-    		                    decoder = ref.constructor[$decoder];
+    		                    else {
+    		                        ref = nextRef;
+    		                        decoder = ref.constructor[$decoder];
+    		                        this.currentRefId = nextRefId;
+    		                    }
     		                    continue;
     		                }
     		                const result = decoder(this, bytes, it, ref, allChanges);
     		                if (result === DEFINITION_MISMATCH) {
     		                    console.warn("@colyseus/schema: definition mismatch");
-    		                    //
-    		                    // keep skipping next bytes until reaches a known structure
-    		                    // by local decoder.
-    		                    //
-    		                    const nextIterator = { offset: it.offset };
-    		                    while (it.offset < totalBytes) {
-    		                        if (bytes[it.offset] === SWITCH_TO_STRUCTURE) {
-    		                            nextIterator.offset = it.offset + 1;
-    		                            if ($root.refs.has(decode.number(bytes, nextIterator))) {
-    		                                break;
-    		                            }
-    		                        }
-    		                        it.offset++;
-    		                    }
+    		                    this.skipCurrentStructure(bytes, it, totalBytes);
     		                    continue;
     		                }
     		            }
@@ -4409,6 +4833,22 @@
     		            $root.garbageCollectDeletedRefs();
     		            return allChanges;
     		        }
+    		        skipCurrentStructure(bytes, it, totalBytes) {
+    		            //
+    		            // keep skipping next bytes until reaches a known structure
+    		            // by local decoder.
+    		            //
+    		            const nextIterator = { offset: it.offset };
+    		            while (it.offset < totalBytes) {
+    		                if (bytes[it.offset] === SWITCH_TO_STRUCTURE) {
+    		                    nextIterator.offset = it.offset + 1;
+    		                    if (this.root.refs.has(decode.number(bytes, nextIterator))) {
+    		                        break;
+    		                    }
+    		                }
+    		                it.offset++;
+    		            }
+    		        }
     		        getInstanceType(bytes, it, defaultType) {
     		            let type;
     		            if (bytes[it.offset] === TYPE_ID) {
@@ -4419,26 +4859,22 @@
     		            return type || defaultType;
     		        }
     		        createInstanceOfType(type) {
-    		            // let instance: Schema = new (type as any)();
-    		            // // assign root on $changes
-    		            // instance[$changes].root = this.root[$changes].root;
-    		            // return instance;
     		            return new type();
     		        }
     		        removeChildRefs(ref, allChanges) {
     		            const needRemoveRef = typeof (ref[$childType]) !== "string";
-    		            const refId = this.root.refIds.get(ref);
+    		            const refId = ref[$refId];
     		            ref.forEach((value, key) => {
     		                allChanges.push({
     		                    ref: ref,
     		                    refId,
-    		                    op: exports.OPERATION.DELETE,
+    		                    op: exports$1.OPERATION.DELETE,
     		                    field: key,
     		                    value: undefined,
     		                    previousValue: value
     		                });
     		                if (needRemoveRef) {
-    		                    this.root.removeRef(this.root.refIds.get(value));
+    		                    this.root.removeRef(value[$refId]);
     		                }
     		            });
     		        }
@@ -4447,216 +4883,182 @@
     		    /**
     		     * Reflection
     		     */
-    		    class ReflectionField extends Schema {
-    		    }
-    		    __decorate([
-    		        type("string")
-    		    ], ReflectionField.prototype, "name", void 0);
-    		    __decorate([
-    		        type("string")
-    		    ], ReflectionField.prototype, "type", void 0);
-    		    __decorate([
-    		        type("number")
-    		    ], ReflectionField.prototype, "referencedType", void 0);
-    		    class ReflectionType extends Schema {
-    		        constructor() {
-    		            super(...arguments);
-    		            this.fields = new ArraySchema();
+    		    const ReflectionField = schema({
+    		        name: "string",
+    		        type: "string",
+    		        referencedType: "number",
+    		    });
+    		    const ReflectionType = schema({
+    		        id: "number",
+    		        extendsId: "number",
+    		        fields: [ReflectionField],
+    		    });
+    		    const Reflection = schema({
+    		        types: [ReflectionType],
+    		        rootType: "number",
+    		    });
+    		    Reflection.encode = function (encoder, it = { offset: 0 }) {
+    		        const context = encoder.context;
+    		        const reflection = new Reflection();
+    		        const reflectionEncoder = new Encoder(reflection);
+    		        // rootType is usually the first schema passed to the Encoder
+    		        // (unless it inherits from another schema)
+    		        const rootType = context.schemas.get(encoder.state.constructor);
+    		        if (rootType > 0) {
+    		            reflection.rootType = rootType;
     		        }
-    		    }
-    		    __decorate([
-    		        type("number")
-    		    ], ReflectionType.prototype, "id", void 0);
-    		    __decorate([
-    		        type("number")
-    		    ], ReflectionType.prototype, "extendsId", void 0);
-    		    __decorate([
-    		        type([ReflectionField])
-    		    ], ReflectionType.prototype, "fields", void 0);
-    		    class Reflection extends Schema {
-    		        constructor() {
-    		            super(...arguments);
-    		            this.types = new ArraySchema();
-    		        }
-    		        /**
-    		         * Encodes the TypeContext of an Encoder into a buffer.
-    		         *
-    		         * @param encoder Encoder instance
-    		         * @param it
-    		         * @returns
-    		         */
-    		        static encode(encoder, it = { offset: 0 }) {
-    		            const context = encoder.context;
-    		            const reflection = new Reflection();
-    		            const reflectionEncoder = new Encoder(reflection);
-    		            // rootType is usually the first schema passed to the Encoder
-    		            // (unless it inherits from another schema)
-    		            const rootType = context.schemas.get(encoder.state.constructor);
-    		            if (rootType > 0) {
-    		                reflection.rootType = rootType;
+    		        const includedTypeIds = new Set();
+    		        const pendingReflectionTypes = {};
+    		        // add type to reflection in a way that respects inheritance
+    		        // (parent types should be added before their children)
+    		        const addType = (type) => {
+    		            if (type.extendsId === undefined || includedTypeIds.has(type.extendsId)) {
+    		                includedTypeIds.add(type.id);
+    		                reflection.types.push(type);
+    		                const deps = pendingReflectionTypes[type.id];
+    		                if (deps !== undefined) {
+    		                    delete pendingReflectionTypes[type.id];
+    		                    deps.forEach((childType) => addType(childType));
+    		                }
     		            }
-    		            const includedTypeIds = new Set();
-    		            const pendingReflectionTypes = {};
-    		            // add type to reflection in a way that respects inheritance
-    		            // (parent types should be added before their children)
-    		            const addType = (type) => {
-    		                if (type.extendsId === undefined || includedTypeIds.has(type.extendsId)) {
-    		                    includedTypeIds.add(type.id);
-    		                    reflection.types.push(type);
-    		                    const deps = pendingReflectionTypes[type.id];
-    		                    if (deps !== undefined) {
-    		                        delete pendingReflectionTypes[type.id];
-    		                        deps.forEach((childType) => addType(childType));
+    		            else {
+    		                if (pendingReflectionTypes[type.extendsId] === undefined) {
+    		                    pendingReflectionTypes[type.extendsId] = [];
+    		                }
+    		                pendingReflectionTypes[type.extendsId].push(type);
+    		            }
+    		        };
+    		        context.schemas.forEach((typeid, klass) => {
+    		            const type = new ReflectionType();
+    		            type.id = Number(typeid);
+    		            // support inheritance
+    		            const inheritFrom = Object.getPrototypeOf(klass);
+    		            if (inheritFrom !== Schema) {
+    		                type.extendsId = context.schemas.get(inheritFrom);
+    		            }
+    		            const metadata = klass[Symbol.metadata];
+    		            //
+    		            // FIXME: this is a workaround for inherited types without additional fields
+    		            // if metadata is the same reference as the parent class - it means the class has no own metadata
+    		            //
+    		            if (metadata !== inheritFrom[Symbol.metadata]) {
+    		                for (const fieldIndex in metadata) {
+    		                    const index = Number(fieldIndex);
+    		                    const fieldName = metadata[index].name;
+    		                    // skip fields from parent classes
+    		                    if (!Object.prototype.hasOwnProperty.call(metadata, fieldName)) {
+    		                        continue;
+    		                    }
+    		                    const reflectionField = new ReflectionField();
+    		                    reflectionField.name = fieldName;
+    		                    let fieldType;
+    		                    const field = metadata[index];
+    		                    if (typeof (field.type) === "string") {
+    		                        fieldType = field.type;
+    		                    }
+    		                    else {
+    		                        let childTypeSchema;
+    		                        //
+    		                        // TODO: refactor below.
+    		                        //
+    		                        if (Schema.is(field.type)) {
+    		                            fieldType = "ref";
+    		                            childTypeSchema = field.type;
+    		                        }
+    		                        else {
+    		                            fieldType = Object.keys(field.type)[0];
+    		                            if (typeof (field.type[fieldType]) === "string") {
+    		                                fieldType += ":" + field.type[fieldType]; // array:string
+    		                            }
+    		                            else {
+    		                                childTypeSchema = field.type[fieldType];
+    		                            }
+    		                        }
+    		                        reflectionField.referencedType = (childTypeSchema)
+    		                            ? context.getTypeId(childTypeSchema)
+    		                            : -1;
+    		                    }
+    		                    reflectionField.type = fieldType;
+    		                    type.fields.push(reflectionField);
+    		                }
+    		            }
+    		            addType(type);
+    		        });
+    		        // in case there are types that were not added due to inheritance
+    		        for (const typeid in pendingReflectionTypes) {
+    		            pendingReflectionTypes[typeid].forEach((type) => reflection.types.push(type));
+    		        }
+    		        const buf = reflectionEncoder.encodeAll(it);
+    		        return buf.slice(0, it.offset);
+    		    };
+    		    Reflection.decode = function (bytes, it) {
+    		        const reflection = new Reflection();
+    		        const reflectionDecoder = new Decoder(reflection);
+    		        reflectionDecoder.decode(bytes, it);
+    		        const typeContext = new TypeContext();
+    		        // 1st pass, initialize metadata + inheritance
+    		        reflection.types.forEach((reflectionType) => {
+    		            const parentClass = typeContext.get(reflectionType.extendsId) ?? Schema;
+    		            const schema = class _ extends parentClass {
+    		            };
+    		            // register for inheritance support
+    		            TypeContext.register(schema);
+    		            typeContext.add(schema, reflectionType.id);
+    		        }, {});
+    		        // define fields
+    		        const addFields = (metadata, reflectionType, parentFieldIndex) => {
+    		            reflectionType.fields.forEach((field, i) => {
+    		                const fieldIndex = parentFieldIndex + i;
+    		                if (field.referencedType !== undefined) {
+    		                    let fieldType = field.type;
+    		                    let refType = typeContext.get(field.referencedType);
+    		                    // map or array of primitive type (-1)
+    		                    if (!refType) {
+    		                        const typeInfo = field.type.split(":");
+    		                        fieldType = typeInfo[0];
+    		                        refType = typeInfo[1]; // string
+    		                    }
+    		                    if (fieldType === "ref") {
+    		                        Metadata.addField(metadata, fieldIndex, field.name, refType);
+    		                    }
+    		                    else {
+    		                        Metadata.addField(metadata, fieldIndex, field.name, { [fieldType]: refType });
     		                    }
     		                }
     		                else {
-    		                    if (pendingReflectionTypes[type.extendsId] === undefined) {
-    		                        pendingReflectionTypes[type.extendsId] = [];
-    		                    }
-    		                    pendingReflectionTypes[type.extendsId].push(type);
+    		                    Metadata.addField(metadata, fieldIndex, field.name, field.type);
     		                }
-    		            };
-    		            context.schemas.forEach((typeid, klass) => {
-    		                const type = new ReflectionType();
-    		                type.id = Number(typeid);
-    		                // support inheritance
-    		                const inheritFrom = Object.getPrototypeOf(klass);
-    		                if (inheritFrom !== Schema) {
-    		                    type.extendsId = context.schemas.get(inheritFrom);
-    		                }
-    		                const metadata = klass[Symbol.metadata];
-    		                //
-    		                // FIXME: this is a workaround for inherited types without additional fields
-    		                // if metadata is the same reference as the parent class - it means the class has no own metadata
-    		                //
-    		                if (metadata !== inheritFrom[Symbol.metadata]) {
-    		                    for (const fieldIndex in metadata) {
-    		                        const index = Number(fieldIndex);
-    		                        const fieldName = metadata[index].name;
-    		                        // skip fields from parent classes
-    		                        if (!Object.prototype.hasOwnProperty.call(metadata, fieldName)) {
-    		                            continue;
-    		                        }
-    		                        const reflectionField = new ReflectionField();
-    		                        reflectionField.name = fieldName;
-    		                        let fieldType;
-    		                        const field = metadata[index];
-    		                        if (typeof (field.type) === "string") {
-    		                            fieldType = field.type;
-    		                        }
-    		                        else {
-    		                            let childTypeSchema;
-    		                            //
-    		                            // TODO: refactor below.
-    		                            //
-    		                            if (Schema.is(field.type)) {
-    		                                fieldType = "ref";
-    		                                childTypeSchema = field.type;
-    		                            }
-    		                            else {
-    		                                fieldType = Object.keys(field.type)[0];
-    		                                if (typeof (field.type[fieldType]) === "string") {
-    		                                    fieldType += ":" + field.type[fieldType]; // array:string
-    		                                }
-    		                                else {
-    		                                    childTypeSchema = field.type[fieldType];
-    		                                }
-    		                            }
-    		                            reflectionField.referencedType = (childTypeSchema)
-    		                                ? context.getTypeId(childTypeSchema)
-    		                                : -1;
-    		                        }
-    		                        reflectionField.type = fieldType;
-    		                        type.fields.push(reflectionField);
-    		                    }
-    		                }
-    		                addType(type);
     		            });
-    		            // in case there are types that were not added due to inheritance
-    		            for (const typeid in pendingReflectionTypes) {
-    		                pendingReflectionTypes[typeid].forEach((type) => reflection.types.push(type));
-    		            }
-    		            const buf = reflectionEncoder.encodeAll(it);
-    		            return Buffer.from(buf, 0, it.offset);
-    		        }
-    		        /**
-    		         * Decodes the TypeContext from a buffer into a Decoder instance.
-    		         *
-    		         * @param bytes Reflection.encode() output
-    		         * @param it
-    		         * @returns Decoder instance
-    		         */
-    		        static decode(bytes, it) {
-    		            const reflection = new Reflection();
-    		            const reflectionDecoder = new Decoder(reflection);
-    		            reflectionDecoder.decode(bytes, it);
-    		            const typeContext = new TypeContext();
-    		            // 1st pass, initialize metadata + inheritance
-    		            reflection.types.forEach((reflectionType) => {
-    		                const parentClass = typeContext.get(reflectionType.extendsId) ?? Schema;
-    		                const schema = class _ extends parentClass {
-    		                };
-    		                // register for inheritance support
-    		                TypeContext.register(schema);
-    		                // // for inheritance support
-    		                // Metadata.initialize(schema);
-    		                typeContext.add(schema, reflectionType.id);
-    		            }, {});
-    		            // define fields
-    		            const addFields = (metadata, reflectionType, parentFieldIndex) => {
-    		                reflectionType.fields.forEach((field, i) => {
-    		                    const fieldIndex = parentFieldIndex + i;
-    		                    if (field.referencedType !== undefined) {
-    		                        let fieldType = field.type;
-    		                        let refType = typeContext.get(field.referencedType);
-    		                        // map or array of primitive type (-1)
-    		                        if (!refType) {
-    		                            const typeInfo = field.type.split(":");
-    		                            fieldType = typeInfo[0];
-    		                            refType = typeInfo[1]; // string
-    		                        }
-    		                        if (fieldType === "ref") {
-    		                            Metadata.addField(metadata, fieldIndex, field.name, refType);
-    		                        }
-    		                        else {
-    		                            Metadata.addField(metadata, fieldIndex, field.name, { [fieldType]: refType });
-    		                        }
-    		                    }
-    		                    else {
-    		                        Metadata.addField(metadata, fieldIndex, field.name, field.type);
-    		                    }
-    		                });
-    		            };
-    		            // 2nd pass, set fields
-    		            reflection.types.forEach((reflectionType) => {
-    		                const schema = typeContext.get(reflectionType.id);
-    		                // for inheritance support
-    		                const metadata = Metadata.initialize(schema);
-    		                const inheritedTypes = [];
-    		                let parentType = reflectionType;
-    		                do {
-    		                    inheritedTypes.push(parentType);
-    		                    parentType = reflection.types.find((t) => t.id === parentType.extendsId);
-    		                } while (parentType);
-    		                let parentFieldIndex = 0;
-    		                inheritedTypes.reverse().forEach((reflectionType) => {
-    		                    // add fields from all inherited classes
-    		                    // TODO: refactor this to avoid adding fields from parent classes
-    		                    addFields(metadata, reflectionType, parentFieldIndex);
-    		                    parentFieldIndex += reflectionType.fields.length;
-    		                });
+    		        };
+    		        // 2nd pass, set fields
+    		        reflection.types.forEach((reflectionType) => {
+    		            const schema = typeContext.get(reflectionType.id);
+    		            // for inheritance support
+    		            const metadata = Metadata.initialize(schema);
+    		            const inheritedTypes = [];
+    		            let parentType = reflectionType;
+    		            do {
+    		                inheritedTypes.push(parentType);
+    		                parentType = reflection.types.find((t) => t.id === parentType.extendsId);
+    		            } while (parentType);
+    		            let parentFieldIndex = 0;
+    		            inheritedTypes.reverse().forEach((reflectionType) => {
+    		                // add fields from all inherited classes
+    		                // TODO: refactor this to avoid adding fields from parent classes
+    		                addFields(metadata, reflectionType, parentFieldIndex);
+    		                parentFieldIndex += reflectionType.fields.length;
     		            });
-    		            const state = new (typeContext.get(reflection.rootType || 0))();
-    		            return new Decoder(state, typeContext);
-    		        }
-    		    }
-    		    __decorate([
-    		        type([ReflectionType])
-    		    ], Reflection.prototype, "types", void 0);
-    		    __decorate([
-    		        type("number")
-    		    ], Reflection.prototype, "rootType", void 0);
+    		        });
+    		        const state = new (typeContext.get(reflection.rootType || 0))();
+    		        return new Decoder(state, typeContext);
+    		    };
 
+    		    /**
+    		     * Legacy callback system
+    		     *
+    		     * @param decoder
+    		     * @returns
+    		     */
     		    function getDecoderStateCallbacks(decoder) {
     		        const $root = decoder.root;
     		        const callbacks = $root.callbacks;
@@ -4675,20 +5077,20 @@
     		                //
     		                // trigger onRemove on child structure.
     		                //
-    		                if ((change.op & exports.OPERATION.DELETE) === exports.OPERATION.DELETE &&
-    		                    change.previousValue instanceof Schema) {
-    		                    const deleteCallbacks = callbacks[$root.refIds.get(change.previousValue)]?.[exports.OPERATION.DELETE];
+    		                if ((change.op & exports$1.OPERATION.DELETE) === exports$1.OPERATION.DELETE &&
+    		                    Schema.isSchema(change.previousValue)) {
+    		                    const deleteCallbacks = callbacks[change.previousValue[$refId]]?.[exports$1.OPERATION.DELETE];
     		                    for (let i = deleteCallbacks?.length - 1; i >= 0; i--) {
     		                        deleteCallbacks[i]();
     		                    }
     		                }
-    		                if (ref instanceof Schema) {
+    		                if (Schema.isSchema(ref)) {
     		                    //
     		                    // Handle schema instance
     		                    //
     		                    if (!uniqueRefIds.has(refId)) {
     		                        // trigger onChange
-    		                        const replaceCallbacks = $callbacks?.[exports.OPERATION.REPLACE];
+    		                        const replaceCallbacks = $callbacks?.[exports$1.OPERATION.REPLACE];
     		                        for (let i = replaceCallbacks?.length - 1; i >= 0; i--) {
     		                            replaceCallbacks[i]();
     		                            // try {
@@ -4712,29 +5114,29 @@
     		                    //
     		                    // Handle collection of items
     		                    //
-    		                    if ((change.op & exports.OPERATION.DELETE) === exports.OPERATION.DELETE) {
+    		                    if ((change.op & exports$1.OPERATION.DELETE) === exports$1.OPERATION.DELETE) {
     		                        //
     		                        // FIXME: `previousValue` should always be available.
     		                        //
     		                        if (change.previousValue !== undefined) {
     		                            // triger onRemove
-    		                            const deleteCallbacks = $callbacks[exports.OPERATION.DELETE];
+    		                            const deleteCallbacks = $callbacks[exports$1.OPERATION.DELETE];
     		                            for (let i = deleteCallbacks?.length - 1; i >= 0; i--) {
     		                                deleteCallbacks[i](change.previousValue, change.dynamicIndex ?? change.field);
     		                            }
     		                        }
     		                        // Handle DELETE_AND_ADD operations
-    		                        if ((change.op & exports.OPERATION.ADD) === exports.OPERATION.ADD) {
-    		                            const addCallbacks = $callbacks[exports.OPERATION.ADD];
+    		                        if ((change.op & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD) {
+    		                            const addCallbacks = $callbacks[exports$1.OPERATION.ADD];
     		                            for (let i = addCallbacks?.length - 1; i >= 0; i--) {
     		                                addCallbacks[i](change.value, change.dynamicIndex ?? change.field);
     		                            }
     		                        }
     		                    }
-    		                    else if ((change.op & exports.OPERATION.ADD) === exports.OPERATION.ADD &&
+    		                    else if ((change.op & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD &&
     		                        change.previousValue !== change.value) {
     		                        // triger onAdd
-    		                        const addCallbacks = $callbacks[exports.OPERATION.ADD];
+    		                        const addCallbacks = $callbacks[exports$1.OPERATION.ADD];
     		                        for (let i = addCallbacks?.length - 1; i >= 0; i--) {
     		                            addCallbacks[i](change.value, change.dynamicIndex ?? change.field);
     		                        }
@@ -4744,7 +5146,7 @@
     		                        // FIXME: see "should not encode item if added and removed at the same patch" test case.
     		                        // some "ADD" + "DELETE" operations on same patch are being encoded as "DELETE"
     		                        (change.value !== undefined || change.previousValue !== undefined)) {
-    		                        const replaceCallbacks = $callbacks[exports.OPERATION.REPLACE];
+    		                        const replaceCallbacks = $callbacks[exports$1.OPERATION.REPLACE];
     		                        for (let i = replaceCallbacks?.length - 1; i >= 0; i--) {
     		                            replaceCallbacks[i](change.value, change.dynamicIndex ?? change.field);
     		                        }
@@ -4766,7 +5168,7 @@
     		                    ) {
     		                        callback(context.instance[prop], undefined);
     		                    }
-    		                    return $root.addCallback($root.refIds.get(ref), prop, callback);
+    		                    return $root.addCallback(ref[$refId], prop, callback);
     		                };
     		                /**
     		                 * Schema instances
@@ -4786,7 +5188,7 @@
     		                        }
     		                    },
     		                    onChange: function onChange(callback) {
-    		                        return $root.addCallback($root.refIds.get(context.instance), exports.OPERATION.REPLACE, callback);
+    		                        return $root.addCallback(context.instance[$refId], exports$1.OPERATION.REPLACE, callback);
     		                    },
     		                    //
     		                    // TODO: refactor `bindTo()` implementation.
@@ -4796,7 +5198,7 @@
     		                        if (!properties) {
     		                            properties = Object.keys(metadata).map((index) => metadata[index].name);
     		                        }
-    		                        return $root.addCallback($root.refIds.get(context.instance), exports.OPERATION.REPLACE, () => {
+    		                        return $root.addCallback(context.instance[$refId], exports$1.OPERATION.REPLACE, () => {
     		                            properties.forEach((prop) => targetObject[prop] = context.instance[prop]);
     		                        });
     		                    }
@@ -4815,13 +5217,13 @@
     		                                    unbind?.();
     		                                }, false);
     		                                // has existing value
-    		                                if ($root.refIds.get(instance) !== undefined) {
+    		                                if (instance?.[$refId] !== undefined) {
     		                                    callback(instance, true);
     		                                }
     		                            });
     		                            return getProxy(metadataField.type, {
     		                                // make sure refId is available, otherwise need to wait for the instance to be available.
-    		                                instance: ($root.refIds.get(instance) && instance),
+    		                                instance: (instance?.[$refId] !== undefined && instance),
     		                                parentInstance: context.instance,
     		                                onInstanceAvailable,
     		                            });
@@ -4845,7 +5247,7 @@
     		                    if (immediate) {
     		                        ref.forEach((v, k) => callback(v, k));
     		                    }
-    		                    return $root.addCallback($root.refIds.get(ref), exports.OPERATION.ADD, (value, key) => {
+    		                    return $root.addCallback(ref[$refId], exports$1.OPERATION.ADD, (value, key) => {
     		                        onAddCalls.set(callback, true);
     		                        currentOnAddCallback = callback;
     		                        callback(value, key);
@@ -4854,10 +5256,10 @@
     		                    });
     		                };
     		                const onRemove = function (ref, callback) {
-    		                    return $root.addCallback($root.refIds.get(ref), exports.OPERATION.DELETE, callback);
+    		                    return $root.addCallback(ref[$refId], exports$1.OPERATION.DELETE, callback);
     		                };
     		                const onChange = function (ref, callback) {
-    		                    return $root.addCallback($root.refIds.get(ref), exports.OPERATION.REPLACE, callback);
+    		                    return $root.addCallback(ref[$refId], exports$1.OPERATION.REPLACE, callback);
     		                };
     		                return new Proxy({
     		                    onAdd: function (callback, immediate = true) {
@@ -4926,22 +5328,334 @@
     		        decoder.triggerChanges = callback;
     		    }
 
+    		    class StateCallbackStrategy {
+    		        decoder;
+    		        uniqueRefIds = new Set();
+    		        isTriggering = false;
+    		        constructor(decoder) {
+    		            this.decoder = decoder;
+    		            this.decoder.triggerChanges = this.triggerChanges.bind(this);
+    		        }
+    		        get callbacks() {
+    		            return this.decoder.root.callbacks;
+    		        }
+    		        get state() {
+    		            return this.decoder.state;
+    		        }
+    		        addCallback(refId, operationOrProperty, handler) {
+    		            const $root = this.decoder.root;
+    		            return $root.addCallback(refId, operationOrProperty, handler);
+    		        }
+    		        addCallbackOrWaitCollectionAvailable(instance, propertyName, operation, handler, immediate = true) {
+    		            let removeHandler = () => { };
+    		            const removeOnAdd = () => removeHandler();
+    		            const collection = instance[propertyName];
+    		            // Collection not available yet. Listen for its availability before attaching the handler.
+    		            if (!collection || collection[$refId] === undefined) {
+    		                removeHandler = this.addCallback(instance[$refId], propertyName, (value, _) => {
+    		                    if (value !== null && value !== undefined) {
+    		                        removeHandler = this.addCallback(value[$refId], operation, handler);
+    		                    }
+    		                });
+    		                return removeOnAdd;
+    		            }
+    		            else {
+    		                //
+    		                // Call immediately if collection is already available, if it's an ADD operation.
+    		                //
+    		                immediate = immediate && this.isTriggering === false;
+    		                if (operation === exports$1.OPERATION.ADD && immediate) {
+    		                    collection.forEach((value, key) => {
+    		                        handler(value, key);
+    		                    });
+    		                }
+    		                return this.addCallback(collection[$refId], operation, handler);
+    		            }
+    		        }
+    		        listen(...args) {
+    		            if (typeof args[0] === 'string') {
+    		                // listen(property, handler, immediate?)
+    		                return this.listenInstance(this.state, args[0], args[1], args[2]);
+    		            }
+    		            else {
+    		                // listen(instance, property, handler, immediate?)
+    		                return this.listenInstance(args[0], args[1], args[2], args[3]);
+    		            }
+    		        }
+    		        listenInstance(instance, propertyName, handler, immediate = true) {
+    		            immediate = immediate && this.isTriggering === false;
+    		            //
+    		            // Call handler immediately if property is already available.
+    		            //
+    		            const currentValue = instance[propertyName];
+    		            if (immediate && currentValue !== null && currentValue !== undefined) {
+    		                handler(currentValue, undefined);
+    		            }
+    		            return this.addCallback(instance[$refId], propertyName, handler);
+    		        }
+    		        onChange(...args) {
+    		            if (args.length === 2 && typeof args[0] !== 'string') {
+    		                // onChange(instance, handler) - instance change
+    		                const instance = args[0];
+    		                const handler = args[1];
+    		                return this.addCallback(instance[$refId], exports$1.OPERATION.REPLACE, handler);
+    		            }
+    		            if (typeof args[0] === 'string') {
+    		                // onChange(property, handler) - collection on root state
+    		                return this.addCallbackOrWaitCollectionAvailable(this.state, args[0], exports$1.OPERATION.REPLACE, args[1]);
+    		            }
+    		            else {
+    		                // onChange(instance, property, handler) - nested collection
+    		                return this.addCallbackOrWaitCollectionAvailable(args[0], args[1], exports$1.OPERATION.REPLACE, args[2]);
+    		            }
+    		        }
+    		        onAdd(...args) {
+    		            if (typeof args[0] === 'string') {
+    		                // onAdd(property, handler, immediate?) - collection on root state
+    		                return this.addCallbackOrWaitCollectionAvailable(this.state, args[0], exports$1.OPERATION.ADD, args[1], args[2] !== false);
+    		            }
+    		            else {
+    		                // onAdd(instance, property, handler, immediate?) - nested collection
+    		                return this.addCallbackOrWaitCollectionAvailable(args[0], args[1], exports$1.OPERATION.ADD, args[2], args[3] !== false);
+    		            }
+    		        }
+    		        onRemove(...args) {
+    		            if (typeof args[0] === 'string') {
+    		                // onRemove(property, handler) - collection on root state
+    		                return this.addCallbackOrWaitCollectionAvailable(this.state, args[0], exports$1.OPERATION.DELETE, args[1]);
+    		            }
+    		            else {
+    		                // onRemove(instance, property, handler) - nested collection
+    		                return this.addCallbackOrWaitCollectionAvailable(args[0], args[1], exports$1.OPERATION.DELETE, args[2]);
+    		            }
+    		        }
+    		        /**
+    		         * Bind properties from a Schema instance to a target object.
+    		         * Changes will be automatically reflected on the target object.
+    		         */
+    		        bindTo(from, to, properties, immediate = true) {
+    		            const metadata = from.constructor[Symbol.metadata];
+    		            // If no properties specified, bind all properties
+    		            if (!properties) {
+    		                properties = Object.keys(metadata)
+    		                    .filter(key => !isNaN(Number(key)))
+    		                    .map((index) => metadata[index].name);
+    		            }
+    		            const action = () => {
+    		                for (const prop of properties) {
+    		                    const fromValue = from[prop];
+    		                    if (fromValue !== undefined) {
+    		                        to[prop] = fromValue;
+    		                    }
+    		                }
+    		            };
+    		            if (immediate) {
+    		                action();
+    		            }
+    		            return this.addCallback(from[$refId], exports$1.OPERATION.REPLACE, action);
+    		        }
+    		        triggerChanges(allChanges) {
+    		            this.uniqueRefIds.clear();
+    		            for (let i = 0, l = allChanges.length; i < l; i++) {
+    		                const change = allChanges[i];
+    		                const refId = change.refId;
+    		                const ref = change.ref;
+    		                const $callbacks = this.callbacks[refId];
+    		                if (!$callbacks) {
+    		                    continue;
+    		                }
+    		                //
+    		                // trigger onRemove on child structure.
+    		                //
+    		                if ((change.op & exports$1.OPERATION.DELETE) === exports$1.OPERATION.DELETE &&
+    		                    Schema.isSchema(change.previousValue)) {
+    		                    const childRefId = change.previousValue[$refId];
+    		                    const deleteCallbacks = this.callbacks[childRefId]?.[exports$1.OPERATION.DELETE];
+    		                    if (deleteCallbacks) {
+    		                        for (let j = deleteCallbacks.length - 1; j >= 0; j--) {
+    		                            deleteCallbacks[j]();
+    		                        }
+    		                    }
+    		                }
+    		                if (Schema.isSchema(ref)) {
+    		                    //
+    		                    // Handle Schema instance
+    		                    //
+    		                    if (!this.uniqueRefIds.has(refId)) {
+    		                        // trigger onChange
+    		                        const replaceCallbacks = $callbacks[exports$1.OPERATION.REPLACE];
+    		                        if (replaceCallbacks) {
+    		                            for (let j = replaceCallbacks.length - 1; j >= 0; j--) {
+    		                                try {
+    		                                    replaceCallbacks[j]();
+    		                                }
+    		                                catch (e) {
+    		                                    console.error(e);
+    		                                }
+    		                            }
+    		                        }
+    		                    }
+    		                    // trigger field callbacks
+    		                    const fieldCallbacks = $callbacks[change.field];
+    		                    if (fieldCallbacks) {
+    		                        for (let j = fieldCallbacks.length - 1; j >= 0; j--) {
+    		                            try {
+    		                                this.isTriggering = true;
+    		                                fieldCallbacks[j](change.value, change.previousValue);
+    		                            }
+    		                            catch (e) {
+    		                                console.error(e);
+    		                            }
+    		                            finally {
+    		                                this.isTriggering = false;
+    		                            }
+    		                        }
+    		                    }
+    		                }
+    		                else {
+    		                    //
+    		                    // Handle collection of items
+    		                    //
+    		                    const dynamicIndex = change.dynamicIndex ?? change.field;
+    		                    if ((change.op & exports$1.OPERATION.DELETE) === exports$1.OPERATION.DELETE) {
+    		                        //
+    		                        // FIXME: `previousValue` should always be available.
+    		                        //
+    		                        if (change.previousValue !== undefined) {
+    		                            // trigger onRemove (value, key)
+    		                            const deleteCallbacks = $callbacks[exports$1.OPERATION.DELETE];
+    		                            if (deleteCallbacks) {
+    		                                for (let j = deleteCallbacks.length - 1; j >= 0; j--) {
+    		                                    deleteCallbacks[j](change.previousValue, dynamicIndex);
+    		                                }
+    		                            }
+    		                        }
+    		                        // Handle DELETE_AND_ADD operation
+    		                        if ((change.op & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD) {
+    		                            const addCallbacks = $callbacks[exports$1.OPERATION.ADD];
+    		                            if (addCallbacks) {
+    		                                this.isTriggering = true;
+    		                                for (let j = addCallbacks.length - 1; j >= 0; j--) {
+    		                                    addCallbacks[j](change.value, dynamicIndex);
+    		                                }
+    		                                this.isTriggering = false;
+    		                            }
+    		                        }
+    		                    }
+    		                    else if ((change.op & exports$1.OPERATION.ADD) === exports$1.OPERATION.ADD &&
+    		                        change.previousValue !== change.value) {
+    		                        // trigger onAdd (value, key)
+    		                        const addCallbacks = $callbacks[exports$1.OPERATION.ADD];
+    		                        if (addCallbacks) {
+    		                            this.isTriggering = true;
+    		                            for (let j = addCallbacks.length - 1; j >= 0; j--) {
+    		                                addCallbacks[j](change.value, dynamicIndex);
+    		                            }
+    		                            this.isTriggering = false;
+    		                        }
+    		                    }
+    		                    // trigger onChange (key, value)
+    		                    if (change.value !== change.previousValue) {
+    		                        const replaceCallbacks = $callbacks[exports$1.OPERATION.REPLACE];
+    		                        if (replaceCallbacks) {
+    		                            for (let j = replaceCallbacks.length - 1; j >= 0; j--) {
+    		                                replaceCallbacks[j](dynamicIndex, change.value);
+    		                            }
+    		                        }
+    		                    }
+    		                }
+    		                this.uniqueRefIds.add(refId);
+    		            }
+    		        }
+    		    }
+    		    /**
+    		     * Factory class for retrieving the callbacks API.
+    		     */
+    		    const Callbacks = {
+    		        /**
+    		         * Get the new callbacks standard API.
+    		         *
+    		         * Usage:
+    		         * ```ts
+    		         * const callbacks = Callbacks.get(roomOrDecoder);
+    		         *
+    		         * // Listen to property changes
+    		         * callbacks.listen("currentTurn", (currentValue, previousValue) => { ... });
+    		         *
+    		         * // Listen to collection additions
+    		         * callbacks.onAdd("entities", (entity, sessionId) => {
+    		         *     // Nested property listening
+    		         *     callbacks.listen(entity, "hp", (currentHp, previousHp) => { ... });
+    		         * });
+    		         *
+    		         * // Listen to collection removals
+    		         * callbacks.onRemove("entities", (entity, sessionId) => { ... });
+    		         *
+    		         * // Listen to any property change on an instance
+    		         * callbacks.onChange(entity, () => { ... });
+    		         *
+    		         * // Bind properties to another object
+    		         * callbacks.bindTo(player, playerVisual);
+    		         * ```
+    		         *
+    		         * @param roomOrDecoder - Room or Decoder instance to get the callbacks for.
+    		         * @returns the new callbacks standard API.
+    		         */
+    		        get(roomOrDecoder) {
+    		            if (roomOrDecoder instanceof Decoder) {
+    		                return new StateCallbackStrategy(roomOrDecoder);
+    		            }
+    		            else if ('decoder' in roomOrDecoder.serializer) {
+    		                return new StateCallbackStrategy(roomOrDecoder.serializer.decoder);
+    		            }
+    		            else {
+    		                throw new Error('Invalid room or decoder');
+    		            }
+    		        },
+    		        /**
+    		         * Get the legacy callbacks API.
+    		         *
+    		         * We aim to deprecate this API on 1.0, and iterate on improving Callbacks.get() API.
+    		         *
+    		         * @param roomOrDecoder - Room or Decoder instance to get the legacy callbacks for.
+    		         * @returns the legacy callbacks API.
+    		         */
+    		        getLegacy(roomOrDecoder) {
+    		            if (roomOrDecoder instanceof Decoder) {
+    		                return getDecoderStateCallbacks(roomOrDecoder);
+    		            }
+    		            else if ('decoder' in roomOrDecoder.serializer) {
+    		                return getDecoderStateCallbacks(roomOrDecoder.serializer.decoder);
+    		            }
+    		        },
+    		        getRawChanges(decoder, callback) {
+    		            return getRawChangesCallback(decoder, callback);
+    		        }
+    		    };
+
     		    class StateView {
+    		        iterable;
+    		        /**
+    		         * Iterable list of items that are visible to this view
+    		         * (Available only if constructed with `iterable: true`)
+    		         */
+    		        items;
+    		        /**
+    		         * List of ChangeTree's that are visible to this view
+    		         */
+    		        visible = new WeakSet();
+    		        /**
+    		         * List of ChangeTree's that are invisible to this view
+    		         */
+    		        invisible = new WeakSet();
+    		        tags; // TODO: use bit manipulation instead of Set<number> ()
+    		        /**
+    		         * Manual "ADD" operations for changes per ChangeTree, specific to this view.
+    		         * (This is used to force encoding a property, even if it was not changed)
+    		         */
+    		        changes = new Map();
     		        constructor(iterable = false) {
     		            this.iterable = iterable;
-    		            /**
-    		             * List of ChangeTree's that are visible to this view
-    		             */
-    		            this.visible = new WeakSet();
-    		            /**
-    		             * List of ChangeTree's that are invisible to this view
-    		             */
-    		            this.invisible = new WeakSet();
-    		            /**
-    		             * Manual "ADD" operations for changes per ChangeTree, specific to this view.
-    		             * (This is used to force encoding a property, even if it was not changed)
-    		             */
-    		            this.changes = new Map();
     		            if (iterable) {
     		                this.items = [];
     		            }
@@ -4949,12 +5663,13 @@
     		        // TODO: allow to set multiple tags at once
     		        add(obj, tag = DEFAULT_VIEW_TAG, checkIncludeParent = true) {
     		            const changeTree = obj?.[$changes];
+    		            const parentChangeTree = changeTree.parent;
     		            if (!changeTree) {
     		                console.warn("StateView#add(), invalid object:", obj);
-    		                return this;
+    		                return false;
     		            }
-    		            else if (!changeTree.parent &&
-    		                changeTree.refId !== 0 // allow root object
+    		            else if (!parentChangeTree &&
+    		                obj[$refId] !== 0 // allow root object
     		            ) {
     		                /**
     		                 * TODO: can we avoid this?
@@ -4975,18 +5690,31 @@
     		            // add parent ChangeTree's
     		            // - if it was invisible to this view
     		            // - if it were previously filtered out
-    		            if (checkIncludeParent && changeTree.parent) {
+    		            if (checkIncludeParent && parentChangeTree) {
     		                this.addParentOf(changeTree, tag);
     		            }
-    		            //
-    		            // TODO: when adding an item of a MapSchema, the changes may not
-    		            // be set (only the parent's changes are set)
-    		            //
-    		            let changes = this.changes.get(changeTree.refId);
+    		            let changes = this.changes.get(obj[$refId]);
     		            if (changes === undefined) {
     		                changes = {};
-    		                this.changes.set(changeTree.refId, changes);
+    		                // FIXME / OPTIMIZE: do not add if no changes are needed
+    		                this.changes.set(obj[$refId], changes);
     		            }
+    		            let isChildAdded = false;
+    		            //
+    		            // Add children of this ChangeTree first.
+    		            // If successful, we must link the current ChangeTree to the child.
+    		            //
+    		            changeTree.forEachChild((change, index) => {
+    		                // Do not ADD children that don't have the same tag
+    		                if (metadata &&
+    		                    metadata[index].tag !== undefined &&
+    		                    metadata[index].tag !== tag) {
+    		                    return;
+    		                }
+    		                if (this.add(change.ref, tag, false)) {
+    		                    isChildAdded = true;
+    		                }
+    		            });
     		            // set tag
     		            if (tag !== DEFAULT_VIEW_TAG) {
     		                if (!this.tags) {
@@ -5003,44 +5731,35 @@
     		                tags.add(tag);
     		                // Ref: add tagged properties
     		                metadata?.[$fieldIndexesByViewTag]?.[tag]?.forEach((index) => {
-    		                    if (changeTree.getChange(index) !== exports.OPERATION.DELETE) {
-    		                        changes[index] = exports.OPERATION.ADD;
+    		                    if (changeTree.getChange(index) !== exports$1.OPERATION.DELETE) {
+    		                        changes[index] = exports$1.OPERATION.ADD;
     		                    }
     		                });
     		            }
-    		            else {
-    		                const isInvisible = this.invisible.has(changeTree);
+    		            else if (!changeTree.isNew || isChildAdded) {
+    		                // new structures will be added as part of .encode() call, no need to force it to .encodeView()
     		                const changeSet = (changeTree.filteredChanges !== undefined)
     		                    ? changeTree.allFilteredChanges
     		                    : changeTree.allChanges;
+    		                const isInvisible = this.invisible.has(changeTree);
     		                for (let i = 0, len = changeSet.operations.length; i < len; i++) {
     		                    const index = changeSet.operations[i];
     		                    if (index === undefined) {
     		                        continue;
     		                    } // skip "undefined" indexes
-    		                    const op = changeTree.indexedOperations[index] ?? exports.OPERATION.ADD;
+    		                    const op = changeTree.indexedOperations[index] ?? exports$1.OPERATION.ADD;
     		                    const tagAtIndex = metadata?.[index].tag;
-    		                    if (!changeTree.isNew && // new structures will be added as part of .encode() call, no need to force it to .encodeView()
+    		                    if (op !== exports$1.OPERATION.DELETE &&
     		                        (isInvisible || // if "invisible", include all
     		                            tagAtIndex === undefined || // "all change" with no tag
     		                            tagAtIndex === tag // tagged property
-    		                        ) &&
-    		                        op !== exports.OPERATION.DELETE) {
+    		                        )) {
     		                        changes[index] = op;
+    		                        isChildAdded = true; // FIXME: assign only once
     		                    }
     		                }
     		            }
-    		            // Add children of this ChangeTree to this view
-    		            changeTree.forEachChild((change, index) => {
-    		                // Do not ADD children that don't have the same tag
-    		                if (metadata &&
-    		                    metadata[index].tag !== undefined &&
-    		                    metadata[index].tag !== tag) {
-    		                    return;
-    		                }
-    		                this.add(change.ref, tag, false);
-    		            });
-    		            return this;
+    		            return isChildAdded;
     		        }
     		        addParentOf(childChangeTree, tag) {
     		            const changeTree = childChangeTree.parent[$changes];
@@ -5057,11 +5776,11 @@
     		                // if (!this.invisible.has(changeTree)) { return; }
     		            }
     		            // add parent's tag properties
-    		            if (changeTree.getChange(parentIndex) !== exports.OPERATION.DELETE) {
-    		                let changes = this.changes.get(changeTree.refId);
+    		            if (changeTree.getChange(parentIndex) !== exports$1.OPERATION.DELETE) {
+    		                let changes = this.changes.get(changeTree.ref[$refId]);
     		                if (changes === undefined) {
     		                    changes = {};
-    		                    this.changes.set(changeTree.refId, changes);
+    		                    this.changes.set(changeTree.ref[$refId], changes);
     		                }
     		                if (!this.tags) {
     		                    this.tags = new WeakMap();
@@ -5075,7 +5794,7 @@
     		                    tags = this.tags.get(changeTree);
     		                }
     		                tags.add(tag);
-    		                changes[parentIndex] = exports.OPERATION.ADD;
+    		                changes[parentIndex] = exports$1.OPERATION.ADD;
     		            }
     		        }
     		        remove(obj, tag = DEFAULT_VIEW_TAG, _isClear = false) {
@@ -5093,32 +5812,42 @@
     		            }
     		            const ref = changeTree.ref;
     		            const metadata = ref.constructor[Symbol.metadata]; // ArraySchema/MapSchema do not have metadata
-    		            let changes = this.changes.get(changeTree.refId);
+    		            const refId = ref[$refId];
+    		            let changes = this.changes.get(refId);
     		            if (changes === undefined) {
     		                changes = {};
-    		                this.changes.set(changeTree.refId, changes);
+    		                this.changes.set(refId, changes);
     		            }
     		            if (tag === DEFAULT_VIEW_TAG) {
     		                // parent is collection (Map/Array)
     		                const parent = changeTree.parent;
-    		                if (!Metadata.isValidInstance(parent)) {
-    		                    const parentChangeTree = parent[$changes];
-    		                    let changes = this.changes.get(parentChangeTree.refId);
+    		                if (parent && !Metadata.isValidInstance(parent) && changeTree.isFiltered) {
+    		                    const parentRefId = parent[$refId];
+    		                    let changes = this.changes.get(parentRefId);
     		                    if (changes === undefined) {
     		                        changes = {};
-    		                        this.changes.set(parentChangeTree.refId, changes);
+    		                        this.changes.set(parentRefId, changes);
+    		                    }
+    		                    else if (changes[changeTree.parentIndex] === exports$1.OPERATION.ADD) {
+    		                        //
+    		                        // SAME PATCH ADD + REMOVE:
+    		                        // The 'changes' of deleted structure should be ignored.
+    		                        //
+    		                        this.changes.delete(refId);
     		                    }
     		                    // DELETE / DELETE BY REF ID
-    		                    changes[changeTree.parentIndex] = exports.OPERATION.DELETE;
+    		                    changes[changeTree.parentIndex] = exports$1.OPERATION.DELETE;
+    		                    // Remove child schema from visible set
+    		                    this._recursiveDeleteVisibleChangeTree(changeTree);
     		                }
     		                else {
     		                    // delete all "tagged" properties.
-    		                    metadata?.[$viewFieldIndexes].forEach((index) => changes[index] = exports.OPERATION.DELETE);
+    		                    metadata?.[$viewFieldIndexes]?.forEach((index) => changes[index] = exports$1.OPERATION.DELETE);
     		                }
     		            }
     		            else {
     		                // delete only tagged properties
-    		                metadata?.[$fieldIndexesByViewTag][tag].forEach((index) => changes[index] = exports.OPERATION.DELETE);
+    		                metadata?.[$fieldIndexesByViewTag][tag].forEach((index) => changes[index] = exports$1.OPERATION.DELETE);
     		            }
     		            // remove tag
     		            if (this.tags && this.tags.has(changeTree)) {
@@ -5164,7 +5893,7 @@
     		            if (!isVisible && changeTree.isVisibilitySharedWithParent) {
     		                // console.log("CHECK AGAINST PARENT...", {
     		                //     ref: changeTree.ref.constructor.name,
-    		                //     refId: changeTree.refId,
+    		                //     refId: changeTree.ref[$refId],
     		                //     parent: changeTree.parent.constructor.name,
     		                // });
     		                if (this.visible.has(changeTree.parent[$changes])) {
@@ -5174,6 +5903,12 @@
     		            }
     		            return isVisible;
     		        }
+    		        _recursiveDeleteVisibleChangeTree(changeTree) {
+    		            changeTree.forEachChild((childChangeTree) => {
+    		                this.visible.delete(childChangeTree);
+    		                this._recursiveDeleteVisibleChangeTree(childChangeTree);
+    		            });
+    		        }
     		    }
 
     		    registerType("map", { constructor: MapSchema });
@@ -5181,452 +5916,56 @@
     		    registerType("set", { constructor: SetSchema });
     		    registerType("collection", { constructor: CollectionSchema, });
 
-    		    exports.$changes = $changes;
-    		    exports.$childType = $childType;
-    		    exports.$decoder = $decoder;
-    		    exports.$deleteByIndex = $deleteByIndex;
-    		    exports.$encoder = $encoder;
-    		    exports.$filter = $filter;
-    		    exports.$getByIndex = $getByIndex;
-    		    exports.$track = $track;
-    		    exports.ArraySchema = ArraySchema;
-    		    exports.ChangeTree = ChangeTree;
-    		    exports.CollectionSchema = CollectionSchema;
-    		    exports.Decoder = Decoder;
-    		    exports.Encoder = Encoder;
-    		    exports.MapSchema = MapSchema;
-    		    exports.Metadata = Metadata;
-    		    exports.Reflection = Reflection;
-    		    exports.ReflectionField = ReflectionField;
-    		    exports.ReflectionType = ReflectionType;
-    		    exports.Schema = Schema;
-    		    exports.SetSchema = SetSchema;
-    		    exports.StateView = StateView;
-    		    exports.TypeContext = TypeContext;
-    		    exports.decode = decode;
-    		    exports.decodeKeyValueOperation = decodeKeyValueOperation;
-    		    exports.decodeSchemaOperation = decodeSchemaOperation;
-    		    exports.defineCustomTypes = defineCustomTypes;
-    		    exports.defineTypes = defineTypes;
-    		    exports.deprecated = deprecated;
-    		    exports.dumpChanges = dumpChanges;
-    		    exports.encode = encode;
-    		    exports.encodeArray = encodeArray;
-    		    exports.encodeKeyValueOperation = encodeKeyValueOperation;
-    		    exports.encodeSchemaOperation = encodeSchemaOperation;
-    		    exports.entity = entity;
-    		    exports.getDecoderStateCallbacks = getDecoderStateCallbacks;
-    		    exports.getRawChangesCallback = getRawChangesCallback;
-    		    exports.registerType = registerType;
-    		    exports.schema = schema;
-    		    exports.type = type;
-    		    exports.view = view;
+    		    exports$1.$changes = $changes;
+    		    exports$1.$childType = $childType;
+    		    exports$1.$decoder = $decoder;
+    		    exports$1.$deleteByIndex = $deleteByIndex;
+    		    exports$1.$encoder = $encoder;
+    		    exports$1.$filter = $filter;
+    		    exports$1.$getByIndex = $getByIndex;
+    		    exports$1.$refId = $refId;
+    		    exports$1.$track = $track;
+    		    exports$1.ArraySchema = ArraySchema;
+    		    exports$1.Callbacks = Callbacks;
+    		    exports$1.ChangeTree = ChangeTree;
+    		    exports$1.CollectionSchema = CollectionSchema;
+    		    exports$1.Decoder = Decoder;
+    		    exports$1.Encoder = Encoder;
+    		    exports$1.MapSchema = MapSchema;
+    		    exports$1.Metadata = Metadata;
+    		    exports$1.Reflection = Reflection;
+    		    exports$1.ReflectionField = ReflectionField;
+    		    exports$1.ReflectionType = ReflectionType;
+    		    exports$1.Schema = Schema;
+    		    exports$1.SetSchema = SetSchema;
+    		    exports$1.StateCallbackStrategy = StateCallbackStrategy;
+    		    exports$1.StateView = StateView;
+    		    exports$1.TypeContext = TypeContext;
+    		    exports$1.decode = decode;
+    		    exports$1.decodeKeyValueOperation = decodeKeyValueOperation;
+    		    exports$1.decodeSchemaOperation = decodeSchemaOperation;
+    		    exports$1.defineCustomTypes = defineCustomTypes;
+    		    exports$1.defineTypes = defineTypes;
+    		    exports$1.deprecated = deprecated;
+    		    exports$1.dumpChanges = dumpChanges;
+    		    exports$1.encode = encode;
+    		    exports$1.encodeArray = encodeArray;
+    		    exports$1.encodeKeyValueOperation = encodeKeyValueOperation;
+    		    exports$1.encodeSchemaOperation = encodeSchemaOperation;
+    		    exports$1.entity = entity;
+    		    exports$1.getDecoderStateCallbacks = getDecoderStateCallbacks;
+    		    exports$1.getRawChangesCallback = getRawChangesCallback;
+    		    exports$1.registerType = registerType;
+    		    exports$1.schema = schema;
+    		    exports$1.type = type;
+    		    exports$1.view = view;
 
     		})); 
-    	} (umd$1, umd$1.exports));
-    	return umd$1.exports;
+    	} (build$1, build$1.exports));
+    	return build$1.exports;
     }
 
-    var umdExports = requireUmd();
-
-    class H3TransportTransport {
-        constructor(events) {
-            this.events = events;
-            this.isOpen = false;
-            this.lengthPrefixBuffer = new Uint8Array(9); // 9 bytes is the maximum length of a length prefix
-        }
-        connect(url, options = {}) {
-            const wtOpts = options.fingerprint && ({
-                // requireUnreliable: true,
-                // congestionControl: "default", // "low-latency" || "throughput"
-                serverCertificateHashes: [{
-                        algorithm: 'sha-256',
-                        value: new Uint8Array(options.fingerprint).buffer
-                    }]
-            }) || undefined;
-            this.wt = new WebTransport(url, wtOpts);
-            this.wt.ready.then((e) => {
-                console.log("WebTransport ready!", e);
-                this.isOpen = true;
-                this.unreliableReader = this.wt.datagrams.readable.getReader();
-                this.unreliableWriter = this.wt.datagrams.writable.getWriter();
-                const incomingBidi = this.wt.incomingBidirectionalStreams.getReader();
-                incomingBidi.read().then((stream) => {
-                    this.reader = stream.value.readable.getReader();
-                    this.writer = stream.value.writable.getWriter();
-                    // immediately write room/sessionId for establishing the room connection
-                    this.sendSeatReservation(options.room.roomId, options.sessionId, options.reconnectionToken);
-                    // start reading incoming data
-                    this.readIncomingData();
-                    this.readIncomingUnreliableData();
-                }).catch((e) => {
-                    console.error("failed to read incoming stream", e);
-                    console.error("TODO: close the connection");
-                });
-                // this.events.onopen(e);
-            }).catch((e) => {
-                // this.events.onerror(e);
-                // this.events.onclose({ code: e.closeCode, reason: e.reason });
-                console.log("WebTransport not ready!", e);
-                this._close();
-            });
-            this.wt.closed.then((e) => {
-                console.log("WebTransport closed w/ success", e);
-                this.events.onclose({ code: e.closeCode, reason: e.reason });
-            }).catch((e) => {
-                console.log("WebTransport closed w/ error", e);
-                this.events.onerror(e);
-                this.events.onclose({ code: e.closeCode, reason: e.reason });
-            }).finally(() => {
-                this._close();
-            });
-        }
-        send(data) {
-            const prefixLength = umdExports.encode.number(this.lengthPrefixBuffer, data.length, { offset: 0 });
-            const dataWithPrefixedLength = new Uint8Array(prefixLength + data.length);
-            dataWithPrefixedLength.set(this.lengthPrefixBuffer.subarray(0, prefixLength), 0);
-            dataWithPrefixedLength.set(data, prefixLength);
-            this.writer.write(dataWithPrefixedLength);
-        }
-        sendUnreliable(data) {
-            const prefixLength = umdExports.encode.number(this.lengthPrefixBuffer, data.length, { offset: 0 });
-            const dataWithPrefixedLength = new Uint8Array(prefixLength + data.length);
-            dataWithPrefixedLength.set(this.lengthPrefixBuffer.subarray(0, prefixLength), 0);
-            dataWithPrefixedLength.set(data, prefixLength);
-            this.unreliableWriter.write(dataWithPrefixedLength);
-        }
-        close(code, reason) {
-            try {
-                this.wt.close({ closeCode: code, reason: reason });
-            }
-            catch (e) {
-                console.error(e);
-            }
-        }
-        readIncomingData() {
-            return __awaiter(this, void 0, void 0, function* () {
-                let result;
-                while (this.isOpen) {
-                    try {
-                        result = yield this.reader.read();
-                        //
-                        // a single read may contain multiple messages
-                        // each message is prefixed with its length
-                        //
-                        const messages = result.value;
-                        const it = { offset: 0 };
-                        do {
-                            //
-                            // QUESTION: should we buffer the message in case it's not fully read?
-                            //
-                            const length = umdExports.decode.number(messages, it);
-                            this.events.onmessage({ data: messages.subarray(it.offset, it.offset + length) });
-                            it.offset += length;
-                        } while (it.offset < messages.length);
-                    }
-                    catch (e) {
-                        if (e.message.indexOf("session is closed") === -1) {
-                            console.error("H3Transport: failed to read incoming data", e);
-                        }
-                        break;
-                    }
-                    if (result.done) {
-                        break;
-                    }
-                }
-            });
-        }
-        readIncomingUnreliableData() {
-            return __awaiter(this, void 0, void 0, function* () {
-                let result;
-                while (this.isOpen) {
-                    try {
-                        result = yield this.unreliableReader.read();
-                        //
-                        // a single read may contain multiple messages
-                        // each message is prefixed with its length
-                        //
-                        const messages = result.value;
-                        const it = { offset: 0 };
-                        do {
-                            //
-                            // QUESTION: should we buffer the message in case it's not fully read?
-                            //
-                            const length = umdExports.decode.number(messages, it);
-                            this.events.onmessage({ data: messages.subarray(it.offset, it.offset + length) });
-                            it.offset += length;
-                        } while (it.offset < messages.length);
-                    }
-                    catch (e) {
-                        if (e.message.indexOf("session is closed") === -1) {
-                            console.error("H3Transport: failed to read incoming data", e);
-                        }
-                        break;
-                    }
-                    if (result.done) {
-                        break;
-                    }
-                }
-            });
-        }
-        sendSeatReservation(roomId, sessionId, reconnectionToken) {
-            const it = { offset: 0 };
-            const bytes = [];
-            umdExports.encode.string(bytes, roomId, it);
-            umdExports.encode.string(bytes, sessionId, it);
-            if (reconnectionToken) {
-                umdExports.encode.string(bytes, reconnectionToken, it);
-            }
-            this.writer.write(new Uint8Array(bytes).buffer);
-        }
-        _close() {
-            this.isOpen = false;
-        }
-    }
-
-    var browser;
-    var hasRequiredBrowser;
-
-    function requireBrowser () {
-    	if (hasRequiredBrowser) return browser;
-    	hasRequiredBrowser = 1;
-
-    	browser = function () {
-    	  throw new Error(
-    	    'ws does not work in the browser. Browser clients must use the native ' +
-    	      'WebSocket object'
-    	  );
-    	};
-    	return browser;
-    }
-
-    var browserExports = requireBrowser();
-    var NodeWebSocket = /*@__PURE__*/getDefaultExportFromCjs(browserExports);
-
-    const WebSocket = globalThis.WebSocket || NodeWebSocket;
-    class WebSocketTransport {
-        constructor(events) {
-            this.events = events;
-        }
-        send(data) {
-            this.ws.send(data);
-        }
-        sendUnreliable(data) {
-            console.warn("colyseus.js: The WebSocket transport does not support unreliable messages");
-        }
-        /**
-         * @param url URL to connect to
-         * @param headers custom headers to send with the connection (only supported in Node.js. Web Browsers do not allow setting custom headers)
-         */
-        connect(url, headers) {
-            try {
-                // Node or Bun environments (supports custom headers)
-                this.ws = new WebSocket(url, { headers, protocols: this.protocols });
-            }
-            catch (e) {
-                // browser environment (custom headers not supported)
-                this.ws = new WebSocket(url, this.protocols);
-            }
-            this.ws.binaryType = 'arraybuffer';
-            this.ws.onopen = this.events.onopen;
-            this.ws.onmessage = this.events.onmessage;
-            this.ws.onclose = this.events.onclose;
-            this.ws.onerror = this.events.onerror;
-        }
-        close(code, reason) {
-            this.ws.close(code, reason);
-        }
-        get isOpen() {
-            return this.ws.readyState === WebSocket.OPEN;
-        }
-    }
-
-    class Connection {
-        constructor(protocol) {
-            this.events = {};
-            switch (protocol) {
-                case "h3":
-                    this.transport = new H3TransportTransport(this.events);
-                    break;
-                default:
-                    this.transport = new WebSocketTransport(this.events);
-                    break;
-            }
-        }
-        connect(url, options) {
-            this.transport.connect.call(this.transport, url, options);
-        }
-        send(data) {
-            this.transport.send(data);
-        }
-        sendUnreliable(data) {
-            this.transport.sendUnreliable(data);
-        }
-        close(code, reason) {
-            this.transport.close(code, reason);
-        }
-        get isOpen() {
-            return this.transport.isOpen;
-        }
-    }
-
-    // Use codes between 0~127 for lesser throughput (1 byte)
-    exports.Protocol = void 0;
-    (function (Protocol) {
-        // Room-related (10~19)
-        Protocol[Protocol["HANDSHAKE"] = 9] = "HANDSHAKE";
-        Protocol[Protocol["JOIN_ROOM"] = 10] = "JOIN_ROOM";
-        Protocol[Protocol["ERROR"] = 11] = "ERROR";
-        Protocol[Protocol["LEAVE_ROOM"] = 12] = "LEAVE_ROOM";
-        Protocol[Protocol["ROOM_DATA"] = 13] = "ROOM_DATA";
-        Protocol[Protocol["ROOM_STATE"] = 14] = "ROOM_STATE";
-        Protocol[Protocol["ROOM_STATE_PATCH"] = 15] = "ROOM_STATE_PATCH";
-        Protocol[Protocol["ROOM_DATA_SCHEMA"] = 16] = "ROOM_DATA_SCHEMA";
-        Protocol[Protocol["ROOM_DATA_BYTES"] = 17] = "ROOM_DATA_BYTES";
-    })(exports.Protocol || (exports.Protocol = {}));
-    exports.ErrorCode = void 0;
-    (function (ErrorCode) {
-        ErrorCode[ErrorCode["MATCHMAKE_NO_HANDLER"] = 4210] = "MATCHMAKE_NO_HANDLER";
-        ErrorCode[ErrorCode["MATCHMAKE_INVALID_CRITERIA"] = 4211] = "MATCHMAKE_INVALID_CRITERIA";
-        ErrorCode[ErrorCode["MATCHMAKE_INVALID_ROOM_ID"] = 4212] = "MATCHMAKE_INVALID_ROOM_ID";
-        ErrorCode[ErrorCode["MATCHMAKE_UNHANDLED"] = 4213] = "MATCHMAKE_UNHANDLED";
-        ErrorCode[ErrorCode["MATCHMAKE_EXPIRED"] = 4214] = "MATCHMAKE_EXPIRED";
-        ErrorCode[ErrorCode["AUTH_FAILED"] = 4215] = "AUTH_FAILED";
-        ErrorCode[ErrorCode["APPLICATION_ERROR"] = 4216] = "APPLICATION_ERROR";
-    })(exports.ErrorCode || (exports.ErrorCode = {}));
-
-    const serializers = {};
-    function registerSerializer(id, serializer) {
-        serializers[id] = serializer;
-    }
-    function getSerializer(id) {
-        const serializer = serializers[id];
-        if (!serializer) {
-            throw new Error("missing serializer: " + id);
-        }
-        return serializer;
-    }
-
-    /**
-     * The MIT License (MIT)
-     *
-     * Copyright 2016 Andrey Sitnik <andrey@sitnik.ru>
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining a copy of
-     * this software and associated documentation files (the "Software"), to deal in
-     * the Software without restriction, including without limitation the rights to
-     * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-     * the Software, and to permit persons to whom the Software is furnished to do so,
-     * subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included in all
-     * copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-     * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-     * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-     * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-     * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-     */
-    const createNanoEvents = () => ({
-        emit(event, ...args) {
-            let callbacks = this.events[event] || [];
-            for (let i = 0, length = callbacks.length; i < length; i++) {
-                callbacks[i](...args);
-            }
-        },
-        events: {},
-        on(event, cb) {
-            var _a;
-            ((_a = this.events[event]) === null || _a === void 0 ? void 0 : _a.push(cb)) || (this.events[event] = [cb]);
-            return () => {
-                var _a;
-                this.events[event] = (_a = this.events[event]) === null || _a === void 0 ? void 0 : _a.filter(i => cb !== i);
-            };
-        }
-    });
-
-    class EventEmitter {
-        constructor() {
-            this.handlers = [];
-        }
-        register(cb, once = false) {
-            this.handlers.push(cb);
-            return this;
-        }
-        invoke(...args) {
-            this.handlers.forEach((handler) => handler.apply(this, args));
-        }
-        invokeAsync(...args) {
-            return Promise.all(this.handlers.map((handler) => handler.apply(this, args)));
-        }
-        remove(cb) {
-            const index = this.handlers.indexOf(cb);
-            this.handlers[index] = this.handlers[this.handlers.length - 1];
-            this.handlers.pop();
-        }
-        clear() {
-            this.handlers = [];
-        }
-    }
-    function createSignal() {
-        const emitter = new EventEmitter();
-        function register(cb) {
-            return emitter.register(cb, this === null);
-        }
-        register.once = (cb) => {
-            const callback = function (...args) {
-                cb.apply(this, args);
-                emitter.remove(callback);
-            };
-            emitter.register(callback);
-        };
-        register.remove = (cb) => emitter.remove(cb);
-        register.invoke = (...args) => emitter.invoke(...args);
-        register.invokeAsync = (...args) => emitter.invokeAsync(...args);
-        register.clear = () => emitter.clear();
-        return register;
-    }
-
-    function getStateCallbacks(room) {
-        try {
-            // SchemaSerializer
-            return umdExports.getDecoderStateCallbacks(room['serializer'].decoder);
-        }
-        catch (e) {
-            // NoneSerializer
-            return undefined;
-        }
-    }
-    class SchemaSerializer {
-        setState(encodedState, it) {
-            this.decoder.decode(encodedState, it);
-        }
-        getState() {
-            return this.state;
-        }
-        patch(patches, it) {
-            return this.decoder.decode(patches, it);
-        }
-        teardown() {
-            this.decoder.root.clearRefs();
-        }
-        handshake(bytes, it) {
-            if (this.state) {
-                //
-                // TODO: validate definitions against concreate this.state instance
-                //
-                umdExports.Reflection.decode(bytes, it); // no-op
-                this.decoder = new umdExports.Decoder(this.state);
-            }
-            else {
-                // initialize reflected state from server
-                this.decoder = umdExports.Reflection.decode(bytes, it);
-                this.state = this.decoder.state;
-            }
-        }
-    }
+    var buildExports = requireBuild();
 
     var decoder;
     try {
@@ -7803,60 +8142,523 @@
     const RESET_BUFFER_MODE = 1024;
     const RESERVE_START_SPACE = 2048;
 
+    class H3TransportTransport {
+        constructor(events) {
+            this.isOpen = false;
+            this.lengthPrefixBuffer = new Uint8Array(9); // 9 bytes is the maximum length of a length prefix
+            this.events = events;
+        }
+        connect(url, options = {}) {
+            const wtOpts = options.fingerprint && ({
+                // requireUnreliable: true,
+                // congestionControl: "default", // "low-latency" || "throughput"
+                serverCertificateHashes: [{
+                        algorithm: 'sha-256',
+                        value: new Uint8Array(options.fingerprint).buffer
+                    }]
+            }) || undefined;
+            this.wt = new WebTransport(url, wtOpts);
+            this.wt.ready.then((e) => {
+                console.log("WebTransport ready!", e);
+                this.isOpen = true;
+                this.unreliableReader = this.wt.datagrams.readable.getReader();
+                this.unreliableWriter = this.wt.datagrams.writable.getWriter();
+                const incomingBidi = this.wt.incomingBidirectionalStreams.getReader();
+                incomingBidi.read().then((stream) => {
+                    this.reader = stream.value.readable.getReader();
+                    this.writer = stream.value.writable.getWriter();
+                    // immediately write room/sessionId for establishing the room connection
+                    this.sendSeatReservation(options.roomId, options.sessionId, options.reconnectionToken, options.skipHandshake);
+                    // start reading incoming data
+                    this.readIncomingData();
+                    this.readIncomingUnreliableData();
+                }).catch((e) => {
+                    console.error("failed to read incoming stream", e);
+                    console.error("TODO: close the connection");
+                });
+                // this.events.onopen(e);
+            }).catch((e) => {
+                // this.events.onerror(e);
+                // this.events.onclose({ code: e.closeCode, reason: e.reason });
+                console.log("WebTransport not ready!", e);
+                this._close();
+            });
+            this.wt.closed.then((e) => {
+                console.log("WebTransport closed w/ success", e);
+                this.events.onclose({ code: e.closeCode, reason: e.reason });
+            }).catch((e) => {
+                console.log("WebTransport closed w/ error", e);
+                this.events.onerror(e);
+                this.events.onclose({ code: e.closeCode, reason: e.reason });
+            }).finally(() => {
+                this._close();
+            });
+        }
+        send(data) {
+            const prefixLength = buildExports.encode.number(this.lengthPrefixBuffer, data.length, { offset: 0 });
+            const dataWithPrefixedLength = new Uint8Array(prefixLength + data.length);
+            dataWithPrefixedLength.set(this.lengthPrefixBuffer.subarray(0, prefixLength), 0);
+            dataWithPrefixedLength.set(data, prefixLength);
+            this.writer.write(dataWithPrefixedLength);
+        }
+        sendUnreliable(data) {
+            const prefixLength = buildExports.encode.number(this.lengthPrefixBuffer, data.length, { offset: 0 });
+            const dataWithPrefixedLength = new Uint8Array(prefixLength + data.length);
+            dataWithPrefixedLength.set(this.lengthPrefixBuffer.subarray(0, prefixLength), 0);
+            dataWithPrefixedLength.set(data, prefixLength);
+            this.unreliableWriter.write(dataWithPrefixedLength);
+        }
+        close(code, reason) {
+            try {
+                this.wt.close({ closeCode: code, reason: reason });
+            }
+            catch (e) {
+                console.error(e);
+            }
+        }
+        readIncomingData() {
+            return __awaiter(this, void 0, void 0, function* () {
+                let result;
+                while (this.isOpen) {
+                    try {
+                        result = yield this.reader.read();
+                        //
+                        // a single read may contain multiple messages
+                        // each message is prefixed with its length
+                        //
+                        const messages = result.value;
+                        const it = { offset: 0 };
+                        do {
+                            //
+                            // QUESTION: should we buffer the message in case it's not fully read?
+                            //
+                            const length = buildExports.decode.number(messages, it);
+                            this.events.onmessage({ data: messages.subarray(it.offset, it.offset + length) });
+                            it.offset += length;
+                        } while (it.offset < messages.length);
+                    }
+                    catch (e) {
+                        if (e.message.indexOf("session is closed") === -1) {
+                            console.error("H3Transport: failed to read incoming data", e);
+                        }
+                        break;
+                    }
+                    if (result.done) {
+                        break;
+                    }
+                }
+            });
+        }
+        readIncomingUnreliableData() {
+            return __awaiter(this, void 0, void 0, function* () {
+                let result;
+                while (this.isOpen) {
+                    try {
+                        result = yield this.unreliableReader.read();
+                        //
+                        // a single read may contain multiple messages
+                        // each message is prefixed with its length
+                        //
+                        const messages = result.value;
+                        const it = { offset: 0 };
+                        do {
+                            //
+                            // QUESTION: should we buffer the message in case it's not fully read?
+                            //
+                            const length = buildExports.decode.number(messages, it);
+                            this.events.onmessage({ data: messages.subarray(it.offset, it.offset + length) });
+                            it.offset += length;
+                        } while (it.offset < messages.length);
+                    }
+                    catch (e) {
+                        if (e.message.indexOf("session is closed") === -1) {
+                            console.error("H3Transport: failed to read incoming data", e);
+                        }
+                        break;
+                    }
+                    if (result.done) {
+                        break;
+                    }
+                }
+            });
+        }
+        sendSeatReservation(roomId, sessionId, reconnectionToken, skipHandshake) {
+            const it = { offset: 0 };
+            const bytes = [];
+            buildExports.encode.string(bytes, roomId, it);
+            buildExports.encode.string(bytes, sessionId, it);
+            if (reconnectionToken) {
+                buildExports.encode.string(bytes, reconnectionToken, it);
+            }
+            if (skipHandshake) {
+                buildExports.encode.boolean(bytes, 1, it);
+            }
+            this.writer.write(new Uint8Array(bytes).buffer);
+        }
+        _close() {
+            this.isOpen = false;
+        }
+    }
+
+    var browser;
+    var hasRequiredBrowser;
+
+    function requireBrowser () {
+    	if (hasRequiredBrowser) return browser;
+    	hasRequiredBrowser = 1;
+
+    	browser = function () {
+    	  throw new Error(
+    	    'ws does not work in the browser. Browser clients must use the native ' +
+    	      'WebSocket object'
+    	  );
+    	};
+    	return browser;
+    }
+
+    var browserExports = requireBrowser();
+    var NodeWebSocket = /*@__PURE__*/getDefaultExportFromCjs(browserExports);
+
+    const WebSocket = globalThis.WebSocket || NodeWebSocket;
+    class WebSocketTransport {
+        constructor(events) {
+            this.events = events;
+        }
+        send(data) {
+            this.ws.send(data);
+        }
+        sendUnreliable(data) {
+            console.warn("@colyseus/sdk: The WebSocket transport does not support unreliable messages");
+        }
+        /**
+         * @param url URL to connect to
+         * @param headers custom headers to send with the connection (only supported in Node.js. Web Browsers do not allow setting custom headers)
+         */
+        connect(url, headers) {
+            try {
+                // Node or Bun environments (supports custom headers)
+                this.ws = new WebSocket(url, { headers, protocols: this.protocols });
+            }
+            catch (e) {
+                // browser environment (custom headers not supported)
+                this.ws = new WebSocket(url, this.protocols);
+            }
+            this.ws.binaryType = 'arraybuffer';
+            this.ws.onopen = (event) => { var _a, _b; return (_b = (_a = this.events).onopen) === null || _b === void 0 ? void 0 : _b.call(_a, event); };
+            this.ws.onmessage = (event) => { var _a, _b; return (_b = (_a = this.events).onmessage) === null || _b === void 0 ? void 0 : _b.call(_a, event); };
+            this.ws.onclose = (event) => { var _a, _b; return (_b = (_a = this.events).onclose) === null || _b === void 0 ? void 0 : _b.call(_a, event); };
+            this.ws.onerror = (event) => { var _a, _b; return (_b = (_a = this.events).onerror) === null || _b === void 0 ? void 0 : _b.call(_a, event); };
+        }
+        close(code, reason) {
+            //
+            // trigger the onclose event immediately if the code is MAY_TRY_RECONNECT
+            // when "offline" event is triggered, the close frame is delayed. this
+            // way client can try to reconnect immediately.
+            //
+            if (code === CloseCode.MAY_TRY_RECONNECT && this.events.onclose) {
+                this.ws.onclose = null;
+                this.events.onclose({ code, reason });
+            }
+            // then we close the connection
+            this.ws.close(code, reason);
+        }
+        get isOpen() {
+            return this.ws.readyState === WebSocket.OPEN;
+        }
+    }
+
+    var _Connection__offlineListener;
+    const onOfflineListeners = [];
+    const hasGlobalEventListeners = typeof (addEventListener) === "function" && typeof (removeEventListener) === "function";
+    if (hasGlobalEventListeners) {
+        /**
+         * Detects when the network is offline and closes all connections.
+         * (When switching wifi networks, etc.)
+         */
+        addEventListener("offline", () => {
+            console.warn(`@colyseus/sdk: 🛑 Network offline. Closing ${onOfflineListeners.length} connection(s)`);
+            onOfflineListeners.forEach((listener) => listener());
+        }, false);
+    }
+    class Connection {
+        constructor(protocol) {
+            this.events = {};
+            _Connection__offlineListener.set(this, (hasGlobalEventListeners) ? () => this.close(CloseCode.MAY_TRY_RECONNECT) : null);
+            switch (protocol) {
+                case "h3":
+                    this.transport = new H3TransportTransport(this.events);
+                    break;
+                default:
+                    this.transport = new WebSocketTransport(this.events);
+                    break;
+            }
+        }
+        connect(url, options) {
+            if (hasGlobalEventListeners) {
+                const onOpen = this.events.onopen;
+                this.events.onopen = (ev) => {
+                    onOfflineListeners.push(__classPrivateFieldGet(this, _Connection__offlineListener, "f"));
+                    onOpen === null || onOpen === void 0 ? void 0 : onOpen(ev);
+                };
+                const onClose = this.events.onclose;
+                this.events.onclose = (ev) => {
+                    onOfflineListeners.splice(onOfflineListeners.indexOf(__classPrivateFieldGet(this, _Connection__offlineListener, "f")), 1);
+                    onClose === null || onClose === void 0 ? void 0 : onClose(ev);
+                };
+            }
+            this.url = url;
+            this.options = options;
+            this.transport.connect(url, options);
+        }
+        send(data) {
+            this.transport.send(data);
+        }
+        sendUnreliable(data) {
+            this.transport.sendUnreliable(data);
+        }
+        reconnect(queryParams) {
+            const url = new URL(this.url);
+            // override query params
+            for (const key in queryParams) {
+                url.searchParams.set(key, queryParams[key]);
+            }
+            this.transport.connect(url.toString(), this.options);
+        }
+        close(code, reason) {
+            this.transport.close(code, reason);
+        }
+        get isOpen() {
+            return this.transport.isOpen;
+        }
+    }
+    _Connection__offlineListener = new WeakMap();
+
+    const serializers = {};
+    function registerSerializer(id, serializer) {
+        serializers[id] = serializer;
+    }
+    function getSerializer(id) {
+        const serializer = serializers[id];
+        if (!serializer) {
+            throw new Error("missing serializer: " + id);
+        }
+        return serializer;
+    }
+
+    /**
+     * The MIT License (MIT)
+     *
+     * Copyright 2016 Andrey Sitnik <andrey@sitnik.ru>
+     *
+     * Permission is hereby granted, free of charge, to any person obtaining a copy of
+     * this software and associated documentation files (the "Software"), to deal in
+     * the Software without restriction, including without limitation the rights to
+     * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+     * the Software, and to permit persons to whom the Software is furnished to do so,
+     * subject to the following conditions:
+     *
+     * The above copyright notice and this permission notice shall be included in all
+     * copies or substantial portions of the Software.
+     *
+     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+     * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+     * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+     * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+     * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+     */
+    const createNanoEvents = () => ({
+        emit(event, ...args) {
+            let callbacks = this.events[event] || [];
+            for (let i = 0, length = callbacks.length; i < length; i++) {
+                callbacks[i](...args);
+            }
+        },
+        events: {},
+        on(event, cb) {
+            var _a;
+            ((_a = this.events[event]) === null || _a === void 0 ? void 0 : _a.push(cb)) || (this.events[event] = [cb]);
+            return () => {
+                var _a;
+                this.events[event] = (_a = this.events[event]) === null || _a === void 0 ? void 0 : _a.filter(i => cb !== i);
+            };
+        }
+    });
+
+    class EventEmitter {
+        constructor() {
+            this.handlers = [];
+        }
+        register(cb, once = false) {
+            this.handlers.push(cb);
+            return this;
+        }
+        invoke(...args) {
+            this.handlers.forEach((handler) => handler.apply(this, args));
+        }
+        invokeAsync(...args) {
+            return Promise.all(this.handlers.map((handler) => handler.apply(this, args)));
+        }
+        remove(cb) {
+            const index = this.handlers.indexOf(cb);
+            this.handlers[index] = this.handlers[this.handlers.length - 1];
+            this.handlers.pop();
+        }
+        clear() {
+            this.handlers = [];
+        }
+    }
+    function createSignal() {
+        const emitter = new EventEmitter();
+        function register(cb) {
+            return emitter.register(cb, this === null);
+        }
+        register.once = (cb) => {
+            const callback = function (...args) {
+                cb.apply(this, args);
+                emitter.remove(callback);
+            };
+            emitter.register(callback);
+        };
+        register.remove = (cb) => emitter.remove(cb);
+        register.invoke = (...args) => emitter.invoke(...args);
+        register.invokeAsync = (...args) => emitter.invokeAsync(...args);
+        register.clear = () => emitter.clear();
+        return register;
+    }
+
+    //
+    // TODO: use a schema interface, which even having duplicate definitions, it could be used to get the callback proxy.
+    //
+    // ```ts
+    //     export type SchemaCallbackProxy<RoomState> = (<T extends ISchema>(instance: T) => CallbackProxy<T>);
+    //     export function getStateCallbacks<T extends ISchema>(room: Room<T>) {
+    // ```
+    //
+    function getStateCallbacks(room) {
+        try {
+            // SchemaSerializer
+            // @ts-ignore
+            return buildExports.getDecoderStateCallbacks(room['serializer'].decoder);
+        }
+        catch (e) {
+            // NoneSerializer
+            return undefined;
+        }
+    }
+    class SchemaSerializer {
+        setState(encodedState, it) {
+            this.decoder.decode(encodedState, it);
+        }
+        getState() {
+            return this.state;
+        }
+        patch(patches, it) {
+            return this.decoder.decode(patches, it);
+        }
+        teardown() {
+            this.decoder.root.clearRefs();
+        }
+        handshake(bytes, it) {
+            if (this.state) {
+                //
+                // TODO: validate definitions against concreate this.state instance
+                //
+                buildExports.Reflection.decode(bytes, it); // no-op
+                this.decoder = new buildExports.Decoder(this.state);
+            }
+            else {
+                // initialize reflected state from server
+                this.decoder = buildExports.Reflection.decode(bytes, it);
+                this.state = this.decoder.state;
+            }
+        }
+    }
+
+    function now() {
+        return typeof (performance) !== 'undefined' ? performance.now() : Date.now();
+    }
+
+    var _Room_lastPingTime, _Room_pingCallback;
     class Room {
         constructor(name, rootSchema) {
             // Public signals
             this.onStateChange = createSignal();
             this.onError = createSignal();
             this.onLeave = createSignal();
+            this.onReconnect = createSignal();
+            this.onDrop = createSignal();
             this.onJoin = createSignal();
-            this.hasJoined = false;
+            // reconnection logic
+            this.reconnection = {
+                retryCount: 0,
+                maxRetries: 15,
+                delay: 100,
+                minDelay: 100,
+                maxDelay: 5000,
+                minUptime: 5000,
+                backoff: exponentialBackoff,
+                maxEnqueuedMessages: 10,
+                enqueuedMessages: [],
+                isReconnecting: false,
+            };
+            this.joinedAtTime = 0;
             this.onMessageHandlers = createNanoEvents();
-            this.roomId = null;
+            _Room_lastPingTime.set(this, 0);
+            _Room_pingCallback.set(this, undefined);
             this.name = name;
             this.packr = new Packr();
             // msgpackr workaround: force buffer to be created.
             this.packr.encode(undefined);
             if (rootSchema) {
-                this.serializer = new (getSerializer("schema"));
-                this.rootSchema = rootSchema;
-                this.serializer.state = new rootSchema();
+                const serializer = new (getSerializer("schema"));
+                this.serializer = serializer;
+                const state = new rootSchema();
+                serializer.state = state;
+                serializer.decoder = new buildExports.Decoder(state);
             }
-            this.onError((code, message) => { var _a; return (_a = console.warn) === null || _a === void 0 ? void 0 : _a.call(console, `colyseus.js - onError => (${code}) ${message}`); });
-            this.onLeave(() => this.removeAllListeners());
+            this.onLeave(() => {
+                this.removeAllListeners();
+                this.destroy();
+            });
         }
-        connect(endpoint, devModeCloseCallback, room = this, // when reconnecting on devMode, re-use previous room intance for handling events.
-        options, headers) {
-            const connection = new Connection(options.protocol);
-            room.connection = connection;
-            connection.events.onmessage = Room.prototype.onMessageCallback.bind(room);
-            connection.events.onclose = function (e) {
+        connect(endpoint, options, headers) {
+            var _a;
+            this.connection = new Connection(options.protocol);
+            this.connection.events.onmessage = this.onMessageCallback.bind(this);
+            this.connection.events.onclose = (e) => {
                 var _a;
-                if (!room.hasJoined) {
+                if (this.joinedAtTime === 0) {
                     (_a = console.warn) === null || _a === void 0 ? void 0 : _a.call(console, `Room connection was closed unexpectedly (${e.code}): ${e.reason}`);
-                    room.onError.invoke(e.code, e.reason);
+                    this.onError.invoke(e.code, e.reason);
                     return;
                 }
-                if (e.code === CloseCode.DEVMODE_RESTART && devModeCloseCallback) {
-                    devModeCloseCallback();
+                if (e.code === CloseCode.NO_STATUS_RECEIVED ||
+                    e.code === CloseCode.ABNORMAL_CLOSURE ||
+                    e.code === CloseCode.GOING_AWAY ||
+                    e.code === CloseCode.MAY_TRY_RECONNECT) {
+                    this.onDrop.invoke(e.code, e.reason);
+                    this.handleReconnection();
                 }
                 else {
-                    room.onLeave.invoke(e.code, e.reason);
-                    room.destroy();
+                    this.onLeave.invoke(e.code, e.reason);
                 }
             };
-            connection.events.onerror = function (e) {
-                var _a;
-                (_a = console.warn) === null || _a === void 0 ? void 0 : _a.call(console, `Room, onError (${e.code}): ${e.reason}`);
-                room.onError.invoke(e.code, e.reason);
+            this.connection.events.onerror = (e) => {
+                this.onError.invoke(e.code, e.reason);
             };
-            // FIXME: refactor this.
+            /**
+             * if local serializer has state, it means we don't need to receive the
+             * handshake from the server
+             */
+            const skipHandshake = (((_a = this.serializer) === null || _a === void 0 ? void 0 : _a.getState()) !== undefined);
             if (options.protocol === "h3") {
+                // FIXME: refactor this.
                 const url = new URL(endpoint);
-                connection.connect(url.origin, options);
+                this.connection.connect(url.origin, Object.assign(Object.assign({}, options), { skipHandshake }));
             }
             else {
-                connection.connect(endpoint, headers);
+                this.connection.connect(`${endpoint}${skipHandshake ? "&skipHandshake=1" : ""}`, headers);
             }
         }
         leave(consented = true) {
@@ -7864,7 +8666,7 @@
                 this.onLeave((code) => resolve(code));
                 if (this.connection) {
                     if (consented) {
-                        this.packr.buffer[0] = exports.Protocol.LEAVE_ROOM;
+                        this.packr.buffer[0] = Protocol.LEAVE_ROOM;
                         this.connection.send(this.packr.buffer.subarray(0, 1));
                     }
                     else {
@@ -7879,30 +8681,51 @@
         onMessage(type, callback) {
             return this.onMessageHandlers.on(this.getMessageHandlerKey(type), callback);
         }
-        send(type, message) {
+        ping(callback) {
+            var _a;
+            // skip if connection is not open
+            if (!((_a = this.connection) === null || _a === void 0 ? void 0 : _a.isOpen)) {
+                return;
+            }
+            __classPrivateFieldSet(this, _Room_lastPingTime, now(), "f");
+            __classPrivateFieldSet(this, _Room_pingCallback, callback, "f");
+            this.packr.buffer[0] = Protocol.PING;
+            this.connection.send(this.packr.buffer.subarray(0, 1));
+        }
+        send(messageType, payload) {
             const it = { offset: 1 };
-            this.packr.buffer[0] = exports.Protocol.ROOM_DATA;
-            if (typeof (type) === "string") {
-                umdExports.encode.string(this.packr.buffer, type, it);
+            this.packr.buffer[0] = Protocol.ROOM_DATA;
+            if (typeof (messageType) === "string") {
+                buildExports.encode.string(this.packr.buffer, messageType, it);
             }
             else {
-                umdExports.encode.number(this.packr.buffer, type, it);
+                buildExports.encode.number(this.packr.buffer, messageType, it);
             }
             // force packr to use beginning of the buffer
             this.packr.position = 0;
-            const data = (message !== undefined)
-                ? this.packr.pack(message, 2048 + it.offset) // 2048 = RESERVE_START_SPACE
+            const data = (payload !== undefined)
+                ? this.packr.pack(payload, 2048 + it.offset) // 2048 = RESERVE_START_SPACE
                 : this.packr.buffer.subarray(0, it.offset);
-            this.connection.send(data);
-        }
-        sendUnreliable(type, message) {
-            const it = { offset: 1 };
-            this.packr.buffer[0] = exports.Protocol.ROOM_DATA;
-            if (typeof (type) === "string") {
-                umdExports.encode.string(this.packr.buffer, type, it);
+            // If connection is not open, buffer the message
+            if (!this.connection.isOpen) {
+                enqueueMessage(this, new Uint8Array(data));
             }
             else {
-                umdExports.encode.number(this.packr.buffer, type, it);
+                this.connection.send(data);
+            }
+        }
+        sendUnreliable(type, message) {
+            // If connection is not open, skip
+            if (!this.connection.isOpen) {
+                return;
+            }
+            const it = { offset: 1 };
+            this.packr.buffer[0] = Protocol.ROOM_DATA;
+            if (typeof (type) === "string") {
+                buildExports.encode.string(this.packr.buffer, type, it);
+            }
+            else {
+                buildExports.encode.number(this.packr.buffer, type, it);
             }
             // force packr to use beginning of the buffer
             this.packr.position = 0;
@@ -7913,12 +8736,12 @@
         }
         sendBytes(type, bytes) {
             const it = { offset: 1 };
-            this.packr.buffer[0] = exports.Protocol.ROOM_DATA_BYTES;
+            this.packr.buffer[0] = Protocol.ROOM_DATA_BYTES;
             if (typeof (type) === "string") {
-                umdExports.encode.string(this.packr.buffer, type, it);
+                buildExports.encode.string(this.packr.buffer, type, it);
             }
             else {
-                umdExports.encode.number(this.packr.buffer, type, it);
+                buildExports.encode.number(this.packr.buffer, type, it);
             }
             // check if buffer needs to be resized
             // TODO: can we avoid this?
@@ -7928,7 +8751,13 @@
                 this.packr.useBuffer(newBuffer);
             }
             this.packr.buffer.set(bytes, it.offset);
-            this.connection.send(this.packr.buffer.subarray(0, it.offset + bytes.byteLength));
+            // If connection is not open, buffer the message
+            if (!this.connection.isOpen) {
+                enqueueMessage(this, this.packr.buffer.subarray(0, it.offset + bytes.byteLength));
+            }
+            else {
+                this.connection.send(this.packr.buffer.subarray(0, it.offset + bytes.byteLength));
+            }
         }
         get state() {
             return this.serializer.getState();
@@ -7938,6 +8767,8 @@
             this.onStateChange.clear();
             this.onError.clear();
             this.onLeave.clear();
+            this.onReconnect.clear();
+            this.onDrop.clear();
             this.onMessageHandlers.events = {};
             if (this.serializer instanceof SchemaSerializer) {
                 // Remove callback references
@@ -7945,57 +8776,78 @@
             }
         }
         onMessageCallback(event) {
+            var _a;
             const buffer = new Uint8Array(event.data);
             const it = { offset: 1 };
             const code = buffer[0];
-            if (code === exports.Protocol.JOIN_ROOM) {
-                const reconnectionToken = umdExports.decode.utf8Read(buffer, it, buffer[it.offset++]);
-                this.serializerId = umdExports.decode.utf8Read(buffer, it, buffer[it.offset++]);
+            if (code === Protocol.JOIN_ROOM) {
+                const reconnectionToken = buildExports.decode.utf8Read(buffer, it, buffer[it.offset++]);
+                this.serializerId = buildExports.decode.utf8Read(buffer, it, buffer[it.offset++]);
                 // Instantiate serializer if not locally available.
                 if (!this.serializer) {
                     const serializer = getSerializer(this.serializerId);
                     this.serializer = new serializer();
                 }
+                // apply handshake on first join (no need to do this on reconnect)
                 if (buffer.byteLength > it.offset && this.serializer.handshake) {
                     this.serializer.handshake(buffer, it);
                 }
+                if (this.joinedAtTime === 0) {
+                    this.joinedAtTime = Date.now();
+                    this.onJoin.invoke();
+                }
+                else {
+                    console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x2705)} reconnection successful!`); // ✅
+                    this.reconnection.isReconnecting = false;
+                    this.onReconnect.invoke();
+                }
                 this.reconnectionToken = `${this.roomId}:${reconnectionToken}`;
-                this.hasJoined = true;
-                this.onJoin.invoke();
                 // acknowledge successfull JOIN_ROOM
-                this.packr.buffer[0] = exports.Protocol.JOIN_ROOM;
+                this.packr.buffer[0] = Protocol.JOIN_ROOM;
                 this.connection.send(this.packr.buffer.subarray(0, 1));
+                // Send any enqueued messages that were buffered while disconnected
+                if (this.reconnection.enqueuedMessages.length > 0) {
+                    for (const message of this.reconnection.enqueuedMessages) {
+                        this.connection.send(message.data);
+                    }
+                    // Clear the buffer after sending
+                    this.reconnection.enqueuedMessages = [];
+                }
             }
-            else if (code === exports.Protocol.ERROR) {
-                const code = umdExports.decode.number(buffer, it);
-                const message = umdExports.decode.string(buffer, it);
+            else if (code === Protocol.ERROR) {
+                const code = buildExports.decode.number(buffer, it);
+                const message = buildExports.decode.string(buffer, it);
                 this.onError.invoke(code, message);
             }
-            else if (code === exports.Protocol.LEAVE_ROOM) {
+            else if (code === Protocol.LEAVE_ROOM) {
                 this.leave();
             }
-            else if (code === exports.Protocol.ROOM_STATE) {
+            else if (code === Protocol.ROOM_STATE) {
                 this.serializer.setState(buffer, it);
                 this.onStateChange.invoke(this.serializer.getState());
             }
-            else if (code === exports.Protocol.ROOM_STATE_PATCH) {
+            else if (code === Protocol.ROOM_STATE_PATCH) {
                 this.serializer.patch(buffer, it);
                 this.onStateChange.invoke(this.serializer.getState());
             }
-            else if (code === exports.Protocol.ROOM_DATA) {
-                const type = (umdExports.decode.stringCheck(buffer, it))
-                    ? umdExports.decode.string(buffer, it)
-                    : umdExports.decode.number(buffer, it);
+            else if (code === Protocol.ROOM_DATA) {
+                const type = (buildExports.decode.stringCheck(buffer, it))
+                    ? buildExports.decode.string(buffer, it)
+                    : buildExports.decode.number(buffer, it);
                 const message = (buffer.byteLength > it.offset)
                     ? unpack(buffer, { start: it.offset })
                     : undefined;
                 this.dispatchMessage(type, message);
             }
-            else if (code === exports.Protocol.ROOM_DATA_BYTES) {
-                const type = (umdExports.decode.stringCheck(buffer, it))
-                    ? umdExports.decode.string(buffer, it)
-                    : umdExports.decode.number(buffer, it);
+            else if (code === Protocol.ROOM_DATA_BYTES) {
+                const type = (buildExports.decode.stringCheck(buffer, it))
+                    ? buildExports.decode.string(buffer, it)
+                    : buildExports.decode.number(buffer, it);
                 this.dispatchMessage(type, buffer.subarray(it.offset));
+            }
+            else if (code === Protocol.PING) {
+                (_a = __classPrivateFieldGet(this, _Room_pingCallback, "f")) === null || _a === void 0 ? void 0 : _a.call(this, Math.round(now() - __classPrivateFieldGet(this, _Room_lastPingTime, "f")));
+                __classPrivateFieldSet(this, _Room_pingCallback, undefined, "f");
             }
         }
         dispatchMessage(type, message) {
@@ -8007,8 +8859,8 @@
             else if (this.onMessageHandlers.events['*']) {
                 this.onMessageHandlers.emit('*', type, message);
             }
-            else {
-                (_a = console.warn) === null || _a === void 0 ? void 0 : _a.call(console, `colyseus.js: onMessage() not registered for type '${type}'.`);
+            else if (!messageType.startsWith("__")) { // ignore internal messages
+                (_a = console.warn) === null || _a === void 0 ? void 0 : _a.call(console, `@colyseus/sdk: onMessage() not registered for type '${type}'.`);
             }
         }
         destroy() {
@@ -8025,135 +8877,216 @@
                 default: throw new Error("invalid message type.");
             }
         }
-    }
-
-    var fetch$1 = {};
-
-    var hasRequiredFetch;
-
-    function requireFetch () {
-    	if (hasRequiredFetch) return fetch$1;
-    	hasRequiredFetch = 1;
-    	function apply(src, tar) {
-    		tar.statusMessage = src.statusText;
-    		tar.statusCode = src.status;
-    		tar.data = src.body;
-    	}
-
-    	function send(method, uri, opts) {
-    		opts = opts || {};
-    		var timer, ctrl, tmp=opts.body;
-
-    		opts.method = method;
-    		opts.headers = opts.headers || {};
-
-    		if (tmp instanceof FormData) ; else if (tmp && typeof tmp == 'object') {
-    			opts.headers['content-type'] = 'application/json';
-    			opts.body = JSON.stringify(tmp);
-    		}
-
-    		if (opts.withCredentials) {
-    			opts.credentials = 'include';
-    		}
-
-    		if (opts.timeout) {
-    			ctrl = new AbortController;
-    			opts.signal = ctrl.signal;
-    			timer = setTimeout(ctrl.abort, opts.timeout);
-    		}
-
-    		return new Promise((res, rej) => {
-    			fetch(uri, opts).then((rr, reply) => {
-    				clearTimeout(timer);
-
-    				apply(rr, rr); //=> rr.headers
-    				reply = rr.status >= 400 ? rej : res;
-
-    				tmp = rr.headers.get('content-type');
-    				if (!tmp || !~tmp.indexOf('application/json')) {
-    					reply(rr);
-    				} else {
-    					rr.text().then(str => {
-    						try {
-    							rr.data = JSON.parse(str, opts.reviver);
-    							reply(rr);
-    						} catch (err) {
-    							err.headers = rr.headers;
-    							apply(rr, err);
-    							rej(err);
-    						}
-    					});
-    				}
-    			}).catch(err => {
-    				err.timeout = ctrl && ctrl.signal.aborted;
-    				rej(err);
-    			});
-    		});
-    	}
-
-    	var get = /*#__PURE__*/ send.bind(send, 'GET');
-    	var post = /*#__PURE__*/ send.bind(send, 'POST');
-    	var patch = /*#__PURE__*/ send.bind(send, 'PATCH');
-    	var del = /*#__PURE__*/ send.bind(send, 'DELETE');
-    	var put = /*#__PURE__*/ send.bind(send, 'PUT');
-
-    	fetch$1.del = del;
-    	fetch$1.get = get;
-    	fetch$1.patch = patch;
-    	fetch$1.post = post;
-    	fetch$1.put = put;
-    	fetch$1.send = send;
-    	return fetch$1;
-    }
-
-    var fetchExports = requireFetch();
-    var index = /*@__PURE__*/getDefaultExportFromCjs(fetchExports);
-
-    var httpie = /*#__PURE__*/_mergeNamespaces({
-        __proto__: null,
-        default: index
-    }, [fetchExports]);
-
-    class HTTP {
-        constructor(client, headers = {}) {
-            this.client = client;
-            this.headers = headers;
+        handleReconnection() {
+            if (Date.now() - this.joinedAtTime < this.reconnection.minUptime) {
+                console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x274C)} Room has not been up for long enough for automatic reconnection. (min uptime: ${this.reconnection.minUptime}ms)`); // ❌
+                this.onLeave.invoke(CloseCode.ABNORMAL_CLOSURE, "Room uptime too short for reconnection.");
+                return;
+            }
+            if (!this.reconnection.isReconnecting) {
+                this.reconnection.retryCount = 0;
+                this.reconnection.isReconnecting = true;
+            }
+            this.retryReconnection();
         }
-        get(path, options = {}) {
-            return this.request("get", path, options);
-        }
-        post(path, options = {}) {
-            return this.request("post", path, options);
-        }
-        del(path, options = {}) {
-            return this.request("del", path, options);
-        }
-        put(path, options = {}) {
-            return this.request("put", path, options);
-        }
-        request(method, path, options = {}) {
-            return httpie[method](this.client['getHttpEndpoint'](path), this.getOptions(options)).catch((e) => {
-                var _a;
-                const status = e.statusCode; //  || -1
-                const message = ((_a = e.data) === null || _a === void 0 ? void 0 : _a.error) || e.statusMessage || e.message; //  || "offline"
-                if (!status && !message) {
-                    throw e;
+        retryReconnection() {
+            if (this.reconnection.retryCount >= this.reconnection.maxRetries) {
+                // No more retries
+                console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x274C)} ❌ Reconnection failed after ${this.reconnection.maxRetries} attempts.`); // ❌
+                this.reconnection.isReconnecting = false;
+                this.onLeave.invoke(CloseCode.FAILED_TO_RECONNECT, "No more retries. Reconnection failed.");
+                return;
+            }
+            this.reconnection.retryCount++;
+            const delay = Math.min(this.reconnection.maxDelay, Math.max(this.reconnection.minDelay, this.reconnection.backoff(this.reconnection.retryCount, this.reconnection.delay)));
+            console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x023F3)} will retry in ${(delay / 1000).toFixed(1)} seconds...`); // 🔄
+            // Wait before attempting reconnection
+            setTimeout(() => {
+                try {
+                    console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x1F504)} Re-establishing sessionId '${this.sessionId}' with roomId '${this.roomId}'... (attempt ${this.reconnection.retryCount} of ${this.reconnection.maxRetries})`); // 🔄
+                    this.connection.reconnect({
+                        reconnectionToken: this.reconnectionToken.split(":")[1],
+                        skipHandshake: true, // we already applied the handshake on first join
+                    });
                 }
-                throw new ServerError(status, message);
+                catch (e) {
+                    this.retryReconnection();
+                }
+            }, delay);
+        }
+    }
+    _Room_lastPingTime = new WeakMap(), _Room_pingCallback = new WeakMap();
+    const exponentialBackoff = (attempt, delay) => {
+        return Math.floor(Math.pow(2, attempt) * delay);
+    };
+    function enqueueMessage(room, message) {
+        room.reconnection.enqueuedMessages.push({ data: message });
+        if (room.reconnection.enqueuedMessages.length > room.reconnection.maxEnqueuedMessages) {
+            room.reconnection.enqueuedMessages.shift();
+        }
+    }
+
+    function isJSONSerializable(value) {
+        if (value === undefined) {
+            return false;
+        }
+        const t = typeof value;
+        if (t === "string" || t === "number" || t === "boolean" || t === null) {
+            return true;
+        }
+        if (t !== "object") {
+            return false;
+        }
+        if (Array.isArray(value)) {
+            return true;
+        }
+        if (value.buffer) {
+            return false;
+        }
+        return ((value.constructor && value.constructor.name === "Object") ||
+            typeof value.toJSON === "function");
+    }
+    function getURLWithQueryParams(url, option) {
+        const { params, query } = option || {};
+        // Parse the URL and extract existing query parameters
+        const [urlPath, urlQuery] = url.split("?");
+        let path = urlPath;
+        // Handle params substitution
+        if (params) {
+            if (Array.isArray(params)) {
+                const paramPaths = path.split("/").filter((p) => p.startsWith(":"));
+                for (const [index, key] of paramPaths.entries()) {
+                    const value = params[index];
+                    path = path.replace(key, value);
+                }
+            }
+            else {
+                for (const [key, value] of Object.entries(params)) {
+                    path = path.replace(`:${key}`, String(value));
+                }
+            }
+        }
+        // Merge query parameters from URL and options
+        const queryParams = new URLSearchParams(urlQuery);
+        if (query) {
+            for (const [key, value] of Object.entries(query)) {
+                if (value == null)
+                    continue;
+                queryParams.set(key, String(value));
+            }
+        }
+        // Build final URL
+        let queryParamString = queryParams.toString();
+        queryParamString = queryParamString.length > 0 ? `?${queryParamString}`.replace(/\+/g, "%20") : "";
+        return `${path}${queryParamString}`;
+    }
+    class HTTP {
+        constructor(sdk, baseOptions) {
+            // alias "del()" to "delete()"
+            this.del = this.delete;
+            this.sdk = sdk;
+            this.options = baseOptions;
+        }
+        request(method, path, options) {
+            return __awaiter(this, void 0, void 0, function* () {
+                return this.executeRequest(method, path, options);
             });
         }
-        getOptions(options) {
-            // merge default custom headers with user headers
-            options.headers = Object.assign({}, this.headers, options.headers);
-            if (this.authToken) {
-                options.headers['Authorization'] = `Bearer ${this.authToken}`;
-            }
-            if (typeof (cc) !== 'undefined' && cc.sys && cc.sys.isNative) ;
-            else {
-                // always include credentials
-                options.withCredentials = true;
-            }
-            return options;
+        get(path, options) {
+            return this.request("GET", path, options);
+        }
+        post(path, options) {
+            return this.request("POST", path, options);
+        }
+        delete(path, options) {
+            return this.request("DELETE", path, options);
+        }
+        patch(path, options) {
+            return this.request("PATCH", path, options);
+        }
+        put(path, options) {
+            return this.request("PUT", path, options);
+        }
+        executeRequest(method, path, requestOptions) {
+            return __awaiter(this, void 0, void 0, function* () {
+                var _a, _b, _c;
+                //
+                // FIXME: if FormData is provided, merging "baseOptions.body" with
+                // "options.body" will not work as intended
+                //
+                let body = (this.options.body)
+                    ? Object.assign(Object.assign({}, this.options.body), ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.body) || {})) : requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.body;
+                const query = (this.options.query)
+                    ? Object.assign(Object.assign({}, this.options.query), ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.query) || {})) : requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.query;
+                const params = (this.options.params)
+                    ? Object.assign(Object.assign({}, this.options.params), ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.params) || {})) : requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.params;
+                const headers = new Headers((this.options.headers)
+                    ? Object.assign(Object.assign({}, this.options.headers), ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.headers) || {})) : requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.headers);
+                // Add Authorization header if authToken is set
+                if (this.authToken && !headers.has("authorization")) {
+                    headers.set("authorization", `Bearer ${this.authToken}`);
+                }
+                // Stringify JSON-serializable objects for fetch() body
+                if (isJSONSerializable(body) && typeof body === 'object' && body !== null) {
+                    if (!headers.has("content-type")) {
+                        headers.set("content-type", "application/json");
+                    }
+                    for (const [key, value] of Object.entries(body)) {
+                        if (value instanceof Date) {
+                            body[key] = value.toISOString();
+                        }
+                    }
+                    body = JSON.stringify(body);
+                }
+                const mergedOptions = Object.assign(Object.assign(Object.assign({ credentials: (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.credentials) || "include" }, this.options), requestOptions), { query,
+                    params,
+                    headers,
+                    body,
+                    method });
+                const url = getURLWithQueryParams(this.sdk['getHttpEndpoint'](path.toString()), mergedOptions);
+                let raw;
+                try {
+                    raw = yield fetch(url, mergedOptions);
+                }
+                catch (err) {
+                    // If it's an AbortError, re-throw as-is
+                    if (err.name === 'AbortError') {
+                        throw err;
+                    }
+                    // Re-throw with network error code at top level (e.g. ECONNREFUSED)
+                    const networkError = new ServerError(((_a = err.cause) === null || _a === void 0 ? void 0 : _a.code) || err.code, err.message);
+                    networkError.response = raw;
+                    networkError.cause = err.cause;
+                    throw networkError;
+                }
+                const contentType = raw.headers.get("content-type");
+                let data;
+                // TODO: improve content-type detection here!
+                if (contentType === null || contentType === void 0 ? void 0 : contentType.indexOf("json")) {
+                    data = yield raw.json();
+                }
+                else if (contentType === null || contentType === void 0 ? void 0 : contentType.indexOf("text")) {
+                    data = yield raw.text();
+                }
+                else {
+                    data = yield raw.blob();
+                }
+                if (!raw.ok) {
+                    throw new ServerError(raw.status, (_c = (_b = data.message) !== null && _b !== void 0 ? _b : data.error) !== null && _c !== void 0 ? _c : raw.statusText, {
+                        headers: raw.headers,
+                        status: raw.status,
+                        response: raw,
+                        data
+                    });
+                }
+                return {
+                    raw,
+                    data,
+                    headers: raw.headers,
+                    status: raw.status,
+                    statusText: raw.statusText,
+                };
+            });
         }
     }
 
@@ -8241,18 +9174,17 @@
         }
     }
 
-    var _Auth__initialized, _Auth__initializationPromise, _Auth__signInWindow, _Auth__events;
+    var _Auth__initialized, _Auth__signInWindow, _Auth__events;
     class Auth {
         constructor(http) {
-            this.http = http;
             this.settings = {
                 path: "/auth",
                 key: "colyseus-auth-token",
             };
             _Auth__initialized.set(this, false);
-            _Auth__initializationPromise.set(this, void 0);
-            _Auth__signInWindow.set(this, undefined);
+            _Auth__signInWindow.set(this, null);
             _Auth__events.set(this, createNanoEvents());
+            this.http = http;
             getItem(this.settings.key, (token) => this.token = token);
         }
         set token(token) {
@@ -8264,16 +9196,12 @@
         onChange(callback) {
             const unbindChange = __classPrivateFieldGet(this, _Auth__events, "f").on("change", callback);
             if (!__classPrivateFieldGet(this, _Auth__initialized, "f")) {
-                __classPrivateFieldSet(this, _Auth__initializationPromise, new Promise((resolve, reject) => {
-                    this.getUserData().then((userData) => {
-                        this.emitChange(Object.assign(Object.assign({}, userData), { token: this.token }));
-                    }).catch((e) => {
-                        // user is not logged in, or service is down
-                        this.emitChange({ user: null, token: undefined });
-                    }).finally(() => {
-                        resolve();
-                    });
-                }), "f");
+                this.getUserData().then((userData) => {
+                    this.emitChange(Object.assign(Object.assign({}, userData), { token: this.token }));
+                }).catch((e) => {
+                    // user is not logged in, or service is down
+                    this.emitChange({ user: null, token: undefined });
+                });
             }
             __classPrivateFieldSet(this, _Auth__initialized, true, "f");
             return unbindChange;
@@ -8331,20 +9259,21 @@
                     const upgradingToken = this.token ? `?token=${this.token}` : "";
                     // Capitalize first letter of providerName
                     const title = `Login with ${(providerName[0].toUpperCase() + providerName.substring(1))}`;
-                    const url = this.http['client']['getHttpEndpoint'](`${(settings.prefix || `${this.settings.path}/provider`)}/${providerName}${upgradingToken}`);
+                    const url = this.http['sdk']['getHttpEndpoint'](`${(settings.prefix || `${this.settings.path}/provider`)}/${providerName}${upgradingToken}`);
                     const left = (screen.width / 2) - (w / 2);
                     const top = (screen.height / 2) - (h / 2);
                     __classPrivateFieldSet(this, _Auth__signInWindow, window.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left), "f");
                     const onMessage = (event) => {
                         // TODO: it is a good idea to check if event.origin can be trusted!
                         // if (event.origin.indexOf(window.location.hostname) === -1) { return; }
+                        var _a;
                         // require 'user' and 'token' inside received data.
                         if (event.data.user === undefined && event.data.token === undefined) {
                             return;
                         }
                         clearInterval(rejectionChecker);
-                        __classPrivateFieldGet(this, _Auth__signInWindow, "f").close();
-                        __classPrivateFieldSet(this, _Auth__signInWindow, undefined, "f");
+                        (_a = __classPrivateFieldGet(this, _Auth__signInWindow, "f")) === null || _a === void 0 ? void 0 : _a.close();
+                        __classPrivateFieldSet(this, _Auth__signInWindow, null, "f");
                         window.removeEventListener("message", onMessage);
                         if (event.data.error !== undefined) {
                             reject(event.data.error);
@@ -8356,7 +9285,7 @@
                     };
                     const rejectionChecker = setInterval(() => {
                         if (!__classPrivateFieldGet(this, _Auth__signInWindow, "f") || __classPrivateFieldGet(this, _Auth__signInWindow, "f").closed) {
-                            __classPrivateFieldSet(this, _Auth__signInWindow, undefined, "f");
+                            __classPrivateFieldSet(this, _Auth__signInWindow, null, "f");
                             reject("cancelled");
                             window.removeEventListener("message", onMessage);
                         }
@@ -8384,7 +9313,7 @@
             __classPrivateFieldGet(this, _Auth__events, "f").emit("change", authData);
         }
     }
-    _Auth__initialized = new WeakMap(), _Auth__initializationPromise = new WeakMap(), _Auth__signInWindow = new WeakMap(), _Auth__events = new WeakMap();
+    _Auth__initialized = new WeakMap(), _Auth__signInWindow = new WeakMap(), _Auth__events = new WeakMap();
 
     /**
      * Discord Embedded App SDK
@@ -8433,20 +9362,12 @@
     }
 
     var _a;
-    class MatchMakeError extends Error {
-        constructor(message, code) {
-            super(message);
-            this.code = code;
-            this.name = "MatchMakeError";
-            Object.setPrototypeOf(this, MatchMakeError.prototype);
-        }
-    }
     // - React Native does not provide `window.location`
     // - Cocos Creator (Native) does not provide `window.location.hostname`
     const DEFAULT_ENDPOINT = (typeof (window) !== "undefined" && typeof ((_a = window === null || window === void 0 ? void 0 : window.location) === null || _a === void 0 ? void 0 : _a.hostname) !== "undefined")
         ? `${window.location.protocol.replace("http", "ws")}//${window.location.hostname}${(window.location.port && `:${window.location.port}`)}`
         : "ws://127.0.0.1:2567";
-    class Client {
+    class ColyseusSDK {
         constructor(settings = DEFAULT_ENDPOINT, options) {
             var _a, _b;
             if (typeof (settings) === "string") {
@@ -8462,7 +9383,8 @@
                     hostname: url.hostname,
                     pathname: url.pathname,
                     port,
-                    secure
+                    secure,
+                    searchParams: url.searchParams.toString() || undefined,
                 };
             }
             else {
@@ -8481,7 +9403,13 @@
             if (this.settings.pathname.endsWith("/")) {
                 this.settings.pathname = this.settings.pathname.slice(0, -1);
             }
-            this.http = new HTTP(this, (options === null || options === void 0 ? void 0 : options.headers) || {});
+            // specify room connection protocol if provided
+            if (options === null || options === void 0 ? void 0 : options.protocol) {
+                this.settings.protocol = options.protocol;
+            }
+            this.http = new HTTP(this, {
+                headers: (options === null || options === void 0 ? void 0 : options.headers) || {},
+            });
             this.auth = new Auth(this.http);
             this.urlBuilder = options === null || options === void 0 ? void 0 : options.urlBuilder;
             //
@@ -8494,33 +9422,54 @@
                 console.log("Colyseus SDK: Discord Embedded SDK detected. Using custom URL builder.");
             }
         }
+        /**
+         * Select the endpoint with the lowest latency.
+         * @param endpoints Array of endpoints to select from.
+         * @param options Client options.
+         * @param latencyOptions Latency measurement options (protocol, pingCount).
+         * @returns The client with the lowest latency.
+         */
+        static selectByLatency(endpoints_1, options_1) {
+            return __awaiter(this, arguments, void 0, function* (endpoints, options, latencyOptions = {}) {
+                const clients = endpoints.map(endpoint => new ColyseusSDK(endpoint, options));
+                const latencies = (yield Promise.allSettled(clients.map((client, index) => client.getLatency(latencyOptions).then(latency => {
+                    const settings = clients[index].settings;
+                    console.log(`🛜 Endpoint Latency: ${latency}ms - ${settings.hostname}:${settings.port}${settings.pathname}`);
+                    return [index, latency];
+                }))))
+                    .filter((result) => result.status === 'fulfilled')
+                    .map(result => result.value);
+                if (latencies.length === 0) {
+                    throw new Error('All endpoints failed to respond');
+                }
+                return clients[latencies.sort((a, b) => a[1] - b[1])[0][0]];
+            });
+        }
+        // Implementation
         joinOrCreate(roomName_1) {
             return __awaiter(this, arguments, void 0, function* (roomName, options = {}, rootSchema) {
                 return yield this.createMatchMakeRequest('joinOrCreate', roomName, options, rootSchema);
             });
         }
+        // Implementation
         create(roomName_1) {
             return __awaiter(this, arguments, void 0, function* (roomName, options = {}, rootSchema) {
                 return yield this.createMatchMakeRequest('create', roomName, options, rootSchema);
             });
         }
+        // Implementation
         join(roomName_1) {
             return __awaiter(this, arguments, void 0, function* (roomName, options = {}, rootSchema) {
                 return yield this.createMatchMakeRequest('join', roomName, options, rootSchema);
             });
         }
+        // Implementation
         joinById(roomId_1) {
             return __awaiter(this, arguments, void 0, function* (roomId, options = {}, rootSchema) {
                 return yield this.createMatchMakeRequest('joinById', roomId, options, rootSchema);
             });
         }
-        /**
-         * Re-establish connection with a room this client was previously connected to.
-         *
-         * @param reconnectionToken The `room.reconnectionToken` from previously connected room.
-         * @param rootSchema (optional) Concrete root schema definition
-         * @returns Promise<Room>
-         */
+        // Implementation
         reconnect(reconnectionToken, rootSchema) {
             return __awaiter(this, void 0, void 0, function* () {
                 if (typeof (reconnectionToken) === "string" && typeof (rootSchema) === "string") {
@@ -8533,76 +9482,97 @@
                 return yield this.createMatchMakeRequest('reconnect', roomId, { reconnectionToken: token }, rootSchema);
             });
         }
-        consumeSeatReservation(response, rootSchema, reuseRoomInstance // used in devMode
-        ) {
+        consumeSeatReservation(response, rootSchema) {
             return __awaiter(this, void 0, void 0, function* () {
-                const room = this.createRoom(response.room.name, rootSchema);
-                room.roomId = response.room.roomId;
+                const room = this.createRoom(response.name, rootSchema);
+                room.roomId = response.roomId;
                 room.sessionId = response.sessionId;
                 const options = { sessionId: room.sessionId };
                 // forward "reconnection token" in case of reconnection.
                 if (response.reconnectionToken) {
                     options.reconnectionToken = response.reconnectionToken;
                 }
-                const targetRoom = reuseRoomInstance || room;
-                room.connect(this.buildEndpoint(response.room, options, response.protocol), response.devMode && (() => __awaiter(this, void 0, void 0, function* () {
-                    console.info(`[Colyseus devMode]: ${String.fromCodePoint(0x1F504)} Re-establishing connection with room id '${room.roomId}'...`); // 🔄
-                    let retryCount = 0;
-                    let retryMaxRetries = 8;
-                    const retryReconnection = () => __awaiter(this, void 0, void 0, function* () {
-                        retryCount++;
-                        try {
-                            yield this.consumeSeatReservation(response, rootSchema, targetRoom);
-                            console.info(`[Colyseus devMode]: ${String.fromCodePoint(0x2705)} Successfully re-established connection with room '${room.roomId}'`); // ✅
-                        }
-                        catch (e) {
-                            if (retryCount < retryMaxRetries) {
-                                console.info(`[Colyseus devMode]: ${String.fromCodePoint(0x1F504)} retrying... (${retryCount} out of ${retryMaxRetries})`); // 🔄
-                                setTimeout(retryReconnection, 2000);
-                            }
-                            else {
-                                console.info(`[Colyseus devMode]: ${String.fromCodePoint(0x274C)} Failed to reconnect. Is your server running? Please check server logs.`); // ❌
-                            }
-                        }
-                    });
-                    setTimeout(retryReconnection, 2000);
-                })), targetRoom, response, this.http.headers);
+                room.connect(this.buildEndpoint(response, options), response, this.http.options.headers);
                 return new Promise((resolve, reject) => {
                     const onError = (code, message) => reject(new ServerError(code, message));
-                    targetRoom.onError.once(onError);
-                    targetRoom['onJoin'].once(() => {
-                        targetRoom.onError.remove(onError);
-                        resolve(targetRoom);
+                    room.onError.once(onError);
+                    room['onJoin'].once(() => {
+                        room.onError.remove(onError);
+                        resolve(room);
                     });
                 });
             });
         }
+        /**
+         * Create a new connection with the server, and measure the latency.
+         * @param options Latency measurement options (protocol, pingCount).
+         */
+        getLatency(options = {}) {
+            var _a, _b;
+            const protocol = (_a = options.protocol) !== null && _a !== void 0 ? _a : "ws";
+            const pingCount = (_b = options.pingCount) !== null && _b !== void 0 ? _b : 1;
+            return new Promise((resolve, reject) => {
+                const conn = new Connection(protocol);
+                const latencies = [];
+                let pingStart = 0;
+                conn.events.onopen = () => {
+                    pingStart = Date.now();
+                    conn.send(new Uint8Array([Protocol.PING]));
+                };
+                conn.events.onmessage = (_) => {
+                    latencies.push(Date.now() - pingStart);
+                    if (latencies.length < pingCount) {
+                        // Send another ping
+                        pingStart = Date.now();
+                        conn.send(new Uint8Array([Protocol.PING]));
+                    }
+                    else {
+                        // Done, calculate average and close
+                        conn.close();
+                        const average = latencies.reduce((sum, l) => sum + l, 0) / latencies.length;
+                        resolve(average);
+                    }
+                };
+                conn.events.onerror = (event) => {
+                    reject(new ServerError(CloseCode.ABNORMAL_CLOSURE, `Failed to get latency: ${event.message}`));
+                };
+                conn.connect(this.getHttpEndpoint());
+            });
+        }
         createMatchMakeRequest(method_1, roomName_1) {
-            return __awaiter(this, arguments, void 0, function* (method, roomName, options = {}, rootSchema, reuseRoomInstance) {
-                const response = (yield this.http.post(`matchmake/${method}/${roomName}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(options)
-                })).data;
-                // FIXME: HTTP class is already handling this as ServerError.
-                // @ts-ignore
-                if (response.error) {
-                    throw new MatchMakeError(response.error, response.code);
+            return __awaiter(this, arguments, void 0, function* (method, roomName, options = {}, rootSchema) {
+                try {
+                    if (!roomName) {
+                        throw new Error("Must provide a room name");
+                    }
+                    const httpResponse = yield this.http.post(`/matchmake/${method}/${roomName}`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: options
+                    });
+                    const response = httpResponse.data;
+                    // forward reconnection token during "reconnect" methods.
+                    if (method === "reconnect") {
+                        response.reconnectionToken = options.reconnectionToken;
+                    }
+                    return yield this.consumeSeatReservation(response, rootSchema);
                 }
-                // forward reconnection token during "reconnect" methods.
-                if (method === "reconnect") {
-                    response.reconnectionToken = options.reconnectionToken;
+                catch (error) {
+                    if (error instanceof ServerError) {
+                        throw new MatchMakeError(error.message, error.code);
+                    }
+                    throw error;
                 }
-                return yield this.consumeSeatReservation(response, rootSchema, reuseRoomInstance);
             });
         }
         createRoom(roomName, rootSchema) {
             return new Room(roomName, rootSchema);
         }
-        buildEndpoint(room, options = {}, protocol = "ws") {
-            const params = [];
+        buildEndpoint(seatReservation, options = {}) {
+            let protocol = this.settings.protocol || "ws";
+            let searchParams = this.settings.searchParams || "";
             // forward authentication token
             if (this.http.authToken) {
                 options['_authToken'] = this.http.authToken;
@@ -8612,7 +9582,7 @@
                 if (!options.hasOwnProperty(name)) {
                     continue;
                 }
-                params.push(`${name}=${options[name]}`);
+                searchParams += (searchParams ? '&' : '') + `${name}=${options[name]}`;
             }
             if (protocol === "h3") {
                 protocol = "http";
@@ -8620,20 +9590,23 @@
             let endpoint = (this.settings.secure)
                 ? `${protocol}s://`
                 : `${protocol}://`;
-            if (room.publicAddress) {
-                endpoint += `${room.publicAddress}`;
+            if (seatReservation.publicAddress) {
+                endpoint += `${seatReservation.publicAddress}`;
             }
             else {
                 endpoint += `${this.settings.hostname}${this.getEndpointPort()}${this.settings.pathname}`;
             }
-            const endpointURL = `${endpoint}/${room.processId}/${room.roomId}?${params.join('&')}`;
+            const endpointURL = `${endpoint}/${seatReservation.processId}/${seatReservation.roomId}?${searchParams}`;
             return (this.urlBuilder)
                 ? this.urlBuilder(new URL(endpointURL))
                 : endpointURL;
         }
         getHttpEndpoint(segments = '') {
             const path = segments.startsWith("/") ? segments : `/${segments}`;
-            const endpointURL = `${(this.settings.secure) ? "https" : "http"}://${this.settings.hostname}${this.getEndpointPort()}${this.settings.pathname}${path}`;
+            let endpointURL = `${(this.settings.secure) ? "https" : "http"}://${this.settings.hostname}${this.getEndpointPort()}${this.settings.pathname}${path}`;
+            if (this.settings.searchParams) {
+                endpointURL += `?${this.settings.searchParams}`;
+            }
             return (this.urlBuilder)
                 ? this.urlBuilder(new URL(endpointURL))
                 : endpointURL;
@@ -8644,7 +9617,8 @@
                 : "";
         }
     }
-    Client.VERSION = "0.16.16";
+    ColyseusSDK.VERSION = "0.17";
+    const Client = ColyseusSDK;
 
     class NoneSerializer {
         setState(rawState) { }
@@ -8657,9 +9631,15 @@
     registerSerializer('schema', SchemaSerializer);
     registerSerializer('none', NoneSerializer);
 
+    exports.AbortError = AbortError;
     exports.Auth = Auth;
+    exports.Callbacks = buildExports.Callbacks;
     exports.Client = Client;
+    exports.CloseCode = CloseCode;
+    exports.ColyseusSDK = ColyseusSDK;
+    exports.ErrorCode = ErrorCode;
     exports.MatchMakeError = MatchMakeError;
+    exports.Protocol = Protocol;
     exports.Room = Room;
     exports.SchemaSerializer = SchemaSerializer;
     exports.ServerError = ServerError;

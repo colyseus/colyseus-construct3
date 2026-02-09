@@ -51,6 +51,26 @@ C3.Plugins.Colyseus_SDK.Acts =
     }
   },
 
+  GetRoomPing() {
+    if (this.room && this.room.connection) {
+      this.room.ping((ms) => {
+        this.lastPing = ms;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomPing);
+      });
+    }
+  },
+
+  GetLatency() {
+    if (this.client) {
+      this.client.getLatency().then((ms) => {
+        this.lastLatency = ms;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnLatency);
+      }).catch((err) => {
+        this._onError(err);
+      });
+    }
+  },
+
   /**
    * Auth methods
    */

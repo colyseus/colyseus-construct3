@@ -30,6 +30,9 @@ function checkPath(lastPath, path) {
 
 C3.Plugins.Colyseus_SDK.Cnds =
 {
+  // Client
+  OnLatency() { return true; },
+
   // Matchmaking
   OnJoinRoom() { return true; },
   OnJoinError() { return true; },
@@ -39,6 +42,7 @@ C3.Plugins.Colyseus_SDK.Cnds =
   OnLeaveRoom() { return true; },
   OnRoomError() { return true; },
   OnStateChange() { return true; },
+  OnRoomPing() { return true; },
   OnMessage(type) {
     return (
       type === "*" ||
