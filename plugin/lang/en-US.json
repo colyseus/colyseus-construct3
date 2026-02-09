@@ -33,6 +33,12 @@
         },
 
         "conditions": {
+          "on-latency": {
+            "isStatic": true,
+            "list-name": "On Latency",
+            "display-text": "On Latency",
+            "description": "Triggered when the latency measurement is complete. Use CurrentLatency expression to get the latency in milliseconds."
+          },
           "on-join-room": {
             "isStatic": true,
             "list-name": "On Join Room",
@@ -483,6 +489,11 @@
               }
             }
           },
+          "get-latency": {
+            "list-name": "Get Latency",
+            "display-text": "Get latency",
+            "description": "Measure the latency to the server. Triggers \"On Latency\" when complete."
+          },
 
           "join-room": {
             "list-name": "Join existing room",
@@ -807,6 +818,10 @@
           "get-endpoint": {
             "description": "Get server endpoint",
             "translated-name": "Endpoint"
+          },
+          "current-latency": {
+            "description": "Get the last measured latency in milliseconds. (Available during \"On Latency\")",
+            "translated-name": "CurrentLatency"
           },
           "json": {
             "description": "Evaluates provided string and return stringified JSON object",

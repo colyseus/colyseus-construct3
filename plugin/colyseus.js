@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/license/MIT
 //
-// colyseus.js@0.17.25 - @colyseus/schema 4.0.7
+// colyseus.js@0.17.31 - @colyseus/schema 4.0.11
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('@colyseus/sdk', ['exports'], factory) :
@@ -115,6 +115,7 @@
       CONSENTED: 4e3,
       SERVER_SHUTDOWN: 4001,
       WITH_ERROR: 4002,
+      FAILED_TO_RECONNECT: 4003,
       MAY_TRY_RECONNECT: 4010
     };
 
@@ -372,7 +373,7 @@
     		        // str 8
     		        else if (length < 0x100) {
     		            bytes[it.offset++] = 0xd9;
-    		            bytes[it.offset++] = length % 255;
+    		            bytes[it.offset++] = length;
     		            size = 2;
     		        }
     		        // str 16
@@ -5350,7 +5351,7 @@
     		            const removeOnAdd = () => removeHandler();
     		            const collection = instance[propertyName];
     		            // Collection not available yet. Listen for its availability before attaching the handler.
-    		            if (collection === null || collection === undefined) {
+    		            if (!collection || collection[$refId] === undefined) {
     		                removeHandler = this.addCallback(instance[$refId], propertyName, (value, _) => {
     		                    if (value !== null && value !== undefined) {
     		                        removeHandler = this.addCallback(value[$refId], operation, handler);
@@ -5604,7 +5605,7 @@
     		            if (roomOrDecoder instanceof Decoder) {
     		                return new StateCallbackStrategy(roomOrDecoder);
     		            }
-    		            else if (roomOrDecoder.serializer.decoder) {
+    		            else if ('decoder' in roomOrDecoder.serializer) {
     		                return new StateCallbackStrategy(roomOrDecoder.serializer.decoder);
     		            }
     		            else {
@@ -5623,7 +5624,7 @@
     		            if (roomOrDecoder instanceof Decoder) {
     		                return getDecoderStateCallbacks(roomOrDecoder);
     		            }
-    		            else if (roomOrDecoder.serializer.decoder) {
+    		            else if ('decoder' in roomOrDecoder.serializer) {
     		                return getDecoderStateCallbacks(roomOrDecoder.serializer.decoder);
     		            }
     		        },
@@ -8616,7 +8617,10 @@
                 serializer.state = state;
                 serializer.decoder = new buildExports.Decoder(state);
             }
-            this.onLeave(() => this.removeAllListeners());
+            this.onLeave(() => {
+                this.removeAllListeners();
+                this.destroy();
+            });
         }
         connect(endpoint, options, headers) {
             var _a;
@@ -8638,7 +8642,6 @@
                 }
                 else {
                     this.onLeave.invoke(e.code, e.reason);
-                    this.destroy();
                 }
             };
             this.connection.events.onerror = (e) => {
@@ -8655,7 +8658,7 @@
                 this.connection.connect(url.origin, Object.assign(Object.assign({}, options), { skipHandshake }));
             }
             else {
-                this.connection.connect(`${endpoint}${skipHandshake ? "?skipHandshake=1" : ""}`, headers);
+                this.connection.connect(`${endpoint}${skipHandshake ? "&skipHandshake=1" : ""}`, headers);
             }
         }
         leave(consented = true) {
@@ -8764,6 +8767,8 @@
             this.onStateChange.clear();
             this.onError.clear();
             this.onLeave.clear();
+            this.onReconnect.clear();
+            this.onDrop.clear();
             this.onMessageHandlers.events = {};
             if (this.serializer instanceof SchemaSerializer) {
                 // Remove callback references
@@ -8875,6 +8880,7 @@
         handleReconnection() {
             if (Date.now() - this.joinedAtTime < this.reconnection.minUptime) {
                 console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x274C)} Room has not been up for long enough for automatic reconnection. (min uptime: ${this.reconnection.minUptime}ms)`); // ❌
+                this.onLeave.invoke(CloseCode.ABNORMAL_CLOSURE, "Room uptime too short for reconnection.");
                 return;
             }
             if (!this.reconnection.isReconnecting) {
@@ -8884,6 +8890,13 @@
             this.retryReconnection();
         }
         retryReconnection() {
+            if (this.reconnection.retryCount >= this.reconnection.maxRetries) {
+                // No more retries
+                console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x274C)} ❌ Reconnection failed after ${this.reconnection.maxRetries} attempts.`); // ❌
+                this.reconnection.isReconnecting = false;
+                this.onLeave.invoke(CloseCode.FAILED_TO_RECONNECT, "No more retries. Reconnection failed.");
+                return;
+            }
             this.reconnection.retryCount++;
             const delay = Math.min(this.reconnection.maxDelay, Math.max(this.reconnection.minDelay, this.reconnection.backoff(this.reconnection.retryCount, this.reconnection.delay)));
             console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x023F3)} will retry in ${(delay / 1000).toFixed(1)} seconds...`); // 🔄
@@ -8897,13 +8910,7 @@
                     });
                 }
                 catch (e) {
-                    console.log(".reconnect() failed", e);
-                    if (this.reconnection.retryCount < this.reconnection.maxRetries) {
-                        this.retryReconnection();
-                    }
-                    else {
-                        console.info(`[Colyseus reconnection]: ${String.fromCodePoint(0x274C)} Failed to reconnect. Is your server running? Please check server logs.`); // ❌
-                    }
+                    this.retryReconnection();
                 }
             }, delay);
         }
@@ -9065,7 +9072,7 @@
                     data = yield raw.blob();
                 }
                 if (!raw.ok) {
-                    throw new ServerError((_b = data.code) !== null && _b !== void 0 ? _b : raw.status, (_c = data.message) !== null && _c !== void 0 ? _c : raw.statusText, {
+                    throw new ServerError(raw.status, (_c = (_b = data.message) !== null && _b !== void 0 ? _b : data.error) !== null && _c !== void 0 ? _c : raw.statusText, {
                         headers: raw.headers,
                         status: raw.status,
                         response: raw,
@@ -9535,6 +9542,9 @@
         createMatchMakeRequest(method_1, roomName_1) {
             return __awaiter(this, arguments, void 0, function* (method, roomName, options = {}, rootSchema) {
                 try {
+                    if (!roomName) {
+                        throw new Error("Must provide a room name");
+                    }
                     const httpResponse = yield this.http.post(`/matchmake/${method}/${roomName}`, {
                         headers: {
                             'Accept': 'application/json',

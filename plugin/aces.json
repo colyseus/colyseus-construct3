@@ -2,7 +2,13 @@
   "$schema": "../aces.schema.json",
 
   "colyseus": {
-    "conditions": [],
+    "conditions": [
+      {
+        "id": "on-latency",
+        "scriptName": "OnLatency",
+        "isTrigger": true
+      }
+    ],
     "actions": [
       {
         "id": "set-endpoint",
@@ -10,6 +16,10 @@
         "params": [
           { "id": "endpoint", "type": "string" }
         ]
+      },
+      {
+        "id": "get-latency",
+        "scriptName": "GetLatency"
       }
     ],
     "expressions": [
@@ -18,6 +28,12 @@
         "expressionName": "Endpoint",
         "scriptName": "Endpoint",
         "returnType": "string"
+      },
+      {
+        "id": "current-latency",
+        "expressionName": "CurrentLatency",
+        "scriptName": "CurrentLatency",
+        "returnType": "number"
       }
     ]
   },

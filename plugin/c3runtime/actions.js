@@ -60,6 +60,17 @@ C3.Plugins.Colyseus_SDK.Acts =
     }
   },
 
+  GetLatency() {
+    if (this.client) {
+      this.client.getLatency().then((ms) => {
+        this.lastLatency = ms;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnLatency);
+      }).catch((err) => {
+        this._onError(err);
+      });
+    }
+  },
+
   /**
    * Auth methods
    */

@@ -30,6 +30,9 @@ function checkPath(lastPath, path) {
 
 C3.Plugins.Colyseus_SDK.Cnds =
 {
+  // Client
+  OnLatency() { return true; },
+
   // Matchmaking
   OnJoinRoom() { return true; },
   OnJoinError() { return true; },
