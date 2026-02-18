@@ -3,7 +3,7 @@
 // This software is released under the MIT License.
 // https://opensource.org/license/MIT
 //
-// colyseus.js@0.17.31 - @colyseus/schema 4.0.11
+// colyseus.js@0.17.34 - @colyseus/schema 4.0.13
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define('@colyseus/sdk', ['exports'], factory) :
@@ -4218,7 +4218,11 @@
     		            const ref = changeTree.ref;
     		            // Assign unique `refId` to ref if it doesn't have one yet.
     		            if (ref[$refId] === undefined) {
-    		                ref[$refId] = this.getNextUniqueId();
+    		                Object.defineProperty(ref, $refId, {
+    		                    value: this.getNextUniqueId(),
+    		                    enumerable: false,
+    		                    writable: true
+    		                });
     		            }
     		            const refId = ref[$refId];
     		            const isNewChangeTree = (this.changeTrees[refId] === undefined);
@@ -4660,7 +4664,11 @@
     		        // for decoding
     		        addRef(refId, ref, incrementCount = true) {
     		            this.refs.set(refId, ref);
-    		            ref[$refId] = refId;
+    		            Object.defineProperty(ref, $refId, {
+    		                value: refId,
+    		                enumerable: false,
+    		                writable: true
+    		            });
     		            if (incrementCount) {
     		                this.refCount[refId] = (this.refCount[refId] || 0) + 1;
     		            }
@@ -5352,11 +5360,15 @@
     		            const collection = instance[propertyName];
     		            // Collection not available yet. Listen for its availability before attaching the handler.
     		            if (!collection || collection[$refId] === undefined) {
-    		                removeHandler = this.addCallback(instance[$refId], propertyName, (value, _) => {
+    		                let removePropertyCallback;
+    		                removePropertyCallback = this.addCallback(instance[$refId], propertyName, (value, _) => {
     		                    if (value !== null && value !== undefined) {
+    		                        // Remove the property listener now that collection is available
+    		                        removePropertyCallback();
     		                        removeHandler = this.addCallback(value[$refId], operation, handler);
     		                    }
     		                });
+    		                removeHandler = removePropertyCallback;
     		                return removeOnAdd;
     		            }
     		            else {
