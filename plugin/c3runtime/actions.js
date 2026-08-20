@@ -45,6 +45,14 @@ C3.Plugins.Colyseus_SDK.Acts =
     C3.Plugins.Colyseus_SDK.Acts.RoomSend.call(this, type, JSON.parse(message));
   },
 
+  RoomRequest(tag, type, message) {
+    this._RoomRequest(tag, type, message);
+  },
+
+  RoomRequestJSON(tag, type, message) {
+    this._RoomRequest(tag, type, JSON.parse(message));
+  },
+
   RoomLeave(consented) {
     if (this.room) {
       this.room.leave(consented);

@@ -10,6 +10,7 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
 
     if (properties) {
       this.endpoint = properties[0] || this.endpoint;
+      this.debug = !!properties[1];
       this.client = new Colyseus.Client(this.endpoint);
     }
   }
@@ -68,7 +69,14 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
 
       // listen for changes on the room's state
       room.onStateChange.once(function () {
-        const callbacks = Colyseus.Callbacks.get(room);
+        let callbacks;
+        try {
+          callbacks = Colyseus.Callbacks.get(room);
+        } catch (e) {
+          // no decoder (e.g. "none" serializer) — nothing to listen to
+          if (self.debug) { console.warn("Colyseus: state callbacks unavailable:", e.message); }
+          return;
+        }
 
         function registerCallbacksOnStructure(schemaInstance, path) {
           const metadata = schemaInstance.constructor[Symbol.metadata];
@@ -76,7 +84,10 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
           for (const index in metadata) {
             const field = metadata[index].name;
             const type = metadata[index].type;
-            const schemaType = typeof(type);
+            // schema 5: `{ quantized }` is a scalar carried as an object, not a collection
+            const schemaType = (type !== null && typeof type === "object" && type.quantized !== undefined)
+              ? "quantized"
+              : typeof type;
 
             if (schemaType === "object") {
               const isSchemaChild = Object.values(type).some((value) => value[Symbol.metadata]);
@@ -207,38 +218,50 @@ C3.Plugins.Colyseus_SDK.Instance = class ColyseusInstance extends globalThis.ISD
     try { headers = JSON.parse(_headers); } catch (e) { headers = {}; }
 
     this.client.http[method](path, { headers, body })
-      .then(async (response) => {
+      .then((response) => {
         this.lastRequestTag = tag;
-        this.lastHttpStatusCode = response.statusCode;
-
-        //
-        // TODO: The HTTP client should parse text data internally. We shouldn't do it ourselves here.
-        //
-        if (response.data instanceof ReadableStream) {
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let result = '';
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            result += decoder.decode(value);
-          }
-          this.lastValue = result;
-
-        } else {
-          this.lastValue = response.data;
-        }
-
+        this.lastHttpStatusCode = response.status;
+        this.lastValue = response.data;
         this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRequestComplete);
       })
       .catch((e) => {
         this.lastValue = undefined;
         this.lastRequestTag = tag;
         this.lastError = e;
-        this.lastHttpStatusCode = e.code;
+        this.lastHttpStatusCode = e.status ?? e.code;
         this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRequestError);
         this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
       });
+  }
+
+  _RoomRequest(tag, type, payload) {
+    if (!this.room || !this.room.connection || !this.room.connection.isOpen) {
+      console.log("RoomRequest: not connected.");
+      return;
+    }
+
+    this.room.request(type, payload)
+      .then((response) => {
+        this.lastResponseTag = tag;
+        this.lastResponse = response;
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomResponse);
+      })
+      .catch((e) => {
+        // ctx.reject(reason) is application flow: expose the reason, don't raise "On any error"
+        const rejected = (e && e.name === "rejected");
+        this.lastResponseTag = tag;
+        this.lastResponse = rejected ? e.reason : undefined;
+        this.lastError = { code: e.code, message: e.message, name: e.name, reason: e.reason };
+        this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnRoomRequestError);
+        if (!rejected) {
+          this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
+        }
+      });
+  }
+
+  _onError(e) {
+    this.lastError = e;
+    this._trigger(C3.Plugins.Colyseus_SDK.Cnds.OnAnyError);
   }
 
   getDeepVariable(rawPath, container) {

@@ -386,6 +386,30 @@
         "expressionName": "CurrentPing",
         "scriptName": "CurrentPing",
         "returnType": "number"
+      },
+      {
+        "id": "clock-server-now",
+        "expressionName": "ServerNow",
+        "scriptName": "ServerNow",
+        "returnType": "number"
+      },
+      {
+        "id": "clock-render-now",
+        "expressionName": "RenderNow",
+        "scriptName": "RenderNow",
+        "returnType": "number"
+      },
+      {
+        "id": "clock-rtt",
+        "expressionName": "RoundTripTime",
+        "scriptName": "RoundTripTime",
+        "returnType": "number"
+      },
+      {
+        "id": "clock-jitter",
+        "expressionName": "Jitter",
+        "scriptName": "Jitter",
+        "returnType": "number"
       }
     ]
   },
@@ -406,6 +430,24 @@
         "params": [
           { "id": "type", "type": "string" },
           { "id": "message", "type": "string" }
+        ]
+      },
+      {
+        "id": "room-request",
+        "scriptName": "RoomRequest",
+        "params": [
+          { "id": "tag", "type": "string", "initialValue": "" },
+          { "id": "type", "type": "string" },
+          { "id": "message", "type": "any" }
+        ]
+      },
+      {
+        "id": "room-request-json",
+        "scriptName": "RoomRequestJSON",
+        "params": [
+          { "id": "tag", "type": "string", "initialValue": "" },
+          { "id": "type", "type": "string" },
+          { "id": "message", "type": "string", "initialValue": "Colyseus.JSON(\"{}\")" }
         ]
       }
     ],
@@ -452,6 +494,26 @@
           { "id": "cmp", "type": "combo", "items": ["=", "!="]},
           { "id": "type", "type": "combo", "items": ["string", "number", "boolean", "undefined", "object"] }
         ]
+      },
+      {
+        "id": "on-room-response",
+        "scriptName": "OnRoomResponse",
+        "isTrigger": true,
+        "params": [
+          { "id": "tag", "type": "string" }
+        ]
+      },
+      {
+        "id": "on-room-request-error",
+        "scriptName": "OnRoomRequestError",
+        "isTrigger": true,
+        "params": [
+          { "id": "tag", "type": "string" }
+        ]
+      },
+      {
+        "id": "is-request-rejected",
+        "scriptName": "IsRequestRejected"
       }
     ],
 
@@ -459,7 +521,7 @@
       {
         "id": "message-type",
         "expressionName": "MessageType",
-        "scriptName": "MessageValueType",
+        "scriptName": "MessageType",
         "returnType": "string"
       },
       {
@@ -491,6 +553,33 @@
         "params": [
           { "id": "path", "type": "string", "initialValue": "" }
         ]
+      },
+      {
+        "id": "response-tag",
+        "expressionName": "ResponseTag",
+        "scriptName": "ResponseTag",
+        "returnType": "string"
+      },
+      {
+        "id": "response-value",
+        "expressionName": "ResponseValue",
+        "scriptName": "ResponseValue",
+        "returnType": "any"
+      },
+      {
+        "id": "response-value-at",
+        "expressionName": "ResponseValueAt",
+        "scriptName": "ResponseValueAt",
+        "returnType": "any",
+        "params": [
+          { "id": "path", "type": "string", "initialValue": "" }
+        ]
+      },
+      {
+        "id": "response-value-type",
+        "expressionName": "ResponseValueType",
+        "scriptName": "ResponseValueType",
+        "returnType": "string"
       }
     ]
   },
