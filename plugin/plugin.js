@@ -12,7 +12,7 @@ const SDK = globalThis.SDK;
 const PLUGIN_ID = "Colyseus_SDK";
 ////////////////////////////////////////////
 
-const PLUGIN_VERSION = "0.17.0.3";
+const PLUGIN_VERSION = "0.18.0.0";
 const PLUGIN_CATEGORY = "web";
 
 const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK = class Colyseus_SDK extends SDK.IPluginBase {
@@ -54,7 +54,7 @@ const PLUGIN_CLASS = SDK.Plugins.Colyseus_SDK = class Colyseus_SDK extends SDK.I
       // Add "Default Endpoint" property
       new SDK.PluginProperty("text", "endpoint", "http://localhost:2567"),
       // Add "Debug" property
-      new SDK.PluginProperty("check", "debug", true)
+      new SDK.PluginProperty("check", "debug", false)
     ]);
     SDK.Lang.PopContext(); // .properties
 

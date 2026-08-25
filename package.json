@@ -7,12 +7,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "caddy run",
     "build": "c3addon pack plugin",
-    "copy-dist": "cp ../colyseus/packages/sdk/dist/colyseus.js ./plugin",
-    "chrome": "open -a Google\\ Chrome --args https://editor.construct.net '--disable-web-security' '--disable-extensions' '--disable-plugins'"
+    "copy-dist": "cp node_modules/@colyseus/sdk/dist/colyseus.js plugin/colyseus.js",
+    "chrome": "open -na Google\\ Chrome --args --user-data-dir=/tmp/c3-chrome-dev --disable-web-security --disable-features=LocalNetworkAccessChecks,BlockInsecurePrivateNetworkRequests --disable-extensions https://editor.construct.net"
   },
   "author": "Endel Dreyer",
   "license": "MIT",
   "devDependencies": {
+    "@colyseus/sdk": "0.18.2",
     "c3addon": "^1.0.9"
   }
 }

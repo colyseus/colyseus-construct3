@@ -57,13 +57,14 @@ C3.Plugins.Colyseus_SDK.Cnds =
   CompareMessageValueOfType(cmp, type) { return C3.compare(typeof (this.lastMessage), cmp, typesByIndex[type]); },
   CompareMessageValueAtOfType(path, cmp, type) { return C3.compare(typeof (this.getDeepVariable(path, this.lastMessage)), cmp, typesByIndex[type]); },
 
+  // Request/response
+  OnRoomResponse(tag) { return this.lastResponseTag === tag; },
+  OnRoomRequestError(tag) { return this.lastResponseTag === tag; },
+  IsRequestRejected() { return !!(this.lastError && this.lastError.name === "rejected"); },
+
   // Auth
   OnAuthChange() { return true; },
   OnAuthError() { return true; },
-
-  // HTTP
-  OnRequestComplete() { return true; },
-  OnRequestError() { return true; },
 
   // State/Schema
   OnChangeAtPath(path) { return checkPath(this.lastPath, path); },

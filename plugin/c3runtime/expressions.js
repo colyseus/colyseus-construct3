@@ -8,9 +8,15 @@ C3.Plugins.Colyseus_SDK.Exps =
   SessionId() { return this.room && this.room.sessionId; },
   ReconnectionToken() { return this.room && this.room.reconnectionToken; },
   CloseCode() { return this.lastCloseCode || -1; },
-  CurrentPing() { return this.lastPing || -1; },
-  CurrentLatency() { return this.lastLatency || -1; },
+  CurrentPing() { return this.lastPing ?? -1; },
+  CurrentLatency() { return this.lastLatency ?? -1; },
   Endpoint() { return this.endpoint; },
+
+  // Room clock (server-synchronized only on rooms using defineInput(); otherwise local time / 0)
+  ServerNow() { return this.room ? this.room.clock.serverNow() : -1; },
+  RenderNow() { return this.room ? this.room.clock.renderNow() : -1; },
+  RoundTripTime() { return this.room ? this.room.clock.rtt() : -1; },
+  Jitter() { return this.room ? this.room.clock.jitter() : -1; },
 
   JSON(data) { return JSON.stringify(eval(`(${data})`)); },
 
@@ -20,6 +26,12 @@ C3.Plugins.Colyseus_SDK.Exps =
   MessageType() { return this.lastType; },
   MessageValueType() { return typeof (this.lastMessage); },
   MessageValueAtType(path) { return typeof (this.getDeepVariable(path, this.lastMessage)); },
+
+  // Request/response
+  ResponseTag() { return this.lastResponseTag || ""; },
+  ResponseValue() { return this.castType(this.lastResponse); },
+  ResponseValueAt(path) { return this.castType(this.getDeepVariable(path, this.lastResponse)); },
+  ResponseValueType() { return typeof (this.lastResponse); },
 
   // State
   State(variablePath) { return this.castType(this.getDeepVariable(variablePath, (this.room && this.room.state) || {})); },

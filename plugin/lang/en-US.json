@@ -14,8 +14,8 @@
             "desc": "Default Endpoint to use on \"Connect\" action."
           },
           "debug": {
-            "name": "Debug Panel",
-            "desc": "Show the debug panel in the top right corner of the screen."
+            "name": "Debug Logs",
+            "desc": "Log Colyseus events (messages, state changes, errors) to the browser console."
           }
         },
 
@@ -199,6 +199,36 @@
                 }
               }
             }
+          },
+
+          "on-room-response": {
+            "isStatic": true,
+            "list-name": "On Room Response",
+            "display-text": "On Room Response (with Tag [i]{0}[/i])",
+            "description": "Triggers when the server replied to a request sent with \"Send request\". Use ResponseValue / ResponseValueAt to read the reply.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "The tag name you used to identify the request."
+              }
+            }
+          },
+          "on-room-request-error": {
+            "isStatic": true,
+            "list-name": "On Room Request Error",
+            "display-text": "On Room Request Error (with Tag [i]{0}[/i])",
+            "description": "Triggers when a request was rejected by the server, failed, or timed out. Combine with \"Request was rejected\" and ResponseValue to read the rejection reason, or ErrorMessage for failures.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "The tag name you used to identify the request."
+              }
+            }
+          },
+          "is-request-rejected": {
+            "list-name": "Request was rejected",
+            "display-text": "Request was rejected by the server",
+            "description": "True if the last request error was a deliberate rejection (ctx.reject(reason) on the server). The reason is available via ResponseValue. Use inside \"On Room Request Error\"."
           },
 
           "schema-path-change": {
@@ -614,6 +644,44 @@
               }
             }
           },
+          "room-request": {
+            "list-name": "Send request",
+            "display-text": "Request {1} with {2} (Tag: [b]{0}[/b])",
+            "description": "Send a request to the room and wait for the server's reply. Triggers \"On Room Response\" or \"On Room Request Error\" with the given tag. Requires a Colyseus 0.18 server.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "A tag to identify the request. Can be anything you'd like."
+              },
+              "type": {
+                "name": "Type",
+                "desc": "Type of the request message."
+              },
+              "message": {
+                "name": "Message",
+                "desc": "Data of your request. The return value of the server-side message handler becomes the response."
+              }
+            }
+          },
+          "room-request-json": {
+            "list-name": "Send JSON request",
+            "display-text": "Request {1} with {2} (Tag: [b]{0}[/b])",
+            "description": "Send a JSON request to the room and wait for the server's reply. Triggers \"On Room Response\" or \"On Room Request Error\" with the given tag. Requires a Colyseus 0.18 server.",
+            "params": {
+              "tag": {
+                "name": "Tag",
+                "desc": "A tag to identify the request. Can be anything you'd like."
+              },
+              "type": {
+                "name": "Type",
+                "desc": "Type of the request message."
+              },
+              "message": {
+                "name": "JSON Message",
+                "desc": "JSON representation of the request payload."
+              }
+            }
+          },
 
           "room-leave": {
             "list-name": "Leave room",
@@ -918,6 +986,29 @@
             }
           },
 
+          "response-tag": {
+            "description": "Get the tag of the last request response or error.",
+            "translated-name": "ResponseTag"
+          },
+          "response-value": {
+            "description": "Get the last response value. (Available during \"On Room Response\". During \"On Room Request Error\" of a rejected request it holds the rejection reason.)",
+            "translated-name": "ResponseValue"
+          },
+          "response-value-at": {
+            "description": "Get a nested value from the last response. (Available during \"On Room Response\")",
+            "translated-name": "ResponseValueAt",
+            "params": {
+              "path": {
+                "name": "Variable Path",
+                "desc": "A dot separated path to the variable. e.g. \"items.0.name\""
+              }
+            }
+          },
+          "response-value-type": {
+            "description": "Get the data type of ResponseValue. Possible return values: \"undefined\", \"number\", \"string\", \"boolean\", \"object\".",
+            "translated-name": "ResponseValueType"
+          },
+
           "current-items-count": {
             "description": "Get total number of items on current collection. (Available during add/remove item events)",
             "translated-name": "CurrentItemsCount"
@@ -941,6 +1032,22 @@
           "current-ping": {
             "description": "Get the last measured ping latency in milliseconds. (Available during \"On Room Ping\")",
             "translated-name": "CurrentPing"
+          },
+          "clock-server-now": {
+            "description": "Estimated server time in milliseconds (room clock). Synchronized only on rooms using defineInput(); otherwise local time. -1 when not connected.",
+            "translated-name": "ServerNow"
+          },
+          "clock-render-now": {
+            "description": "Smoothed server time in milliseconds, for rendering/interpolating remote entities. Synchronized only on rooms using defineInput(); otherwise local time. -1 when not connected.",
+            "translated-name": "RenderNow"
+          },
+          "clock-rtt": {
+            "description": "Round-trip time to the room in milliseconds, measured by the room clock. 0 if the room does not sync its clock, -1 when not connected.",
+            "translated-name": "RoundTripTime"
+          },
+          "clock-jitter": {
+            "description": "Connection jitter in milliseconds, estimated by the room clock. 0 if the room does not sync its clock, -1 when not connected.",
+            "translated-name": "Jitter"
           },
           "error-code": {
             "description": "Get last error code",
