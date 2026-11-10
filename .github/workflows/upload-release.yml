@@ -14,12 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '18.x'
+        node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
 
     - name: Install dependencies
@@ -27,7 +27,7 @@ jobs:
         npm install
 
     - id: check
-      uses: EndBug/version-check@v1
+      uses: EndBug/version-check@v2
       with:
         file-name: plugin/addon.json
         diff-search: true
@@ -39,7 +39,7 @@ jobs:
 
     - name: Release
       if: steps.check.outputs.changed == 'true'
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.check.outputs.version }}
         prerelease: false
@@ -54,4 +54,4 @@ jobs:
     #       --authPassword ${{ secrets.C3_AUTH_PASSWORD }} \
     #       --uploadFile Colyseus_SDK.c3addon \
     #       --version ${{ steps.check.outputs.version }} \
-           --releaseNotes 'Released via GitHub Actions'
+    #       --releaseNotes 'Released via GitHub Actions'
